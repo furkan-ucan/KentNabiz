@@ -81,3 +81,7 @@ pnpm dev
 ## Lisans
 
 [MIT Lisansı](LICENSE)
+
+## CI Test
+
+Bu satır CI workflow'unu test etmek için eklenmiştir.
