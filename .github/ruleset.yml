@@ -1,0 +1,33 @@
+name: Branch Protection
+target: branch
+bypass_actors:
+  organization_admin: maintain
+  repository_admin: maintain
+conditions:
+  ref_name:
+    include:
+      - refs/heads/master
+      - refs/heads/main
+rules:
+  - type: commit_message_pattern
+    parameters:
+      pattern: '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)'
+      name: 'Conventional commit messages required'
+  - type: required_status_checks
+    parameters:
+      strict_required_status_checks_policy: true
+      required_status_checks:
+        - context: CI / test
+        - context: CI / build
+  - type: required_linear_history
+    parameters: {}
+  - type: required_signatures
+    parameters: {}
+  - type: pull_request
+    parameters:
+      dismiss_stale_reviews_on_push: true
+      require_code_owner_review: false
+      required_approving_review_count: 1
+      required_review_thread_resolution: true
+  - type: non_fast_forward
+    parameters: {}
