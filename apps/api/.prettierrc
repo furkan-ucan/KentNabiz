@@ -3,6 +3,5 @@
   "trailingComma": "all",
   "endOfLine": "lf",
   "printWidth": 100,
-  "semi": true,
-  "bracketSpacing": true
+  "semi": true
 }

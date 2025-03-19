@@ -1,5 +1,7 @@
 import { RedisModuleOptions } from '@nestjs-modules/ioredis';
 import { ConfigService } from '@nestjs/config';
+import { Module } from '@nestjs/common';
+import { RedisService } from './redis.service';
 
 export const redisConfig = (configService: ConfigService): RedisModuleOptions => ({
   type: 'single',
@@ -13,3 +15,9 @@ export const redisConfig = (configService: ConfigService): RedisModuleOptions =>
     },
   },
 });
+
+@Module({
+  providers: [RedisService],
+  exports: [RedisService],
+})
+export class RedisModule {}
