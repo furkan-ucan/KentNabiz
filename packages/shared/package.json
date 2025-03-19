@@ -9,8 +9,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
-    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "prebuild": "tsc --emitDeclarationOnly",
+    "build": "tsup src/index.ts --format cjs,esm --sourcemap --no-dts",
+    "dev": "tsup src/index.ts --format cjs,esm --watch",
     "clean": "rimraf dist",
     "test": "jest",
     "test:watch": "jest --watch",
