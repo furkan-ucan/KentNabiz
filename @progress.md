@@ -263,9 +263,45 @@ Bu adımlarla, KentNabız projesinin sağlam, test edilmiş ve tip güvenliği y
 - VS Code'da ESLint ve Prettier eklentileri için proje konfigürasyonu uyumlu hale getirildi
 - TypeScript'in NestJS ile tam uyumlu çalışması sağlandı
 
-### Faz 2.2'ye Geçiş Hazırlıkları
+### Adım 2.2: Auth Module İmplementasyonu
 
-- Build süreçleri optimize edildi
-- Tüm linting ve formatlama sorunları çözüldü
-- Kodtabanı GitHub'a push edildi ve hazır durumda
-- API modüllerinin geliştirilmesi için temel altyapı tamamlandı
+#### Geliştirilen Özellikler
+
+- JWT tabanlı kimlik doğrulama sistemi başarıyla implementasyonu tamamlandı
+- Access ve refresh token mekanizması Redis entegrasyonu ile uygulandı
+- Role tabanlı yetkilendirme (RBAC) sistemi kuruldu
+- Token blacklisting ve invalidation mekanizması eklendi
+- UUID kullanarak tekil JWT ID (jti) sistemi entegre edildi
+- Token yenileme ve güvenli logout işlemleri uygulandı
+- Auth controller, service ve guard'ları implementasyonu tamamlandı
+
+#### Karşılaşılan Hatalar
+
+- TypeScript/ESLint uyarıları (JWT token işleme ve bcryptjs tipleri ile ilgili)
+- JWT payload içinde jti alanı eksikliği
+- Redis'te token saklama işlemindeki token ID tanımlama sorunu
+- Token validasyonunda tip güvenliği eksiklikleri
+- Windows ortamında CURL komutlarında tırnak işareti sorunları
+
+#### Hata Çözüm Yöntemi
+
+- JwtPayload interface'i jti, iat ve exp alanları ile genişletildi
+- TokenService sınıfında UUID tiplerini doğru şekilde ele alacak yapılar eklendi
+- AuthService sınıfındaki gereksiz eslint-disable direktifleri temizlendi
+- Token saklama mekanizması kullanıcı ID ve token ID kombinasyonu ile güçlendirildi
+- Redis'te token blacklist mekanizması için yeni metodlar eklendi
+- Refresh token kullanıldığında eski tokenı geçersiz kılma mekanizması eklendi
+
+#### İlerleme Kanıtları
+
+- Register endpoint'i (`/api/auth/register`) başarıyla test edildi
+- Token üretimi ve JWT ID (jti) kullanımı doğrulandı
+- Redis'te token saklama ve blacklisting mekanizması çalışıyor
+- ESLint ve TypeScript hataları giderildi
+
+### Adım 2.3'e Geçiş Hazırlıkları
+
+- User entity ile Auth modülü entegrasyonu planlandı
+- TypeORM repository pattern uygulanması için hazırlıklar yapıldı
+- Jest test yapılandırması optimize edildi
+- User Module için temel yapı ve akış belirlendi

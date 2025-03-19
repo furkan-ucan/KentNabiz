@@ -53,7 +53,7 @@ export class TokenService {
       secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
     });
 
-    // Check if token exists in Redis
+    // Check if token exists in Rediss
     const storedToken = await this.redis.get(`refresh_token:${payload.sub}:${payload.jti || ''}`);
     if (!storedToken || storedToken !== token) {
       throw new Error('Invalid refresh token');
