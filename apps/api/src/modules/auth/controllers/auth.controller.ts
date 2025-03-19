@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Headers, Request } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from '../services/auth.service';
 import { LoginDto } from '../dto/login.dto';
@@ -8,6 +8,7 @@ import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
 import { Token } from '../interfaces/token.interface';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { Public } from '../../../core/decorators/public.decorator';
 
 interface RequestWithUser extends Request {
   user: JwtPayload;
@@ -18,6 +19,7 @@ interface RequestWithUser extends Request {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Post('login')
   @ApiOperation({ summary: 'User login' })
   @ApiResponse({ status: 200, description: 'Login successful' })
@@ -26,6 +28,7 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
+  @Public()
   @Post('register')
   @ApiOperation({ summary: 'User registration' })
   @ApiResponse({ status: 201, description: 'Registration successful' })
@@ -33,11 +36,12 @@ export class AuthController {
     return this.authService.register(registerDto);
   }
 
+  @Public()
   @Post('refresh')
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async refreshToken(@Headers('refresh-token') token: string): Promise<Token> {
+  async refreshToken(@Body('refreshToken') token: string): Promise<Token> {
     return this.authService.refreshToken(token);
   }
 
