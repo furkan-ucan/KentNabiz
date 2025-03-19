@@ -3,15 +3,18 @@
 ## 📌 Adım 10.1: Code Splitting ve Lazy Loading
 
 ### Açıklama
+
 Webpack ve React.lazy kullanarak bundle boyutunu küçültme ve yükleme performansını artırma.
 
 ### 🛠 Teknolojiler
+
 - Webpack ^5.0.0
 - @loadable/component ^5.15.0
 - webpack-bundle-analyzer ^4.9.0
 - compression-webpack-plugin ^10.0.0
 
 ### 📂 Webpack Yapılandırması
+
 ```typescript
 // apps/web/webpack.config.ts
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
@@ -88,6 +91,7 @@ const preloadReportPage = () => {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Bundle analizi yapıldı
 - [ ] Code splitting stratejisi belirlendi
 - [ ] Lazy loading implementasyonu
@@ -95,6 +99,7 @@ const preloadReportPage = () => {
 - [ ] Compression ayarları
 
 ### 📌 Onay Gereksinimleri
+
 - Initial bundle <200KB
 - First paint <2s
 - TTI <3.5s
@@ -103,14 +108,17 @@ const preloadReportPage = () => {
 ## 📌 Adım 10.2: Redis Caching Stratejisi
 
 ### Açıklama
+
 Sık kullanılan verilerin Redis'te önbelleğe alınması ve cache invalidation yönetimi.
 
 ### 🛠 Teknolojiler
+
 - Redis ^7.0.0
 - ioredis ^5.0.0
 - cache-manager ^5.2.0
 
 ### 📂 Cache Yapılandırması
+
 ```typescript
 // apps/api/src/core/cache/cache.module.ts
 import { Module } from '@nestjs/common';
@@ -126,12 +134,12 @@ import { CacheService } from './cache.service';
         host: process.env.REDIS_HOST,
         port: process.env.REDIS_PORT,
         ttl: 60 * 60, // 1 saat
-        max: 100
-      })
-    })
+        max: 100,
+      }),
+    }),
   ],
   providers: [CacheService],
-  exports: [CacheService]
+  exports: [CacheService],
 })
 export class RedisCacheModule {}
 
@@ -142,9 +150,7 @@ import { Cache } from 'cache-manager';
 
 @Injectable()
 export class CacheService {
-  constructor(
-    @Inject(CACHE_MANAGER) private cacheManager: Cache
-  ) {}
+  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
   async get<T>(key: string): Promise<T | null> {
     return this.cacheManager.get<T>(key);
@@ -180,13 +186,11 @@ import { CacheService } from '@/core/cache/cache.service';
 
 @Injectable()
 export class ReportsService {
-  constructor(
-    private readonly cacheService: CacheService
-  ) {}
+  constructor(private readonly cacheService: CacheService) {}
 
   async getReports(params: ReportQueryParams) {
     const cacheKey = this.cacheService.generateKey('reports', params);
-    
+
     // Cache'den kontrol et
     const cachedData = await this.cacheService.get<Report[]>(cacheKey);
     if (cachedData) {
@@ -196,7 +200,7 @@ export class ReportsService {
     // DB'den verileri çek
     const reports = await this.reportRepository.find({
       where: params,
-      relations: ['user', 'media']
+      relations: ['user', 'media'],
     });
 
     // Cache'e kaydet
@@ -207,17 +211,18 @@ export class ReportsService {
 
   async createReport(data: CreateReportDto) {
     const report = await this.reportRepository.save(data);
-    
+
     // İlgili cache'leri temizle
     await this.cacheService.del('reports:list');
     await this.cacheService.del(`reports:${report.id}`);
-    
+
     return report;
   }
 }
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Redis bağlantısı
 - [ ] Cache stratejisi
 - [ ] TTL politikası
@@ -225,6 +230,7 @@ export class ReportsService {
 - [ ] Error handling
 
 ### 📌 Onay Gereksinimleri
+
 - Cache hit rate >80%
 - Response time <100ms
 - Memory usage optimal
@@ -232,15 +238,18 @@ export class ReportsService {
 ## 📌 Adım 10.3: Image ve Bundle Optimizasyonu
 
 ### Açıklama
+
 Resim boyutlarının optimizasyonu ve CDN entegrasyonu.
 
 ### 🛠 Teknolojiler
+
 - sharp ^0.32.0
 - imagemin ^8.0.0
 - webpack-image-loader ^4.0.0
 - CloudFront/CloudFlare CDN
 
 ### 📂 Image Optimization
+
 ```typescript
 // apps/api/src/modules/media/services/image-processor.service.ts
 import { Injectable } from '@nestjs/common';
@@ -249,12 +258,7 @@ import * as sharp from 'sharp';
 @Injectable()
 export class ImageProcessorService {
   async optimize(buffer: Buffer, options: ImageOptions = {}): Promise<Buffer> {
-    const {
-      width,
-      height,
-      quality = 80,
-      format = 'webp'
-    } = options;
+    const { width, height, quality = 80, format = 'webp' } = options;
 
     let image = sharp(buffer);
 
@@ -262,7 +266,7 @@ export class ImageProcessorService {
     if (width || height) {
       image = image.resize(width, height, {
         fit: 'inside',
-        withoutEnlargement: true
+        withoutEnlargement: true,
       });
     }
 
@@ -281,14 +285,14 @@ export class ImageProcessorService {
       width: 200,
       height: 200,
       quality: 60,
-      format: 'webp'
+      format: 'webp',
     });
   }
 }
 
 // apps/web/next.config.js
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
-  enabled: process.env.ANALYZE === 'true'
+  enabled: process.env.ANALYZE === 'true',
 });
 
 module.exports = withBundleAnalyzer({
@@ -297,9 +301,9 @@ module.exports = withBundleAnalyzer({
     formats: ['image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 60 * 60 * 24 // 1 gün
+    minimumCacheTTL: 60 * 60 * 24, // 1 gün
   },
-  webpack: (config) => {
+  webpack: config => {
     config.module.rules.push({
       test: /\.(jpe?g|png|svg|gif|ico|webp|avif)$/,
       use: [
@@ -308,24 +312,25 @@ module.exports = withBundleAnalyzer({
           options: {
             mozjpeg: {
               progressive: true,
-              quality: 80
+              quality: 80,
             },
             optipng: {
-              enabled: true
+              enabled: true,
             },
             webp: {
-              quality: 80
-            }
-          }
-        }
-      ]
+              quality: 80,
+            },
+          },
+        },
+      ],
     });
     return config;
-  }
+  },
 });
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Image optimization pipeline
 - [ ] WebP/AVIF support
 - [ ] Responsive images
@@ -333,6 +338,7 @@ module.exports = withBundleAnalyzer({
 - [ ] Cache headers
 
 ### 📌 Onay Gereksinimleri
+
 - Image boyutları %50+ küçüldü
 - CDN hit rate >90%
 - WebP formatı aktif
@@ -340,14 +346,17 @@ module.exports = withBundleAnalyzer({
 ## 📌 Adım 10.4: Database Indexing ve Query Optimizasyonu
 
 ### Açıklama
+
 PostgreSQL indeksleme ve sorgu optimizasyonları.
 
 ### 🛠 Teknolojiler
+
 - PostgreSQL v14
 - TypeORM ^0.3.0
 - pg_stat_statements
 
 ### 📂 Database Optimizasyonu
+
 ```typescript
 // apps/api/src/database/migrations/1700000000000-AddIndexes.ts
 import { MigrationInterface, QueryRunner } from 'typeorm';
@@ -398,13 +407,15 @@ import { Report } from '../entities/report.entity';
 export class ReportRepository extends Repository<Report> {
   async findNearbyReports(lat: number, lng: number, radius: number = 1000) {
     return this.createQueryBuilder('report')
-      .where(`
+      .where(
+        `
         ST_DWithin(
           location::geography,
           ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
           :radius
         )
-      `)
+      `
+      )
       .setParameters({ lat, lng, radius })
       .orderBy('created_at', 'DESC')
       .take(20)
@@ -414,10 +425,12 @@ export class ReportRepository extends Repository<Report> {
 
   async searchReports(query: string) {
     return this.createQueryBuilder('report')
-      .where(`
+      .where(
+        `
         to_tsvector('turkish', report.title || ' ' || report.description) @@ 
         plainto_tsquery('turkish', :query)
-      `)
+      `
+      )
       .setParameter('query', query)
       .orderBy('created_at', 'DESC')
       .take(20)
@@ -428,6 +441,7 @@ export class ReportRepository extends Repository<Report> {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Index analizi
 - [ ] Query planlayıcı
 - [ ] Cache stratejisi
@@ -435,6 +449,7 @@ export class ReportRepository extends Repository<Report> {
 - [ ] GIS optimizasyonu
 
 ### 📌 Onay Gereksinimleri
+
 - Query time <50ms
 - Index hit rate >90%
 - Explain analyze başarılı
@@ -442,14 +457,17 @@ export class ReportRepository extends Repository<Report> {
 ## 📌 Adım 10.5: API Response Time İyileştirmeleri
 
 ### Açıklama
+
 API yanıt sürelerinin iyileştirilmesi ve connection pooling optimizasyonları.
 
 ### 🛠 Teknolojiler
+
 - pg-pool ^3.6.0
 - fastify ^4.0.0
 - compression ^1.7.0
 
 ### 📂 API Optimizasyonu
+
 ```typescript
 // apps/api/src/core/database/database.config.ts
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
@@ -458,7 +476,7 @@ import * as pg from 'pg';
 const pgPool = new pg.Pool({
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000
+  connectionTimeoutMillis: 2000,
 });
 
 export const databaseConfig: TypeOrmModuleOptions = {
@@ -476,8 +494,8 @@ export const databaseConfig: TypeOrmModuleOptions = {
   extra: {
     max: 20,
     connectionTimeoutMillis: 2000,
-    idleTimeoutMillis: 30000
-  }
+    idleTimeoutMillis: 30000,
+  },
 };
 
 // apps/api/src/main.ts
@@ -486,10 +504,7 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 import * as compression from 'compression';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(
-    AppModule,
-    new FastifyAdapter()
-  );
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
 
   // Compression middleware
   app.use(compression());
@@ -513,12 +528,12 @@ import { map } from 'rxjs/operators';
 export class TransformInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const now = Date.now();
-    
+
     return next.handle().pipe(
       map(data => ({
         data,
         timestamp: Date.now(),
-        responseTime: `${Date.now() - now}ms`
+        responseTime: `${Date.now() - now}ms`,
       }))
     );
   }
@@ -526,6 +541,7 @@ export class TransformInterceptor implements NestInterceptor {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Connection pooling
 - [ ] Response compression
 - [ ] Timeout handling
@@ -533,6 +549,7 @@ export class TransformInterceptor implements NestInterceptor {
 - [ ] Monitoring setup
 
 ### 📌 Onay Gereksinimleri
+
 - Response time <100ms
 - Error rate <1%
 - Connection pooling optimal
@@ -540,18 +557,21 @@ export class TransformInterceptor implements NestInterceptor {
 ## 🔍 Faz 10 Sonuç ve Değerlendirme
 
 ### Performance Metrics
+
 - Initial bundle size: <200KB
 - API response time: <100ms
 - Cache hit rate: >80%
 - Query time: <50ms
 
 ### Monitoring Setup
+
 - Resource utilization
 - Error tracking
 - Performance metrics
 - Cache statistics
 
 ### ⚠️ Önemli Notlar
+
 - Cache invalidation stratejisi önemli
 - Query planlarını düzenli kontrol et
 - Bundle size monitör et

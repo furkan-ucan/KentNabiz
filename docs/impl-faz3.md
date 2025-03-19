@@ -3,9 +3,11 @@
 ## 📌 Adım 3.1: Temel Proje Yapılandırması
 
 ### Açıklama
+
 React tabanlı web uygulamasının temel iskeletini ve yapılandırmasını oluşturuyoruz.
 
 ### 🛠 Teknolojiler
+
 - React ^18.2.0
 - TypeScript ^5.0.0
 - Vite ^5.0.0
@@ -13,6 +15,7 @@ React tabanlı web uygulamasının temel iskeletini ve yapılandırmasını olu�
 - Prettier ^3.0.0
 
 ### 📂 Proje Yapısı
+
 ```typescript
 apps/web/
 ├── src/
@@ -38,12 +41,14 @@ apps/web/
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Vite projesi kuruldu
 - [ ] TypeScript konfigürasyonu yapıldı
 - [ ] ESLint ve Prettier aktif
 - [ ] Klasör yapısı oluşturuldu
 
 ### 📌 Onay Gereksinimleri
+
 - Development server çalışıyor
 - TypeScript derleme başarılı
 - Lint komutları hatasız çalışıyor
@@ -51,14 +56,17 @@ apps/web/
 ## 📌 Adım 3.2: Routing ve Lazy Loading
 
 ### Açıklama
+
 React Router ile sayfa yönlendirme ve kod bölme (code splitting) yapılandırması.
 
 ### 🛠 Teknolojiler
+
 - React Router ^6.20.0
 - React Suspense
 - React Error Boundary
 
 ### 📂 Router Yapılandırması
+
 ```typescript
 // src/routes/index.tsx
 import { lazy, Suspense } from 'react';
@@ -75,20 +83,20 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     errorElement: <ErrorBoundary />,
     children: [
-      { 
-        index: true, 
-        element: <HomePage /> 
+      {
+        index: true,
+        element: <HomePage />
       },
       {
         path: 'reports',
         children: [
-          { 
-            index: true, 
-            element: <ReportPage /> 
+          {
+            index: true,
+            element: <ReportPage />
           },
-          { 
-            path: 'map', 
-            element: <ReportMapPage /> 
+          {
+            path: 'map',
+            element: <ReportMapPage />
           },
           {
             path: ':id',
@@ -106,12 +114,14 @@ export const router = createBrowserRouter([
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Route tanımlamaları
 - [ ] Lazy loading
 - [ ] Error boundary
 - [ ] Protected routes
 
 ### 📌 Onay Gereksinimleri
+
 - Tüm rotalar çalışıyor
 - Code splitting aktif
 - Route guard'lar aktif
@@ -119,13 +129,16 @@ export const router = createBrowserRouter([
 ## 📌 Adım 3.3: State Management
 
 ### Açıklama
+
 Redux Toolkit ile state yönetimi ve async thunk yapılandırması.
 
 ### 🛠 Teknolojiler
+
 - @reduxjs/toolkit ^2.0.0
 - React Redux ^9.0.0
 
 ### 📂 Store Yapılandırması
+
 ```typescript
 // src/store/index.ts
 import { configureStore } from '@reduxjs/toolkit';
@@ -137,12 +150,12 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     reports: reportReducer,
-    ui: uiReducer
+    ui: uiReducer,
   },
-  middleware: (getDefaultMiddleware) =>
+  middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
-      serializableCheck: false
-    })
+      serializableCheck: false,
+    }),
 });
 
 // src/store/slices/reportSlice.ts
@@ -162,19 +175,21 @@ const reportSlice = createSlice({
   reducers: {
     // sync reducers
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     // async reducers
-  }
+  },
 });
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Store konfigürasyonu
 - [ ] Slice tanımlamaları
 - [ ] Async thunks
 - [ ] Selector hooks
 
 ### 📌 Onay Gereksinimleri
+
 - Redux DevTools çalışıyor
 - State updates performanslı
 - Side effects yönetiliyor
@@ -182,15 +197,18 @@ const reportSlice = createSlice({
 ## 📌 Adım 3.4: UI Components ve Tema Sistemi
 
 ### Açıklama
+
 Chakra UI ile komponent sistemi, tema yapılandırması ve responsive tasarım.
 
 ### 🛠 Teknolojiler
+
 - @chakra-ui/react ^2.8.0
 - @emotion/react ^11.0.0
 - @emotion/styled ^11.0.0
 - framer-motion ^10.0.0
 
 ### 📂 Tema Yapılandırması
+
 ```typescript
 // src/styles/theme/index.ts
 import { extendTheme } from '@chakra-ui/react';
@@ -202,8 +220,8 @@ export const theme = extendTheme({
   ...foundations,
   components: {
     Button: buttonStyles,
-    Card: cardStyles
-  }
+    Card: cardStyles,
+  },
 });
 
 // src/styles/theme/foundations/colors.ts
@@ -213,14 +231,14 @@ export const colors = {
     100: '#BAE3FF',
     500: '#2B6CB0',
     600: '#2C5282',
-    900: '#1A365D'
+    900: '#1A365D',
   },
   status: {
     new: '#38A169',
     inProgress: '#D69E2E',
     resolved: '#3182CE',
-    rejected: '#E53E3E'
-  }
+    rejected: '#E53E3E',
+  },
 };
 
 // src/styles/theme/foundations/index.ts
@@ -231,11 +249,12 @@ import { spacing } from './spacing';
 export const foundations = {
   colors,
   ...typography,
-  space: spacing
+  space: spacing,
 };
 ```
 
 ### 📂 Base Components
+
 ```typescript
 // src/components/ui/Button/Button.tsx
 import { Button as ChakraButton, ButtonProps } from '@chakra-ui/react';
@@ -259,9 +278,9 @@ interface ReportCardProps {
 
 export const ReportCard = ({ report, onClick }: ReportCardProps) => {
   return (
-    <Box 
-      borderRadius="lg" 
-      p={4} 
+    <Box
+      borderRadius="lg"
+      p={4}
       boxShadow="md"
       onClick={onClick}
       cursor="pointer"
@@ -277,6 +296,7 @@ export const ReportCard = ({ report, onClick }: ReportCardProps) => {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Tema foundations (colors, typography, spacing)
 - [ ] Component variants
 - [ ] Responsive patterns
@@ -284,6 +304,7 @@ export const ReportCard = ({ report, onClick }: ReportCardProps) => {
 - [ ] Dark mode support
 
 ### 📌 Onay Gereksinimleri
+
 - Tema tutarlılığı
 - Component isolation
 - A11y standartları
@@ -292,14 +313,17 @@ export const ReportCard = ({ report, onClick }: ReportCardProps) => {
 ## 📌 Adım 3.5: Performans Optimizasyonu
 
 ### Açıklama
+
 Bundle size optimizasyonu, code splitting ve performans monitoring.
 
 ### 🛠 Teknolojiler
+
 - webpack-bundle-analyzer
 - @compression/brotli
 - web-vitals
 
 ### 📂 Bundle Optimizasyonu
+
 ```typescript
 // vite.config.ts
 import { splitVendorChunkPlugin } from 'vite';
@@ -311,22 +335,22 @@ export default defineConfig({
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
-          'chakra': ['@chakra-ui/react'],
-          'leaflet': ['leaflet', 'react-leaflet'],
-          'redux': ['@reduxjs/toolkit', 'react-redux']
-        }
-      }
+          chakra: ['@chakra-ui/react'],
+          leaflet: ['leaflet', 'react-leaflet'],
+          redux: ['@reduxjs/toolkit', 'react-redux'],
+        },
+      },
     },
-    chunkSizeWarningLimit: 500
+    chunkSizeWarningLimit: 500,
   },
   plugins: [
     splitVendorChunkPlugin(),
     visualizer({
       filename: 'stats.html',
       gzipSize: true,
-      brotliSize: true
-    })
-  ]
+      brotliSize: true,
+    }),
+  ],
 });
 
 // src/lib/performance/vitals.ts
@@ -344,13 +368,13 @@ function getConnectionSpeed() {
 
 export function sendToAnalytics(metric) {
   const body = {
-    dsn: 'your-analytics-key', 
+    dsn: 'your-analytics-key',
     id: metric.id,
     page: window.location.pathname,
     href: window.location.href,
     event_name: metric.name,
     value: metric.value.toString(),
-    speed: getConnectionSpeed()
+    speed: getConnectionSpeed(),
   };
 
   const blob = new Blob([JSON.stringify(body)], { type: 'application/json' });
@@ -367,18 +391,19 @@ export function webVitals() {
 ```
 
 ### 📂 Lazy Loading ve Code Splitting
+
 ```typescript
 // src/routes/LazyComponents.ts
 import { lazy } from 'react';
 
-export const ReportMap = lazy(() => 
+export const ReportMap = lazy(() =>
   import('@/features/reports/components/ReportMap')
     .then(module => ({
       default: module.ReportMap
     }))
 );
 
-export const ReportForm = lazy(() => 
+export const ReportForm = lazy(() =>
   import('@/features/reports/components/ReportForm')
     .then(module => ({
       default: module.ReportForm
@@ -403,6 +428,7 @@ export const SuspenseBoundary = ({ children }) => (
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Bundle size analizi
 - [ ] Code splitting stratejisi
 - [ ] Web vitals ölçümü
@@ -410,6 +436,7 @@ export const SuspenseBoundary = ({ children }) => (
 - [ ] Cache stratejisi
 
 ### 📌 Onay Gereksinimleri
+
 - Bundle size < 300KB (gzipped)
 - First paint < 2s
 - TTI < 3.5s
@@ -418,14 +445,17 @@ export const SuspenseBoundary = ({ children }) => (
 ## 📌 Adım 3.6: API ve Veri Katmanı
 
 ### Açıklama
+
 API client, interceptors ve veri yönetimi sistemi.
 
 ### 🛠 Teknolojiler
+
 - axios ^1.6.0
 - @tanstack/react-query ^5.0.0
 - axios-retry ^4.0.0
 
 ### 📂 API Client Yapılandırması
+
 ```typescript
 // src/lib/api/client.ts
 import axios, { AxiosError } from 'axios';
@@ -436,17 +466,16 @@ export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 });
 
-axiosRetry(apiClient, { 
+axiosRetry(apiClient, {
   retries: 3,
-  retryDelay: (retryCount) => retryCount * 1000,
-  retryCondition: (error) => {
-    return axiosRetry.isNetworkOrIdempotentRequestError(error) || 
-           error.response?.status === 429;
-  }
+  retryDelay: retryCount => retryCount * 1000,
+  retryCondition: error => {
+    return axiosRetry.isNetworkOrIdempotentRequestError(error) || error.response?.status === 429;
+  },
 });
 
 let isRefreshing = false;
@@ -464,19 +493,19 @@ const processQueue = (error: any = null) => {
 };
 
 apiClient.interceptors.request.use(
-  (config) => {
+  config => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  error => Promise.reject(error)
 );
 
 apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  response => response,
+  async error => {
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -494,7 +523,7 @@ apiClient.interceptors.response.use(
       try {
         const newToken = await refreshToken();
         localStorage.setItem('token', newToken);
-        
+
         processQueue();
         return apiClient(originalRequest);
       } catch (refreshError) {
@@ -517,18 +546,17 @@ export const useReports = (params: ReportQueryParams) => {
   return useQuery({
     queryKey: ['reports', params],
     queryFn: () => apiClient.get('/reports', { params }),
-    select: (data) => data.data,
-    staleTime: 5 * 60 * 1000 // 5 minutes
+    select: data => data.data,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
 export const useCreateReport = () => {
   return useMutation({
-    mutationFn: (report: CreateReportDto) => 
-      apiClient.post('/reports', report),
+    mutationFn: (report: CreateReportDto) => apiClient.post('/reports', report),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reports'] });
-    }
+    },
   });
 };
 ```
@@ -536,15 +564,18 @@ export const useCreateReport = () => {
 ## 📌 Adım 3.11: Form Validation ve API Integration
 
 ### Açıklama
+
 Formik, Yup ve Axios ile form doğrulama ve API entegrasyonu yapılandırması.
 
 ### 🛠 Teknolojiler
+
 - formik ^2.4.0
 - yup ^1.3.0
 - axios ^1.6.0
 - @tanstack/react-query ^5.0.0
 
 ### 📂 Form Validation Schema
+
 ```typescript
 // src/lib/validation/schemas.ts
 import * as Yup from 'yup';
@@ -569,22 +600,22 @@ export const reportSchema = Yup.object({
     longitude: Yup.number()
       .required(t('validation.required'))
       .min(-180, t('validation.invalidLongitude'))
-      .max(180, t('validation.invalidLongitude'))
+      .max(180, t('validation.invalidLongitude')),
   }),
   media: Yup.array().of(
     Yup.object({
       type: Yup.string().oneOf(['IMAGE', 'VIDEO']),
       file: Yup.mixed()
-        .test('fileSize', t('validation.fileSize'), (value) => {
+        .test('fileSize', t('validation.fileSize'), value => {
           if (!value) return true;
           return value.size <= 5 * 1024 * 1024; // 5MB
         })
-        .test('fileType', t('validation.fileType'), (value) => {
+        .test('fileType', t('validation.fileType'), value => {
           if (!value) return true;
           return ['image/jpeg', 'image/png', 'video/mp4'].includes(value.type);
-        })
+        }),
     })
-  )
+  ),
 });
 
 // src/lib/validation/messages.ts
@@ -596,16 +627,17 @@ export const validationMessages = {
     invalidCategory: 'Geçersiz kategori',
     invalidLatitude: 'Geçersiz enlem değeri',
     invalidLongitude: 'Geçersiz boylam değeri',
-    fileSize: 'Dosya boyutu 5MB\'dan küçük olmalıdır',
-    fileType: 'Desteklenmeyen dosya formatı'
+    fileSize: "Dosya boyutu 5MB'dan küçük olmalıdır",
+    fileType: 'Desteklenmeyen dosya formatı',
   },
   en: {
     // ... English translations
-  }
+  },
 };
 ```
 
 ### 📂 API Client Configuration
+
 ```typescript
 // src/lib/api/client.ts
 import axios from 'axios';
@@ -616,31 +648,31 @@ export const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 });
 
 // Request interceptor
 apiClient.interceptors.request.use(
-  (config) => {
+  config => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  error => Promise.reject(error)
 );
 
 // Response interceptor
 apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  response => response,
+  async error => {
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
+
       try {
         const newToken = await refreshToken();
         localStorage.setItem('token', newToken);
@@ -659,7 +691,7 @@ apiClient.interceptors.response.use(
         title: 'Sunucu Hatası',
         description: 'Lütfen daha sonra tekrar deneyin',
         status: 'error',
-        duration: 5000
+        duration: 5000,
       });
     }
 
@@ -676,32 +708,32 @@ export const useReportSubmit = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Report) => 
-      apiClient.post('/reports', data),
+    mutationFn: (data: Report) => apiClient.post('/reports', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       toast({
         title: 'Başarılı',
         description: 'Raporunuz başarıyla gönderildi',
-        status: 'success'
+        status: 'success',
       });
     },
-    onError: (error) => {
+    onError: error => {
       toast({
         title: 'Hata',
         description: error.response?.data?.message || 'Bir hata oluştu',
-        status: 'error'
+        status: 'error',
       });
-    }
+    },
   });
 };
 ```
 
 ### 📂 Form Components
+
 ```typescript
 // src/components/forms/ReportForm/index.tsx
 import { Formik, Form } from 'formik';
-import { 
+import {
   VStack,
   Button,
   useToast
@@ -714,7 +746,7 @@ import { useReportSubmit } from '@/lib/api/hooks/useReportSubmit';
 
 export const ReportForm = () => {
   const { mutate, isPending } = useReportSubmit();
-  
+
   return (
     <Formik
       initialValues={{
@@ -735,14 +767,14 @@ export const ReportForm = () => {
               label="Başlık"
               placeholder="Raporunuz için kısa bir başlık girin"
             />
-            
+
             <FormField
               name="description"
               label="Açıklama"
               placeholder="Detaylı açıklama yazın"
               textarea
             />
-            
+
             <FormField
               name="category"
               label="Kategori"
@@ -753,11 +785,11 @@ export const ReportForm = () => {
                 { value: 'ENVIRONMENT', label: 'Çevre' }
               ]}
             />
-            
+
             <LocationPicker name="location" />
-            
+
             <MediaUpload name="media" />
-            
+
             <Button
               type="submit"
               colorScheme="brand"
@@ -776,6 +808,7 @@ export const ReportForm = () => {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Form validation çalışıyor
 - [ ] API entegrasyonu tamamlandı
 - [ ] Error handling yapıldı
@@ -783,6 +816,7 @@ export const ReportForm = () => {
 - [ ] i18n desteği sağlandı
 
 ### 📌 Onay Gereksinimleri
+
 - Tüm form alanları doğru validate ediliyor
 - API hataları kullanıcıya gösteriliyor
 - Token yenileme sorunsuz çalışıyor
@@ -791,13 +825,16 @@ export const ReportForm = () => {
 ## 📌 Adım 3.7: Map Integration
 
 ### Açıklama
+
 Leaflet.js ile harita entegrasyonu ve marker yönetimi.
 
 ### 🛠 Teknolojiler
+
 - leaflet ^1.9.0
 - react-leaflet ^4.2.0
 
 ### 📂 Map Yapılandırması
+
 ```typescript
 // src/components/map/MapView.tsx
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
@@ -813,12 +850,14 @@ export const useMap = () => {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Map initialization
 - [ ] Marker management
 - [ ] Cluster support
 - [ ] Location picker
 
 ### 📌 Onay Gereksinimleri
+
 - Harita sorunsuz yükleniyor
 - Marker'lar çalışıyor
 - Performans optimizasyonları yapıldı
@@ -826,15 +865,18 @@ export const useMap = () => {
 ## 📌 Adım 3.8: Form ve Validation Sistemi
 
 ### Açıklama
+
 Formik, Yup ve i18n entegrasyonu ile gelişmiş form yönetimi.
 
 ### 🛠 Teknolojiler
+
 - formik ^2.4.0
 - yup ^1.3.0
 - i18next ^23.0.0
 - i18next-react ^13.0.0
 
 ### 📂 Validation Yapılandırması
+
 ```typescript
 // src/lib/validation/schemas/index.ts
 import * as yup from 'yup';
@@ -854,31 +896,31 @@ yup.addMethod(yup.object, 'location', function () {
 
 // src/lib/validation/schemas/report.schema.ts
 export const reportSchema = yup.object({
-  title: yup.string()
+  title: yup
+    .string()
     .required(i18n.t('validation.required'))
     .min(3, i18n.t('validation.minLength', { count: 3 })),
-  description: yup.string()
+  description: yup
+    .string()
     .required(i18n.t('validation.required'))
     .max(500, i18n.t('validation.maxLength', { count: 500 })),
-  location: yup.object()
-    .location()
-    .required(i18n.t('validation.required')),
-  category: yup.string()
+  location: yup.object().location().required(i18n.t('validation.required')),
+  category: yup
+    .string()
     .oneOf(['INFRASTRUCTURE', 'ENVIRONMENT', 'SECURITY'])
     .required(i18n.t('validation.required')),
-  photos: yup.array()
-    .of(yup.string())
-    .max(5, i18n.t('validation.maxPhotos'))
+  photos: yup.array().of(yup.string()).max(5, i18n.t('validation.maxPhotos')),
 });
 ```
 
 ### 📂 Form Components
+
 ```typescript
 // src/components/forms/BaseForm/FormField.tsx
 import { useField } from 'formik';
-import { 
-  FormControl, 
-  FormLabel, 
+import {
+  FormControl,
+  FormLabel,
   FormErrorMessage,
   Input
 } from '@chakra-ui/react';
@@ -891,7 +933,7 @@ interface FormFieldProps {
 
 export const FormField = ({ name, label, type = 'text' }: FormFieldProps) => {
   const [field, meta] = useField(name);
-  
+
   return (
     <FormControl isInvalid={meta.touched && meta.error}>
       <FormLabel htmlFor={name}>{label}</FormLabel>
@@ -947,21 +989,21 @@ export const ReportForm = ({ onSubmit }: ReportFormProps) => {
         <Form>
           <VStack spacing={4} align="stretch">
             <FormField name="title" label={t('form.title')} />
-            <FormField 
-              name="description" 
-              label={t('form.description')} 
-              type="textarea" 
+            <FormField
+              name="description"
+              label={t('form.description')}
+              type="textarea"
             />
             <LocationPicker name="location" />
             <PhotoUpload name="photos" />
-            
+
             {status?.error && (
               <Alert status="error">
                 <AlertIcon />
                 {status.error}
               </Alert>
             )}
-            
+
             <Button
               type="submit"
               isLoading={isSubmitting}
@@ -979,13 +1021,14 @@ export const ReportForm = ({ onSubmit }: ReportFormProps) => {
 ```
 
 ### 📂 Error Boundary Yapılandırması
+
 ```typescript
 // src/components/ErrorBoundary/index.tsx
 import { ErrorBoundary } from 'react-error-boundary';
-import { 
-  Alert, 
-  AlertIcon, 
-  AlertTitle, 
+import {
+  Alert,
+  AlertIcon,
+  AlertTitle,
   AlertDescription,
   Button,
   VStack
@@ -1056,6 +1099,7 @@ export const App = () => {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] i18n entegrasyonu
 - [ ] Custom validation rules
 - [ ] Reusable form components
@@ -1063,6 +1107,7 @@ export const App = () => {
 - [ ] Form state management
 
 ### 📌 Onay Gereksinimleri
+
 - Form validasyonları çalışıyor
 - i18n çevirileri tam
 - Error handling tutarlı
@@ -1071,15 +1116,18 @@ export const App = () => {
 ## 📌 Adım 3.9: i18n ve Localization
 
 ### Açıklama
+
 Çoklu dil desteği ve yerelleştirme yapılandırması.
 
 ### 🛠 Teknolojiler
+
 - i18next ^23.0.0
 - react-i18next ^13.0.0
 - i18next-http-backend ^2.0.0
 - i18next-browser-languagedetector ^7.0.0
 
 ### 📂 i18n Yapılandırması
+
 ```typescript
 // src/config/i18n/index.ts
 import i18n from 'i18next';
@@ -1132,6 +1180,7 @@ export const LanguageSwitcher = () => {
 ```
 
 ### 📂 Dil Dosyaları
+
 ```json
 // public/locales/tr/common.json
 {
@@ -1176,6 +1225,7 @@ export const LanguageSwitcher = () => {
 ```
 
 ### 📂 Hook ve Helper'lar
+
 ```typescript
 // src/hooks/useLocalization.ts
 import { useTranslation } from 'react-i18next';
@@ -1184,22 +1234,22 @@ import { tr, enUS } from 'date-fns/locale';
 
 export const useLocalization = () => {
   const { t, i18n } = useTranslation();
-  
+
   const locales = {
     tr,
-    en: enUS
+    en: enUS,
   };
 
   const formatDate = (date: Date, formatStr = 'PP') => {
     return format(date, formatStr, {
-      locale: locales[i18n.language]
+      locale: locales[i18n.language],
     });
   };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat(i18n.language, {
       style: 'currency',
-      currency: i18n.language === 'tr' ? 'TRY' : 'USD'
+      currency: i18n.language === 'tr' ? 'TRY' : 'USD',
     }).format(amount);
   };
 
@@ -1208,12 +1258,13 @@ export const useLocalization = () => {
     formatDate,
     formatCurrency,
     currentLanguage: i18n.language,
-    changeLanguage: i18n.changeLanguage
+    changeLanguage: i18n.changeLanguage,
   };
 };
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] i18n yapılandırması
 - [ ] Dil dosyaları
 - [ ] Dil değiştirme mekanizması
@@ -1221,6 +1272,7 @@ export const useLocalization = () => {
 - [ ] RTL desteği (gerekirse)
 
 ### 📌 Onay Gereksinimleri
+
 - Tüm metinler çevrilmiş
 - Dil değişimi sorunsuz
 - Formatlama tutarlı
@@ -1229,15 +1281,18 @@ export const useLocalization = () => {
 ## 📌 Adım 3.10: Map Integration ve Clustering
 
 ### Açıklama
+
 Leaflet.js ile harita entegrasyonu, marker clustering ve harita performans optimizasyonları.
 
 ### 🛠 Teknolojiler
+
 - leaflet ^1.9.0
 - react-leaflet ^4.2.0
 - @react-leaflet/core ^2.1.0
 - leaflet.markercluster ^1.5.3
 
 ### 📂 Harita Components
+
 ```typescript
 // src/features/map/components/MapView/index.tsx
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
@@ -1247,7 +1302,7 @@ import { useReportMarkers } from '../../hooks/useReportMarkers';
 
 export const MapView = () => {
   const { markers, isLoading } = useReportMarkers();
-  
+
   return (
     <MapContainer
       center={[41.0082, 28.9784]}
@@ -1259,7 +1314,7 @@ export const MapView = () => {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         maxZoom={19}
       />
-      
+
       <MarkerClusterGroup
         chunkedLoading
         maxClusterRadius={60}
@@ -1273,7 +1328,7 @@ export const MapView = () => {
           />
         ))}
       </MarkerClusterGroup>
-      
+
       <MapControls />
     </MapContainer>
   );
@@ -1291,7 +1346,7 @@ interface ReportMarkerProps {
 
 export const ReportMarker = ({ position, report }: ReportMarkerProps) => {
   const icon = useCustomIcon(report.status);
-  
+
   return (
     <Marker position={position} icon={icon}>
       <Popup>
@@ -1303,6 +1358,7 @@ export const ReportMarker = ({ position, report }: ReportMarkerProps) => {
 ```
 
 ### 📂 Custom Hooks
+
 ```typescript
 // src/features/map/hooks/useMapBounds.ts
 import { useState, useEffect } from 'react';
@@ -1335,36 +1391,39 @@ import { useMapBounds } from './useMapBounds';
 
 export const useReportMarkers = () => {
   const bounds = useMapBounds();
-  
+
   return useQuery({
     queryKey: ['reports', bounds],
-    queryFn: () => apiClient.get('/reports', {
-      params: {
-        north: bounds.getNorth(),
-        south: bounds.getSouth(),
-        east: bounds.getEast(),
-        west: bounds.getWest()
-      }
-    }),
-    select: (data) => data.data.map(report => ({
-      id: report.id,
-      position: [report.location.latitude, report.location.longitude],
-      report
-    })),
-    staleTime: 30000 // 30 seconds
+    queryFn: () =>
+      apiClient.get('/reports', {
+        params: {
+          north: bounds.getNorth(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          west: bounds.getWest(),
+        },
+      }),
+    select: data =>
+      data.data.map(report => ({
+        id: report.id,
+        position: [report.location.latitude, report.location.longitude],
+        report,
+      })),
+    staleTime: 30000, // 30 seconds
   });
 };
 ```
 
 ### 📂 Map Controls ve Utils
+
 ```typescript
 // src/features/map/components/MapControls/index.tsx
 import { useMap } from 'react-leaflet';
-import { 
-  Box, 
-  IconButton, 
+import {
+  Box,
+  IconButton,
   VStack,
-  useToast 
+  useToast
 } from '@chakra-ui/react';
 
 export const MapControls = () => {
@@ -1427,6 +1486,7 @@ export const optimizeMarkerLayer = (layer: L.Layer) => {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Marker clustering çalışıyor
 - [ ] Harita sınırlarına göre veri çekme
 - [ ] Konum bulma özelliği
@@ -1434,6 +1494,7 @@ export const optimizeMarkerLayer = (layer: L.Layer) => {
 - [ ] Error handling
 
 ### 📌 Onay Gereksinimleri
+
 - Marker'lar doğru gruplandı
 - Harita etkileşimi akıcı
 - Veri yükleme optimizasyonu yapıldı
@@ -1442,14 +1503,17 @@ export const optimizeMarkerLayer = (layer: L.Layer) => {
 ## 📌 Adım 3.12: Leaflet.js Map Integration ve Optimizasyonlar
 
 ### Açıklama
+
 Harita entegrasyonu, cluster yönetimi ve performans optimizasyonları.
 
 ### 🛠 Teknolojiler
+
 - react-leaflet ^4.2.0
 - leaflet.markercluster ^1.5.3
 - @turf/turf ^6.5.0
 
 ### 📂 Map Components
+
 ```typescript
 // src/components/map/MapContainer/index.tsx
 import { useEffect, useRef } from 'react';
@@ -1475,11 +1539,11 @@ const MapView = () => {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       />
-      
+
       {!isLoading && (
         <MapCluster reports={reports} />
       )}
-      
+
       <MapControls />
     </MapContainer>
   );
@@ -1511,7 +1575,7 @@ interface Props {
 
 export const MapCluster = ({ reports }: Props) => {
   const map = useMap();
-  
+
   useEffect(() => {
     const markers = L.markerClusterGroup({
       chunkedLoading: true,
@@ -1530,12 +1594,12 @@ export const MapCluster = ({ reports }: Props) => {
             <a href="/reports/${report.id}">Detaylar</a>
           </div>
         `);
-      
+
       markers.addLayer(marker);
     });
 
     map.addLayer(markers);
-    
+
     return () => {
       map.removeLayer(markers);
     };
@@ -1602,6 +1666,7 @@ export const MapControls = () => {
 ```
 
 ### 📂 Map Performance Optimizations
+
 ```typescript
 // src/lib/hooks/useMapOptimizations.ts
 import { useEffect, useCallback } from 'react';
@@ -1611,20 +1676,17 @@ import type { Report } from '@/types';
 
 export const useMapOptimizations = (reports: Report[]) => {
   const map = useMap();
-  
+
   // Viewport içindeki raporları filtreleme
   const getVisibleReports = useCallback(() => {
     const bounds = map.getBounds();
-    return reports.filter((report) => {
-      const point = turf.point([
-        report.location.longitude,
-        report.location.latitude
-      ]);
+    return reports.filter(report => {
+      const point = turf.point([report.location.longitude, report.location.latitude]);
       const boundingBox = turf.bboxPolygon([
         bounds.getWest(),
         bounds.getSouth(),
         bounds.getEast(),
-        bounds.getNorth()
+        bounds.getNorth(),
       ]);
       return turf.booleanPointInPolygon(point, boundingBox);
     });
@@ -1635,9 +1697,9 @@ export const useMapOptimizations = (reports: Report[]) => {
     const handleZoom = () => {
       const zoom = map.getZoom();
       const clusterRadius = Math.max(50, 100 - zoom * 5); // Zoom seviyesine göre cluster yarıçapı
-      
+
       // MarkerClusterGroup'un options'larını güncelle
-      map.eachLayer((layer) => {
+      map.eachLayer(layer => {
         if (layer instanceof L.MarkerClusterGroup) {
           layer.options.maxClusterRadius = clusterRadius;
           layer.refreshClusters();
@@ -1652,12 +1714,13 @@ export const useMapOptimizations = (reports: Report[]) => {
   }, [map]);
 
   return {
-    visibleReports: getVisibleReports()
+    visibleReports: getVisibleReports(),
   };
 };
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Harita lazy loading çalışıyor
 - [ ] Marker clustering aktif
 - [ ] Viewport optimizasyonu yapıldı
@@ -1665,6 +1728,7 @@ export const useMapOptimizations = (reports: Report[]) => {
 - [ ] Performans metrikleri kabul edilebilir seviyede
 
 ### 📌 Performance Metrics
+
 - Initial bundle size: < 200KB
 - Map initial load time: < 2s
 - Marker rendering (1000 markers): < 500ms
@@ -1672,6 +1736,7 @@ export const useMapOptimizations = (reports: Report[]) => {
 - Smooth scrolling ve pan: 60fps
 
 ### 📌 Optimization Checklist
+
 - [x] Code splitting (dynamic import)
 - [x] Lazy loading of map components
 - [x] Viewport-based filtering
@@ -1679,4 +1744,7 @@ export const useMapOptimizations = (reports: Report[]) => {
 - [x] Memory leak prevention
 - [x] Event listener cleanup
 - [x] Bundle size optimization
+
+```
+
 ```

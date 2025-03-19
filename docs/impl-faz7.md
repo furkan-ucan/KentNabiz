@@ -3,15 +3,18 @@
 ## 📌 Adım 7.1: Jest Kurulumu ve Unit Test Yapısı
 
 ### Açıklama
+
 Jest ve testing utilities kullanarak unit test altyapısının kurulması.
 
 ### 🛠 Teknolojiler
+
 - jest ^29.0.0
 - @types/jest ^29.0.0
 - ts-jest ^29.0.0
 - @testing-library/jest-dom ^6.0.0
 
 ### 📂 Jest Yapılandırması
+
 ```typescript
 // jest.config.ts
 import type { Config } from '@jest/types';
@@ -20,15 +23,12 @@ const config: Config.InitialOptions = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
-  testMatch: [
-    '**/__tests__/**/*.+(ts|tsx|js)',
-    '**/?(*.)+(spec|test).+(ts|tsx|js)'
-  ],
+  testMatch: ['**/__tests__/**/*.+(ts|tsx|js)', '**/?(*.)+(spec|test).+(ts|tsx|js)'],
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest'
+    '^.+\\.(ts|tsx)$': 'ts-jest',
   },
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1'
+    '^@/(.*)$': '<rootDir>/src/$1',
   },
   collectCoverage: true,
   coverageDirectory: 'coverage',
@@ -37,9 +37,9 @@ const config: Config.InitialOptions = {
       branches: 80,
       functions: 80,
       lines: 80,
-      statements: 80
-    }
-  }
+      statements: 80,
+    },
+  },
 };
 
 export default config;
@@ -55,9 +55,9 @@ describe('validateReport', () => {
       description: 'Test açıklama',
       location: {
         latitude: 41.0082,
-        longitude: 28.9784
+        longitude: 28.9784,
       },
-      category: 'INFRASTRUCTURE'
+      category: 'INFRASTRUCTURE',
     };
 
     expect(validateReport(validReport)).toBe(true);
@@ -68,12 +68,11 @@ describe('validateReport', () => {
       description: 'Test açıklama',
       location: {
         latitude: 41.0082,
-        longitude: 28.9784
-      }
+        longitude: 28.9784,
+      },
     };
 
-    expect(() => validateReport(invalidReport as Report))
-      .toThrow('Başlık zorunludur');
+    expect(() => validateReport(invalidReport as Report)).toThrow('Başlık zorunludur');
   });
 });
 
@@ -91,7 +90,7 @@ describe('ReportService', () => {
   it('rapor oluşturur ve kaydeder', async () => {
     const report = {
       title: 'Test Rapor',
-      description: 'Açıklama'
+      description: 'Açıklama',
     };
 
     const saved = await service.createReport(report);
@@ -102,12 +101,14 @@ describe('ReportService', () => {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Jest konfigürasyonu tamamlandı
 - [ ] Test coverage ayarları yapıldı
 - [ ] Test utilities ve mock'lar hazır
 - [ ] CI entegrasyonu aktif
 
 ### 📌 Onay Gereksinimleri
+
 - Unit test coverage %80+
 - Test senaryoları başarılı
 - Mock data doğru çalışıyor
@@ -115,14 +116,17 @@ describe('ReportService', () => {
 ## 📌 Adım 7.2: React Testing Library ile Komponent Testleri
 
 ### Açıklama
+
 React komponentlerinin test edilmesi ve kullanıcı etkileşimlerinin doğrulanması.
 
 ### 🛠 Teknolojiler
+
 - @testing-library/react ^14.0.0
 - @testing-library/user-event ^14.0.0
 - @testing-library/jest-dom ^6.0.0
 
 ### 📂 Komponent Test Yapısı
+
 ```typescript
 // src/components/ReportForm/__tests__/ReportForm.test.tsx
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -193,12 +197,14 @@ describe('MapView', () => {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Komponent render testleri
 - [ ] User event testleri
 - [ ] Mock service/API çağrıları
 - [ ] Snapshot testleri
 
 ### 📌 Onay Gereksinimleri
+
 - Tüm komponentler test edildi
 - User interaction testleri başarılı
 - A11y testleri geçildi
@@ -206,13 +212,16 @@ describe('MapView', () => {
 ## 📌 Adım 7.3: Cypress ile E2E Testler
 
 ### Açıklama
+
 Cypress kullanarak uçtan uca test senaryolarının implementasyonu.
 
 ### 🛠 Teknolojiler
+
 - cypress ^13.0.0
 - @cypress/code-coverage ^3.0.0
 
 ### 📂 Cypress Test Yapısı
+
 ```typescript
 // cypress.config.ts
 import { defineConfig } from 'cypress';
@@ -225,11 +234,11 @@ export default defineConfig({
     setupNodeEvents(on, config) {
       require('@cypress/code-coverage/task')(on, config);
       return config;
-    }
+    },
   },
   viewportWidth: 1280,
   viewportHeight: 720,
-  video: false
+  video: false,
 });
 
 // cypress/e2e/report-flow.cy.ts
@@ -241,27 +250,26 @@ describe('Rapor Oluşturma Flow', () => {
   it('yeni rapor oluşturulabilmeli', () => {
     // Ana sayfaya git
     cy.visit('/');
-    
+
     // Yeni rapor butonuna tıkla
     cy.findByText('Yeni Rapor').click();
-    
+
     // Form alanlarını doldur
     cy.findByLabelText('Başlık').type('Test Rapor');
     cy.findByLabelText('Açıklama').type('Detaylı açıklama');
-    
+
     // Haritadan konum seç
     cy.get('#map').click(500, 500);
-    
+
     // Fotoğraf yükle
     cy.get('input[type=file]').attachFile('test-image.jpg');
-    
+
     // Formu gönder
     cy.findByText('Gönder').click();
-    
+
     // Başarılı mesajını kontrol et
-    cy.findByText('Rapor başarıyla oluşturuldu')
-      .should('be.visible');
-    
+    cy.findByText('Rapor başarıyla oluşturuldu').should('be.visible');
+
     // Raporun listelendiğini kontrol et
     cy.visit('/reports');
     cy.findByText('Test Rapor').should('exist');
@@ -270,33 +278,33 @@ describe('Rapor Oluşturma Flow', () => {
   it('offline modda çalışabilmeli', () => {
     // İnterneti kapat
     cy.toggleNetworkStatus(false);
-    
+
     // Rapor oluştur
     cy.visit('/new-report');
     cy.findByLabelText('Başlık').type('Offline Rapor');
     cy.findByText('Gönder').click();
-    
+
     // Offline queue mesajını kontrol et
-    cy.findByText('Rapor kaydedildi, çevrimiçi olunca gönderilecek')
-      .should('be.visible');
-    
+    cy.findByText('Rapor kaydedildi, çevrimiçi olunca gönderilecek').should('be.visible');
+
     // İnterneti aç
     cy.toggleNetworkStatus(true);
-    
+
     // Senkronizasyonu kontrol et
-    cy.findByText('Rapor başarıyla gönderildi')
-      .should('be.visible');
+    cy.findByText('Rapor başarıyla gönderildi').should('be.visible');
   });
 });
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] E2E test senaryoları
 - [ ] Custom commands
 - [ ] Network intercept
 - [ ] Test raporlaması
 
 ### 📌 Onay Gereksinimleri
+
 - Kritik akışlar test edildi
 - CI pipeline entegrasyonu tamam
 - Test raporları oluşuyor
@@ -304,13 +312,16 @@ describe('Rapor Oluşturma Flow', () => {
 ## 📌 Adım 7.4: JMeter ile Performans Testleri
 
 ### Açıklama
+
 JMeter kullanarak API ve uygulama performans testlerinin yapılandırması.
 
 ### 🛠 Teknolojiler
+
 - Apache JMeter ^5.6
 - JMeter Plugins
 
 ### 📂 Test Plan Yapısı
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <jmeterTestPlan version="1.2" properties="5.0">
@@ -348,7 +359,7 @@ JMeter kullanarak API ve uygulama performans testlerinin yapılandırması.
         </HTTPSamplerProxy>
         <hashTree/>
       </hashTree>
-      
+
       <!-- Rapor Oluşturma Test -->
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Report Creation Test">
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController">
@@ -392,12 +403,14 @@ JMeter kullanarak API ve uygulama performans testlerinin yapılandırması.
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Load test senaryoları
 - [ ] Performance metrikleri
 - [ ] Stress testleri
 - [ ] Monitoring setup
 
 ### 📌 Onay Gereksinimleri
+
 - Response time < 200ms (p95)
 - Error rate < 1%
 - Throughput hedeflerine ulaşıldı
@@ -405,13 +418,16 @@ JMeter kullanarak API ve uygulama performans testlerinin yapılandırması.
 ## 📌 Adım 7.5: SonarQube ile Kod Kalite Analizi
 
 ### Açıklama
+
 SonarQube ile kod kalitesi, güvenlik açıkları ve teknik borç analizi.
 
 ### 🛠 Teknolojiler
+
 - SonarQube ^9.9
 - sonar-scanner ^5.0
 
 ### 📂 SonarQube Yapılandırması
+
 ```yaml
 # sonar-project.properties
 sonar.projectKey=kentnabiz
@@ -442,50 +458,53 @@ sonar.rules.exclusions=\
 ```
 
 ### 📂 CI/CD Entegrasyonu
+
 ```yaml
 # .github/workflows/sonar.yml
 name: SonarQube Analysis
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   sonarqube:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-    
-    - name: Install dependencies
-      run: pnpm install
-    
-    - name: Run tests with coverage
-      run: pnpm test --coverage
-    
-    - name: SonarQube Scan
-      uses: sonarsource/sonarqube-scan-action@master
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run tests with coverage
+        run: pnpm test --coverage
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Code smells analizi
 - [ ] Güvenlik taraması
 - [ ] Coverage raporları
 - [ ] CI/CD entegrasyonu
 
 ### 📌 Onay Gereksinimleri
+
 - Quality gate passed
 - Kritik güvenlik açığı yok
 - Teknik borç kontrol altında
@@ -493,23 +512,27 @@ jobs:
 ## 🔍 Faz 7 Sonuç ve Değerlendirme
 
 ### Test Metrikleri
+
 - Unit test coverage: %85+
 - Integration test coverage: %75+
 - E2E test başarı oranı: %98+
 - Performance test başarı oranı: %95+
 
 ### Kalite Metrikleri
+
 - Code smells: <100
 - Duplicated lines: <%3
 - Technical debt ratio: <%5
 - Security hotspots: 0
 
 ### CI/CD Pipeline
+
 - Build başarı oranı: %98+
 - Test automation başarı oranı: %95+
 - Deployment başarı oranı: %99+
 
 ### ⚠️ Önemli Notlar
+
 - Test piramidini dengeli tut
 - Performans testlerini production-like ortamda yap
 - SonarQube quality gate'leri projeye özgü ayarla

@@ -3,11 +3,13 @@
 ## 1. Genel Bilgiler
 
 ### 1.1. API Temel URL
+
 ```
 http://localhost:3000/api
 ```
 
 ### 1.2. Kimlik Doğrulama
+
 API çağrıları JWT (JSON Web Token) tabanlı kimlik doğrulama kullanmaktadır. Token, login endpoint'inden alınır ve diğer tüm isteklerde Authorization header'ında gönderilmelidir.
 
 ```http
@@ -15,7 +17,9 @@ Authorization: Bearer <your_jwt_token>
 ```
 
 ### 1.3. İstek Formatı
+
 Tüm POST ve PUT istekleri JSON formatında olmalıdır:
+
 ```http
 Content-Type: application/json
 ```
@@ -25,11 +29,13 @@ Content-Type: application/json
 ### 2.1. Kimlik Doğrulama
 
 #### Login
+
 ```http
 POST /auth/login
 ```
 
 **İstek**
+
 ```json
 {
   "email": "user@example.com",
@@ -38,6 +44,7 @@ POST /auth/login
 ```
 
 **Başarılı Yanıt (200 OK)**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIs...",
@@ -52,11 +59,13 @@ POST /auth/login
 ### 2.2. Rapor Yönetimi
 
 #### Yeni Rapor Oluşturma
+
 ```http
 POST /reports
 ```
 
 **İstek**
+
 ```json
 {
   "title": "Yol Çukuru",
@@ -76,6 +85,7 @@ POST /reports
 ```
 
 **Başarılı Yanıt (201 Created)**
+
 ```json
 {
   "id": "123e4567-e89b-12d3-a456-426614174000",
@@ -86,11 +96,13 @@ POST /reports
 ```
 
 #### Raporları Listeleme
+
 ```http
 GET /reports
 ```
 
 **Query Parametreleri**
+
 - `category` (string, optional): Kategori filtreleme
 - `status` (string, optional): Durum filtreleme
 - `bounds` (object, optional): Harita sınırları
@@ -102,6 +114,7 @@ GET /reports
 - `limit` (number, default: 10): Sayfa başına kayıt
 
 **Başarılı Yanıt (200 OK)**
+
 ```json
 {
   "items": [
@@ -125,11 +138,13 @@ GET /reports
 ```
 
 #### Rapor Detayı
+
 ```http
 GET /reports/{id}
 ```
 
 **Başarılı Yanıt (200 OK)**
+
 ```json
 {
   "id": "123e4567-e89b-12d3-a456-426614174000",
@@ -158,11 +173,13 @@ GET /reports/{id}
 ```
 
 #### Rapor Güncelleme (Yetkili Personel)
+
 ```http
 PUT /reports/{id}
 ```
 
 **İstek**
+
 ```json
 {
   "status": "IN_PROGRESS",
@@ -172,6 +189,7 @@ PUT /reports/{id}
 ```
 
 **Başarılı Yanıt (200 OK)**
+
 ```json
 {
   "id": "123e4567-e89b-12d3-a456-426614174000",
@@ -183,11 +201,13 @@ PUT /reports/{id}
 ### 2.3. Yorum Yönetimi
 
 #### Yorum Ekleme
+
 ```http
 POST /reports/{id}/comments
 ```
 
 **İstek**
+
 ```json
 {
   "content": "Bu sorun acil çözülmeli"
@@ -195,6 +215,7 @@ POST /reports/{id}/comments
 ```
 
 **Başarılı Yanıt (201 Created)**
+
 ```json
 {
   "id": "comment123",
@@ -210,6 +231,7 @@ POST /reports/{id}/comments
 ## 3. Hata Kodları
 
 ### 3.1. HTTP Durum Kodları
+
 - `200 OK`: İstek başarılı
 - `201 Created`: Yeni kayıt oluşturuldu
 - `400 Bad Request`: Geçersiz istek
@@ -220,6 +242,7 @@ POST /reports/{id}/comments
 - `500 Internal Server Error`: Sunucu hatası
 
 ### 3.2. Hata Yanıt Formatı
+
 ```json
 {
   "statusCode": 400,
@@ -236,12 +259,14 @@ POST /reports/{id}/comments
 ## 4. Veri Tipleri
 
 ### 4.1. Rapor Durumları
+
 - `NEW`: Yeni
 - `IN_PROGRESS`: İşleme Alındı
 - `RESOLVED`: Çözüldü
 - `REJECTED`: Reddedildi
 
 ### 4.2. Rapor Kategorileri
+
 - `INFRASTRUCTURE`: Altyapı
 - `TRAFFIC`: Trafik
 - `ENVIRONMENT`: Çevre
@@ -251,10 +276,12 @@ POST /reports/{id}/comments
 ## 5. Rate Limiting
 
 API çağrıları aşağıdaki limitler dahilinde yapılmalıdır:
+
 - Kimlik doğrulanmamış istekler: 30 istek/dakika
 - Kimlik doğrulanmış istekler: 100 istek/dakika
 
 Limit aşıldığında `429 Too Many Requests` hatası döner:
+
 ```json
 {
   "statusCode": 429,
@@ -266,19 +293,20 @@ Limit aşıldığında `429 Too Many Requests` hatası döner:
 ## 6. Örnek Entegrasyon
 
 ### 6.1. JavaScript/TypeScript (Axios)
+
 ```typescript
 import axios from 'axios';
 
 const api = axios.create({
   baseURL: 'http://localhost:3000/api',
-  timeout: 5000
+  timeout: 5000,
 });
 
 // Login
 const login = async (email: string, password: string) => {
   const response = await api.post('/auth/login', { email, password });
   const { token } = response.data;
-  
+
   // Token'ı sakla ve sonraki isteklerde kullan
   api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   return response.data;
@@ -298,6 +326,7 @@ const getReports = async (params: any) => {
 ```
 
 ### 6.2. Python (Requests)
+
 ```python
 import requests
 
@@ -316,7 +345,7 @@ def login(email: str, password: str):
 
 def create_report(title: str, description: str, latitude: float, longitude: float):
     headers = {'Authorization': f'Bearer {token}'}
-    response = requests.post(f'{BASE_URL}/reports', 
+    response = requests.post(f'{BASE_URL}/reports',
         headers=headers,
         json={
             'title': title,
@@ -333,11 +362,13 @@ def create_report(title: str, description: str, latitude: float, longitude: floa
 ## 7. Güvenlik Önerileri
 
 1. Token Güvenliği
+
    - JWT token'ı güvenli bir şekilde saklanmalıdır
    - Token süresi dolduğunda yenileme yapılmalıdır
    - Token'ı asla URL parametresi olarak göndermemelisiniz
 
 2. İstek Doğrulama
+
    - Tüm girdiler sunucu tarafında doğrulanmalıdır
    - Büyük dosya yüklemelerinde boyut limitleri kontrol edilmelidir
    - API anahtarları ve tokenlar güvenli bir şekilde saklanmalıdır

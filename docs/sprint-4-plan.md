@@ -3,6 +3,7 @@
 ## 1. Bildirim Sistemi
 
 ### 1.1. Backend Entegrasyonu
+
 ```typescript
 // apps/api/src/modules/notifications/
 ├── notification.module.ts
@@ -12,12 +13,14 @@
 ```
 
 ### 1.2. Web Push Bildirimleri
+
 - Service Worker yapılandırması
 - Bildirim izinleri yönetimi
 - Firebase Cloud Messaging entegrasyonu
 - Temel PWA desteği
 
 ### 1.3. Push Notification Templates
+
 ```typescript
 interface NotificationTemplate {
   type: 'REPORT_UPDATE' | 'COMMENT' | 'ASSIGNMENT';
@@ -32,6 +35,7 @@ interface NotificationTemplate {
 ## 2. WebSocket Entegrasyonu
 
 ### 2.1. Socket Gateway
+
 ```typescript
 @WebSocketGateway()
 export class NotificationGateway {
@@ -50,6 +54,7 @@ export class NotificationGateway {
 ```
 
 ### 2.2. Client Integration
+
 ```typescript
 // @kentnabiz/shared/src/services/socket.service.ts
 export class SocketService {
@@ -66,6 +71,7 @@ export class SocketService {
 ## 3. Notification Management
 
 ### 3.1. Database Schema
+
 ```sql
 CREATE TABLE notifications (
   id UUID PRIMARY KEY,
@@ -80,6 +86,7 @@ CREATE TABLE notifications (
 ```
 
 ### 3.2. Notification Center
+
 ```typescript
 // @kentnabiz/ui/src/components/notifications/
 ├── NotificationList.tsx
@@ -90,26 +97,29 @@ CREATE TABLE notifications (
 ## 4. Sprint Planı
 
 ### Hafta 1 - Backend & Socket
-| Gün | Görev |
-|-----|-------|
+
+| Gün       | Görev                     |
+| --------- | ------------------------- |
 | Pazartesi | Notification module setup |
-| Salı | WebSocket gateway |
-| Çarşamba | Push notification service |
-| Perşembe | Database integration |
-| Cuma | Unit tests |
+| Salı      | WebSocket gateway         |
+| Çarşamba  | Push notification service |
+| Perşembe  | Database integration      |
+| Cuma      | Unit tests                |
 
 ### Hafta 2 - Frontend Integration
-| Gün | Görev |
-|-----|-------|
-| Pazartesi | Service worker setup |
-| Salı | Socket.io client |
-| Çarşamba | UI components |
-| Perşembe | State management |
-| Cuma | Testing & optimization |
+
+| Gün       | Görev                  |
+| --------- | ---------------------- |
+| Pazartesi | Service worker setup   |
+| Salı      | Socket.io client       |
+| Çarşamba  | UI components          |
+| Perşembe  | State management       |
+| Cuma      | Testing & optimization |
 
 ## 5. Teknik Detaylar
 
 ### 5.1. Service Worker
+
 ```typescript
 // apps/web/public/sw.js
 self.addEventListener('push', event => {
@@ -117,12 +127,13 @@ self.addEventListener('push', event => {
   self.registration.showNotification(data.title, {
     body: data.body,
     icon: '/icon.png',
-    data: data.data
+    data: data.data,
   });
 });
 ```
 
 ### 5.2. Client Storage
+
 ```typescript
 interface NotificationPrefs {
   pushEnabled: boolean;
@@ -134,12 +145,14 @@ interface NotificationPrefs {
 ## 6. Test Stratejisi
 
 ### 6.1. Unit Tests
+
 - Notification service
 - WebSocket gateway
 - Push notification handling
 - Database operations
 
 ### 6.2. Integration Tests
+
 - End-to-end notification flow
 - WebSocket connections
 - Service worker registration
@@ -148,16 +161,19 @@ interface NotificationPrefs {
 ## 7. Başarı Kriterleri
 
 ### 7.1. Performance
+
 - < 100ms notification delivery
 - Successful WebSocket connection
 - Push notification opt-in rate
 - Browser compatibility
 
 ### 7.2. Reliability
+
 - Offline notification queueing
 - Connection recovery
 - Error handling
 - Message persistence
 
 ## 8. Özet
+
 Sprint 4, KentNabız platformunun bildirim sistemini ve gerçek zamanlı güncelleme yeteneklerini geliştirmeye odaklanmaktadır. WebSocket ve Push Notification servisleri monolitik API içinde implemente edilecek, frontend tarafında ise shared paketler aracılığıyla ortak bir bildirim deneyimi sağlanacaktır.

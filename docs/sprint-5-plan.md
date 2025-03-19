@@ -3,6 +3,7 @@
 ## 1. Monorepo Entegrasyonu
 
 ### 1.1. Shared Paketler
+
 ```typescript
 // apps/mobile/package.json
 {
@@ -14,21 +15,23 @@
 ```
 
 ### 1.2. Metro Konfigürasyonu
+
 ```javascript
 // apps/mobile/metro.config.js
 module.exports = {
   resolver: {
     extraNodeModules: {
       '@kentnabiz/shared': path.resolve(__dirname, '../../packages/shared'),
-      '@kentnabiz/ui': path.resolve(__dirname, '../../packages/ui')
-    }
-  }
+      '@kentnabiz/ui': path.resolve(__dirname, '../../packages/ui'),
+    },
+  },
 };
 ```
 
 ## 2. UI Component Adaptasyonu
 
 ### 2.1. React Native Özellikleri
+
 ```typescript
 // @kentnabiz/ui/src/components/mobile/
 ├── adapters/
@@ -41,6 +44,7 @@ module.exports = {
 ```
 
 ### 2.2. Native Modüller
+
 - React Native Maps
 - Image Picker
 - File System
@@ -50,6 +54,7 @@ module.exports = {
 ## 3. Mobil Spesifik Özellikler
 
 ### 3.1. Temel Özellikler
+
 - Offline storage
 - Location tracking
 - Camera integration
@@ -57,6 +62,7 @@ module.exports = {
 - Biometric auth
 
 ### 3.2. Navigation Yapısı
+
 ```typescript
 // apps/mobile/src/navigation/
 ├── AppNavigator.tsx
@@ -67,26 +73,29 @@ module.exports = {
 ## 4. Sprint Planı
 
 ### Hafta 1 - Temel Kurulum
-| Gün | Görev |
-|-----|-------|
-| Pazartesi | React Native setup |
-| Salı | Monorepo entegrasyonu |
-| Çarşamba | Shared paket adaptasyonu |
-| Perşembe | Navigation yapısı |
-| Cuma | Auth flow |
+
+| Gün       | Görev                    |
+| --------- | ------------------------ |
+| Pazartesi | React Native setup       |
+| Salı      | Monorepo entegrasyonu    |
+| Çarşamba  | Shared paket adaptasyonu |
+| Perşembe  | Navigation yapısı        |
+| Cuma      | Auth flow                |
 
 ### Hafta 2 - Core Features
-| Gün | Görev |
-|-----|-------|
+
+| Gün       | Görev               |
+| --------- | ------------------- |
 | Pazartesi | Harita entegrasyonu |
-| Salı | Rapor oluşturma |
-| Çarşamba | Offline storage |
-| Perşembe | Native features |
-| Cuma | Testing |
+| Salı      | Rapor oluşturma     |
+| Çarşamba  | Offline storage     |
+| Perşembe  | Native features     |
+| Cuma      | Testing             |
 
 ## 5. Native Features
 
 ### 5.1. Camera Integration
+
 ```typescript
 // apps/mobile/src/hooks/useCamera.ts
 export const useCamera = () => {
@@ -103,6 +112,7 @@ export const useCamera = () => {
 ```
 
 ### 5.2. Location Services
+
 ```typescript
 // apps/mobile/src/hooks/useLocation.ts
 export const useLocation = () => {
@@ -120,6 +130,7 @@ export const useLocation = () => {
 ## 6. Offline Support
 
 ### 6.1. Local Storage
+
 ```typescript
 // @kentnabiz/shared/src/storage/
 export class LocalStorage {
@@ -138,6 +149,7 @@ export class LocalStorage {
 ```
 
 ### 6.2. Sync Strategy
+
 - Background sync
 - Conflict resolution
 - Retry mechanism
@@ -146,12 +158,14 @@ export class LocalStorage {
 ## 7. Test Stratejisi
 
 ### 7.1. Component Tests
+
 - React Native Testing Library
 - Component render tests
 - Hook tests
 - Native module mocks
 
 ### 7.2. E2E Tests
+
 - Device testing
 - Offline scenarios
 - Navigation flows
@@ -160,12 +174,14 @@ export class LocalStorage {
 ## 8. Performance
 
 ### 8.1. Optimizasyonlar
+
 - Image caching
 - List virtualization
 - Memory management
 - Bundle size
 
 ### 8.2. Monitoring
+
 - Error tracking
 - Performance metrics
 - Usage analytics
@@ -174,16 +190,19 @@ export class LocalStorage {
 ## 9. Başarı Kriterleri
 
 ### 9.1. Teknik
+
 - Cold start < 2s
 - Smooth animations
 - Offline functionality
 - Battery efficiency
 
 ### 9.2. Quality
+
 - Unit test coverage
 - Error handling
 - Code organization
 - Documentation
 
 ## 10. Özet
+
 Sprint 5, KentNabız mobil uygulamasının monorepo yapısı içinde geliştirilmesini hedeflemektedir. Shared paketlerin etkin kullanımı ile kod tekrarı minimuma indirilecek, native özelliklerin etkin entegrasyonu sağlanacaktır. Offline first yaklaşımı ile kullanıcı deneyimi optimize edilecektir.

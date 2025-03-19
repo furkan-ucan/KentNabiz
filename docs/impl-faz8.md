@@ -3,9 +3,11 @@
 ## 📌 Adım 8.1: Docker Compose Production Konfigürasyonu
 
 ### Açıklama
+
 Production benzeri ortamın Docker Compose ile yapılandırılması.
 
 ### 🛠 Teknolojiler
+
 - Docker v24+
 - Docker Compose v2+
 - Traefik v2.10
@@ -15,6 +17,7 @@ Production benzeri ortamın Docker Compose ile yapılandırılması.
 - Fluent Bit v2.1
 
 ### 📂 Docker Yapılandırması
+
 ```yaml
 # docker-compose.prod.yml
 version: '3.8'
@@ -159,6 +162,7 @@ volumes:
 ```
 
 ### 📂 Log Konfigürasyonu
+
 ```ini
 # config/fluent-bit/fluent-bit.conf
 [SERVICE]
@@ -191,12 +195,14 @@ volumes:
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Tüm servisler ayakta
 - [ ] Traefik routing çalışıyor
 - [ ] Log aggregation aktif
 - [ ] Healthcheck'ler başarılı
 
 ### 📌 Onay Gereksinimleri
+
 - Services up & healthy
 - Inter-service iletişim OK
 - Log collection çalışıyor
@@ -204,14 +210,17 @@ volumes:
 ## 📌 Adım 8.2: Database Migration ve Seeding
 
 ### Açıklama
+
 TypeORM migrations ve seed işlemleri için yapılandırma.
 
 ### 🛠 Teknolojiler
+
 - TypeORM ^0.3.0
 - PostgreSQL v14
 - Node.js v18+
 
 ### 📂 Migration Yapılandırması
+
 ```typescript
 // apps/api/src/database/migrations/1700000000000-InitialSchema.ts
 import { MigrationInterface, QueryRunner } from 'typeorm';
@@ -266,19 +275,20 @@ export default class InitialDatabaseSeed implements Seeder {
       email: 'admin@kentnabiz.com',
       password: await hashPassword('admin123'),
       fullName: 'System Admin',
-      role: 'ADMIN'
+      role: 'ADMIN',
     });
 
     // Test reports
     await factory(Report)().createMany(10, {
       userId: admin.id,
-      status: 'PENDING'
+      status: 'PENDING',
     });
   }
 }
 ```
 
 ### 📂 Migration Scripts
+
 ```json
 // apps/api/package.json
 {
@@ -293,12 +303,14 @@ export default class InitialDatabaseSeed implements Seeder {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Migration scripts çalışıyor
 - [ ] Seed data yükleniyor
 - [ ] Foreign key constraints OK
 - [ ] Rollback testleri başarılı
 
 ### 📌 Onay Gereksinimleri
+
 - Schema güncel
 - Seed data doğru
 - Constraints aktif
@@ -306,15 +318,18 @@ export default class InitialDatabaseSeed implements Seeder {
 ## 📌 Adım 8.3: Log Aggregation ve Monitoring
 
 ### Açıklama
+
 Loki, Prometheus ve Grafana ile log toplama ve sistem izleme.
 
 ### 🛠 Teknolojiler
+
 - Grafana v10.0
 - Loki v2.9
 - Prometheus v2.47
 - Fluent Bit v2.1
 
 ### 📂 Monitoring Stack
+
 ```yaml
 # docker-compose.monitoring.yml
 version: '3.8'
@@ -322,7 +337,7 @@ services:
   loki:
     image: grafana/loki:2.9.0
     ports:
-      - "3100:3100"
+      - '3100:3100'
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
       - ./config/loki:/etc/loki
@@ -332,7 +347,7 @@ services:
   prometheus:
     image: prom/prometheus:v2.47.0
     ports:
-      - "9090:9090"
+      - '9090:9090'
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -347,7 +362,7 @@ services:
   grafana:
     image: grafana/grafana:10.0.0
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
@@ -368,6 +383,7 @@ volumes:
 ```
 
 ### 📂 Prometheus Konfigürasyonu
+
 ```yaml
 # config/prometheus/prometheus.yml
 global:
@@ -386,6 +402,7 @@ scrape_configs:
 ```
 
 ### 📂 Grafana Dashboard
+
 ```json
 // config/grafana/dashboards/api.json
 {
@@ -493,12 +510,14 @@ scrape_configs:
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Log shipping çalışıyor
 - [ ] Metrics toplanıyor
 - [ ] Grafana dashboards hazır
 - [ ] Alerting kuralları aktif
 
 ### 📌 Onay Gereksinimleri
+
 - Log aggregation başarılı
 - Metrikler doğru
 - Dashboardlar erişilebilir
@@ -506,14 +525,17 @@ scrape_configs:
 ## 📌 Adım 8.4: Error Tracking Sistemi
 
 ### Açıklama
+
 Sentry entegrasyonu ile hata takibi ve raporlama.
 
 ### 🛠 Teknolojiler
+
 - Sentry ^7.80.0
 - @sentry/node ^7.80.0
 - @sentry/react ^7.80.0
 
 ### 📂 Sentry Yapılandırması
+
 ```typescript
 // apps/api/src/config/sentry.ts
 import * as Sentry from '@sentry/node';
@@ -526,8 +548,8 @@ export const initSentry = () => {
     integrations: [
       new Sentry.Integrations.Http({ tracing: true }),
       new Sentry.Integrations.Express(),
-      new Sentry.Integrations.Postgres()
-    ]
+      new Sentry.Integrations.Postgres(),
+    ],
   });
 };
 
@@ -538,61 +560,56 @@ export const initSentry = () => {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
     environment: import.meta.env.MODE,
-    integrations: [
-      new Sentry.BrowserTracing(),
-      new Sentry.Replay()
-    ],
+    integrations: [new Sentry.BrowserTracing(), new Sentry.Replay()],
     tracesSampleRate: 1.0,
     replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0
+    replaysOnErrorSampleRate: 1.0,
   });
 };
 ```
 
 ### 📂 Error Middleware
+
 ```typescript
 // apps/api/src/middleware/error.middleware.ts
 import * as Sentry from '@sentry/node';
 import { NextFunction, Request, Response } from 'express';
 import { CustomError } from '../errors/custom.error';
 
-export const errorHandler = (
-  error: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const errorHandler = (error: Error, req: Request, res: Response, next: NextFunction) => {
   // Log error to Sentry
   Sentry.captureException(error, {
     user: { id: req.user?.id },
     extra: {
       path: req.path,
-      method: req.method
-    }
+      method: req.method,
+    },
   });
 
   if (error instanceof CustomError) {
     return res.status(error.statusCode).json({
       success: false,
       message: error.message,
-      errors: error.serializeErrors()
+      errors: error.serializeErrors(),
     });
   }
 
   return res.status(500).json({
     success: false,
-    message: 'Something went wrong'
+    message: 'Something went wrong',
   });
 };
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Sentry DSN yapılandırması
 - [ ] Error tracking aktif
 - [ ] Source maps yüklü
 - [ ] Performance monitoring çalışıyor
 
 ### 📌 Onay Gereksinimleri
+
 - Hatalar raporlanıyor
 - Stack traces tam
 - Performance data toplanıyor
@@ -600,53 +617,56 @@ export const errorHandler = (
 ## 📌 Adım 8.5: CI/CD Pipeline Optimizasyonu
 
 ### Açıklama
+
 GitHub Actions CI/CD pipeline'ının optimize edilmesi.
 
 ### 🛠 Teknolojiler
+
 - GitHub Actions
 - pnpm ^8.0.0
 - Docker Buildx
 
 ### 📂 CI/CD Yapılandırması
+
 ```yaml
 # .github/workflows/ci.yml
 name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 8
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'pnpm'
-    
-    - name: Install dependencies
-      run: pnpm install --frozen-lockfile
-    
-    - name: Type check
-      run: pnpm type-check
-    
-    - name: Lint
-      run: pnpm lint
-    
-    - name: Unit tests
-      run: pnpm test
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm type-check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests
+        run: pnpm test
 
   build:
     needs: test
@@ -654,50 +674,52 @@ jobs:
     strategy:
       matrix:
         app: [api, web]
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Build and push
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: ./apps/${{ matrix.app }}/Dockerfile
-        push: true
-        tags: |
-          ghcr.io/${{ github.repository }}/${{ matrix.app }}:${{ github.sha }}
-          ghcr.io/${{ github.repository }}/${{ matrix.app }}:latest
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/${{ matrix.app }}/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/${{ matrix.app }}:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/${{ matrix.app }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
-    - name: Deploy to Production
-      run: |
-        echo "Deploying to production..."
+      - name: Deploy to Production
+        run: |
+          echo "Deploying to production..."
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Build cache çalışıyor
 - [ ] Test parallelization aktif
 - [ ] Docker layer caching doğru
 - [ ] Deployment automation başarılı
 
 ### 📌 Onay Gereksinimleri
+
 - CI süresi optimize
 - Tests/builds paralel
 - Cache hit rate yüksek
@@ -705,24 +727,28 @@ jobs:
 ## 🔍 Faz 8 Sonuç ve Değerlendirme
 
 ### Performance Metrics
+
 - Build time: <5 dakika
 - Test coverage: %90+
 - Log retention: 30 gün
 - Error tracking latency: <1s
 
 ### Security Checklist
+
 - Secrets management
 - Network segmentation
 - Service authentication
 - Log sanitization
 
 ### Monitoring Checklist
+
 - System metrics
 - Application logs
 - Error tracking
 - Performance data
 
 ### ⚠️ Önemli Notlar
+
 - Production secrets güvenli saklanmalı
 - DB backup stratejisi oluşturulmalı
 - Log rotation politikası belirlenmeli

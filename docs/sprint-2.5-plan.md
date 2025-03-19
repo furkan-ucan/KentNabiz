@@ -3,6 +3,7 @@
 ## 1. Frontend Altyapı
 
 ### 1.1. React Application Setup
+
 ```typescript
 // apps/web/src yapısı
 src/
@@ -22,6 +23,7 @@ src/
 ```
 
 ### 1.2. Core Dependencies
+
 ```json
 {
   "dependencies": {
@@ -41,12 +43,14 @@ src/
 ## 2. UI/UX Geliştirme
 
 ### 2.1. Auth Flows
+
 - Login sayfası
 - Register sayfası
 - Şifre sıfırlama
 - Private route yapısı
 
 ### 2.2. Ana Özellikler
+
 - Dashboard layout
 - Rapor listeleme
 - Rapor detay
@@ -54,6 +58,7 @@ src/
 - Profil yönetimi
 
 ### 2.3. Harita Entegrasyonu
+
 - Leaflet implementasyonu
 - Marker yönetimi
 - Cluster desteği
@@ -62,6 +67,7 @@ src/
 ## 3. State Management
 
 ### 3.1. Redux Store Yapısı
+
 ```typescript
 interface RootState {
   auth: {
@@ -84,6 +90,7 @@ interface RootState {
 ```
 
 ### 3.2. API Entegrasyonu
+
 - RTK Query setup
 - API endpoints
 - Error handling
@@ -92,32 +99,36 @@ interface RootState {
 ## 4. Sprint Planı
 
 ### Hafta 1 - Temel Yapı
-| Gün | Görev |
-|-----|-------|
-| Pazartesi | React app scaffold |
-| Salı | Router ve layout |
-| Çarşamba | UI kit entegrasyonu |
-| Perşembe | Redux store setup |
-| Cuma | Auth flow |
+
+| Gün       | Görev               |
+| --------- | ------------------- |
+| Pazartesi | React app scaffold  |
+| Salı      | Router ve layout    |
+| Çarşamba  | UI kit entegrasyonu |
+| Perşembe  | Redux store setup   |
+| Cuma      | Auth flow           |
 
 ### Hafta 2 - Core Features
-| Gün | Görev |
-|-----|-------|
+
+| Gün       | Görev                  |
+| --------- | ---------------------- |
 | Pazartesi | Dashboard ve listeleme |
-| Salı | Rapor detay ve form |
-| Çarşamba | Harita entegrasyonu |
-| Perşembe | Media upload |
-| Cuma | Profil ve ayarlar |
+| Salı      | Rapor detay ve form    |
+| Çarşamba  | Harita entegrasyonu    |
+| Perşembe  | Media upload           |
+| Cuma      | Profil ve ayarlar      |
 
 ## 5. Performance Optimizasyonları
 
 ### 5.1. Code Splitting
+
 - Route-based splitting
 - Component lazy loading
 - Image optimization
 - Bundle analizi
 
 ### 5.2. Caching Stratejisi
+
 - API response cache
 - Image cache
 - Map tile cache
@@ -126,6 +137,7 @@ interface RootState {
 ## 6. Test Stratejisi
 
 ### 6.1. Component Tests
+
 ```typescript
 describe('ReportForm', () => {
   it('should validate required fields', () => {
@@ -139,6 +151,7 @@ describe('ReportForm', () => {
 ```
 
 ### 6.2. Integration Tests
+
 - API calls
 - Route transitions
 - State updates
@@ -147,16 +160,19 @@ describe('ReportForm', () => {
 ## 7. Başarı Kriterleri
 
 ### 7.1. Performance
+
 - First load < 2s
 - Page transitions < 300ms
 - API responses < 200ms
 - Lighthouse score > 90
 
 ### 7.2. Quality
+
 - Test coverage > 80%
 - Zero TypeScript errors
 - Consistent styling
 - Cross-browser uyumluluk
 
 ## 8. Özet
+
 Bu sprint, KentNabız web uygulamasının geliştirilmesine odaklanmaktadır. Monorepo yapısı içinde shared paketleri kullanarak, modern ve performanslı bir web uygulaması geliştirilecektir. Kullanıcı deneyimi ve kod kalitesi ön planda tutularak, maintainable ve scalable bir frontend altyapısı oluşturulacaktır.

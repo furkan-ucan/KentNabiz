@@ -5,67 +5,67 @@ export interface InputProps {
    * Input tipi
    */
   type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'search' | 'date';
-  
+
   /**
    * Placeholder metni
    */
   placeholder?: string;
-  
+
   /**
    * Input değeri
    */
   value?: string;
-  
+
   /**
    * Değer değiştiğinde tetiklenecek fonksiyon
    */
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  
+
   /**
    * Input etiketi
    */
   label?: string;
-  
+
   /**
    * Hata mesajı
    */
   error?: string;
-  
+
   /**
    * Input ID'si
    */
   id?: string;
-  
+
   /**
    * Input adı
    */
   name?: string;
-  
+
   /**
    * Zorunlu alan mı?
    */
   required?: boolean;
-  
+
   /**
    * Özel CSS sınıfı
    */
   className?: string;
-  
+
   /**
    * Disabled durumu
    */
   disabled?: boolean;
-  
+
   /**
    * Autocompletion özelliği
    */
   autoComplete?: string;
-  
+
   /**
    * Maksimum karakter sayısı
    */
   maxLength?: number;
-  
+
   /**
    * Minimum karakter sayısı
    */
@@ -96,9 +96,9 @@ export const Input: React.FC<InputProps> = ({
 
   // Gerçek implementasyon framework'e göre değişecektir
   // (React, React Native veya başka bir UI kütüphanesi)
-  
+
   // Bu sadece bir TypeScript arayüzü/taslak implementasyonudur
-  
+
   return (
     <div className="form-input-container">
       {label && (

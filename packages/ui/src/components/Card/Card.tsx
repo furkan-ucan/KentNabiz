@@ -5,32 +5,32 @@ export interface CardProps {
    * Kart başlığı
    */
   title?: string;
-  
+
   /**
    * Kart içeriği
    */
   children: React.ReactNode;
-  
+
   /**
    * Özel CSS sınıfı
    */
   className?: string;
-  
+
   /**
    * Kart alt bölümü
    */
   footer?: React.ReactNode;
-  
+
   /**
    * Kart köşe yuvarlama boyutu
    */
   borderRadius?: 'none' | 'sm' | 'md' | 'lg';
-  
+
   /**
    * Kart gölge boyutu
    */
   shadow?: 'none' | 'sm' | 'md' | 'lg';
-  
+
   /**
    * Tıklama olayı
    */
@@ -52,9 +52,9 @@ export const Card: React.FC<CardProps> = ({
   // Stil sınıflarını oluştur
   const radiusClass = borderRadius !== 'none' ? `rounded-${borderRadius}` : '';
   const shadowClass = shadow !== 'none' ? `shadow-${shadow}` : '';
-  
+
   return (
-    <div 
+    <div
       className={`border border-gray-200 bg-white ${radiusClass} ${shadowClass} ${className}`}
       onClick={onClick}
       role={onClick ? 'button' : undefined}

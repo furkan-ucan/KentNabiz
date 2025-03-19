@@ -3,9 +3,11 @@
 ## 📌 Adım 6.1: React Navigation Kurulumu ve Temel Yapı
 
 ### Açıklama
+
 React Navigation ile mobil uygulama için routing ve navigasyon altyapısının kurulması.
 
 ### 🛠 Teknolojiler
+
 - @react-navigation/native ^6.0.0
 - @react-navigation/native-stack ^6.0.0
 - @react-navigation/bottom-tabs ^6.0.0
@@ -13,6 +15,7 @@ React Navigation ile mobil uygulama için routing ve navigasyon altyapısının 
 - react-native-safe-area-context ^4.0.0
 
 ### 📂 Navigasyon Yapısı
+
 ```typescript
 // src/navigation/types.ts
 export type RootStackParamList = {
@@ -32,8 +35,8 @@ export const RootNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Auth">
-        <Stack.Screen 
-          name="Auth" 
+        <Stack.Screen
+          name="Auth"
           component={AuthNavigator}
           options={{ headerShown: false }}
         />
@@ -68,8 +71,8 @@ const Tab = createBottomTabNavigator();
 export const MainNavigator = () => {
   return (
     <Tab.Navigator>
-      <Tab.Screen 
-        name="Home" 
+      <Tab.Screen
+        name="Home"
         component={HomeScreen}
         options={{
           tabBarIcon: ({ color }) => (
@@ -77,17 +80,17 @@ export const MainNavigator = () => {
           )
         }}
       />
-      <Tab.Screen 
-        name="Map" 
-        component={MapScreen} 
+      <Tab.Screen
+        name="Map"
+        component={MapScreen}
         options={{
           tabBarIcon: ({ color }) => (
             <Icon name="map" color={color} />
           )
         }}
       />
-      <Tab.Screen 
-        name="Profile" 
+      <Tab.Screen
+        name="Profile"
         component={ProfileScreen}
         options={{
           tabBarIcon: ({ color }) => (
@@ -101,12 +104,14 @@ export const MainNavigator = () => {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Stack navigator kurulumu
 - [ ] Tab navigator kurulumu
 - [ ] TypeScript route tanımları
 - [ ] Screen options yapılandırması
 
 ### 📌 Onay Gereksinimleri
+
 - Tüm navigasyon akışları çalışıyor
 - Type-safe routing sağlandı
 - Platform spesifik animasyonlar doğru
@@ -114,14 +119,17 @@ export const MainNavigator = () => {
 ## 📌 Adım 6.2: Kamera ve Lokasyon Servisleri
 
 ### Açıklama
+
 Kamera API'si ve GPS servisleri için native modül entegrasyonları.
 
 ### 🛠 Teknolojiler
+
 - react-native-vision-camera ^3.0.0
 - @react-native-community/geolocation ^3.0.0
 - react-native-permissions ^3.0.0
 
 ### 📂 Native Servis Yapılandırması
+
 ```typescript
 // src/services/camera/CameraService.ts
 import { Camera } from 'react-native-vision-camera';
@@ -136,9 +144,9 @@ export class CameraService {
 
     const status = await check(permission);
     if (status === 'denied') {
-      return await request(permission) === 'granted';
+      return (await request(permission)) === 'granted';
     }
-    
+
     return status === 'granted';
   }
 
@@ -146,9 +154,9 @@ export class CameraService {
     const photo = await camera.current.takePhoto({
       qualityPrioritization: 'quality',
       flash: 'auto',
-      enableShutterSound: false
+      enableShutterSound: false,
     });
-    
+
     return photo.path;
   }
 }
@@ -173,9 +181,9 @@ export class LocationService {
     this.watchId = Geolocation.watchPosition(
       position => callback(position.coords),
       error => console.error(error),
-      { 
-        enableHighAccuracy: true, 
-        distanceFilter: 10 // 10 metre
+      {
+        enableHighAccuracy: true,
+        distanceFilter: 10, // 10 metre
       }
     );
   }
@@ -190,12 +198,14 @@ export class LocationService {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Kamera izinleri
 - [ ] Lokasyon izinleri
 - [ ] Enerji optimizasyonu
 - [ ] Hata yönetimi
 
 ### 📌 Onay Gereksinimleri
+
 - Kamera erişimi sorunsuz
 - GPS doğru konum alıyor
 - İzin akışları platform uyumlu
@@ -203,14 +213,17 @@ export class LocationService {
 ## 📌 Adım 6.3: Offline Storage ve Senkronizasyon
 
 ### Açıklama
+
 Çevrimdışı veri depolama ve senkronizasyon mekanizmalarının kurulumu.
 
 ### 🛠 Teknolojiler
+
 - WatermelonDB ^0.25.0
 - @nozbe/watermelondb ^0.25.0
 - rxjs ^7.0.0
 
 ### 📂 Offline Storage Yapılandırması
+
 ```typescript
 // src/database/schema.ts
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
@@ -228,8 +241,8 @@ export default appSchema({
         { name: 'longitude', type: 'number' },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
-        { name: 'sync_status', type: 'string' }
-      ]
+        { name: 'sync_status', type: 'string' },
+      ],
     }),
     tableSchema({
       name: 'media',
@@ -237,10 +250,10 @@ export default appSchema({
         { name: 'report_id', type: 'string' },
         { name: 'type', type: 'string' },
         { name: 'uri', type: 'string' },
-        { name: 'sync_status', type: 'string' }
-      ]
-    })
-  ]
+        { name: 'sync_status', type: 'string' },
+      ],
+    }),
+  ],
 });
 
 // src/database/models/Report.ts
@@ -303,8 +316,8 @@ export class SyncService {
         description: report.description,
         location: {
           latitude: report.latitude,
-          longitude: report.longitude
-        }
+          longitude: report.longitude,
+        },
       });
 
       await this.database.write(async () => {
@@ -325,12 +338,14 @@ export class SyncService {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Schema migrations
 - [ ] CRUD operasyonları
 - [ ] Sync mekanizması
 - [ ] Error handling
 
 ### 📌 Onay Gereksinimleri
+
 - Offline veri kaydı çalışıyor
 - Senkronizasyon başarılı
 - Çakışma çözümü doğru
@@ -338,15 +353,18 @@ export class SyncService {
 ## 📌 Adım 6.4: Push Notification Sistemi
 
 ### Açıklama
+
 FCM entegrasyonu ve push notification yönetimi.
 
 ### 🛠 Teknolojiler
+
 - @react-native-firebase/app ^18.0.0
 - @react-native-firebase/messaging ^18.0.0
 - @react-native-community/push-notification-ios ^1.11.0
 - react-native-push-notification ^8.0.0
 
 ### 📂 Push Notification Yapılandırması
+
 ```typescript
 // src/services/notifications/NotificationService.ts
 import messaging from '@react-native-firebase/messaging';
@@ -358,10 +376,10 @@ export class NotificationService {
     // iOS için izin alma
     if (Platform.OS === 'ios') {
       const authStatus = await messaging().requestPermission();
-      const enabled = 
+      const enabled =
         authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
         authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-      
+
       if (!enabled) {
         throw new Error('Notification permission denied');
       }
@@ -373,7 +391,7 @@ export class NotificationService {
         channelId: 'default',
         channelName: 'Default Channel',
         importance: 4, // MAX: 5
-        vibrate: true
+        vibrate: true,
       });
     }
 
@@ -415,19 +433,21 @@ export class NotificationService {
       largeIcon: '',
       priority: 'high',
       vibrate: true,
-      playSound: true
+      playSound: true,
     });
   }
 }
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] FCM konfigürasyonu
 - [ ] Platform spesifik setup
 - [ ] Token yönetimi
 - [ ] Bildirim gösterimi
 
 ### 📌 Onay Gereksinimleri
+
 - FCM token alınıyor
 - Bildirimler gösteriliyor
 - Background handling çalışıyor
@@ -435,14 +455,17 @@ export class NotificationService {
 ## 📌 Adım 6.5: Native UI Adaptasyonları
 
 ### Açıklama
+
 Platform spesifik UI bileşenleri ve stil adaptasyonları.
 
 ### 🛠 Teknolojiler
+
 - react-native-paper ^5.0.0
 - react-native-safe-area-context ^4.0.0
 - react-native-vector-icons ^9.0.0
 
 ### 📂 UI Adaptasyonları
+
 ```typescript
 // src/theme/index.ts
 import { Platform } from 'react-native';
@@ -567,12 +590,14 @@ const styles = StyleSheet.create({
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Platform spesifik stiller
 - [ ] Theme yapılandırması
 - [ ] Responsive tasarım
 - [ ] Accessibility desteği
 
 ### 📌 Onay Gereksinimleri
+
 - Platform uyumlu UI
 - Tutarlı tema sistemi
 - A11y standartları karşılandı
@@ -580,24 +605,28 @@ const styles = StyleSheet.create({
 ## 🔍 Faz 6 Sonuç ve Değerlendirme
 
 ### Başarı Metrikleri
+
 - Cold start süresi < 2s
 - Frame drop rate < 1%
 - Offline sync başarı oranı > 99%
 - Push delivery rate > 95%
 
 ### Performans İyileştirmeleri
+
 - Lazy loading ve code splitting
 - Image caching ve önbellekleme
 - Network request optimizasyonu
 - Memory leak kontrolü
 
 ### Platform Spesifik Kontroller
+
 - iOS ve Android permission handling
 - Platform UI/UX uyumluluğu
 - Background task yönetimi
 - Deep linking desteği
 
 ### ⚠️ Önemli Notlar
+
 - Kamera ve GPS kullanımını optimize et
 - Offline storage limitlerini belirle
 - FCM token yenilemelerini monitör et

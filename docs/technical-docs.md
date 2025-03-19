@@ -93,88 +93,88 @@ src/
 // user.entity.ts
 @Entity('users')
 export class User {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ unique: true })
-    email: string;
+  @Column({ unique: true })
+  email: string;
 
-    @Column()
-    passwordHash: string;
+  @Column()
+  passwordHash: string;
 
-    @Column()
-    fullName: string;
+  @Column()
+  fullName: string;
 
-    @Column()
-    role: UserRole;
+  @Column()
+  role: UserRole;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @CreateDateColumn()
+  createdAt: Date;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+  @UpdateDateColumn()
+  updatedAt: Date;
 }
 
 // report.entity.ts
 @Entity('reports')
 export class Report {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column()
-    title: string;
+  @Column()
+  title: string;
 
-    @Column('text')
-    description: string;
+  @Column('text')
+  description: string;
 
-    @Column('geometry', {
-        spatialFeatureType: 'Point',
-        srid: 4326
-    })
-    location: Point;
+  @Column('geometry', {
+    spatialFeatureType: 'Point',
+    srid: 4326,
+  })
+  location: Point;
 
-    @Column()
-    category: ReportCategory;
+  @Column()
+  category: ReportCategory;
 
-    @Column()
-    status: ReportStatus;
+  @Column()
+  status: ReportStatus;
 
-    @Column()
-    priority: ReportPriority;
+  @Column()
+  priority: ReportPriority;
 
-    @ManyToOne(() => User)
-    reporter: User;
+  @ManyToOne(() => User)
+  reporter: User;
 
-    @ManyToOne(() => User)
-    assignedTo: User;
+  @ManyToOne(() => User)
+  assignedTo: User;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @CreateDateColumn()
+  createdAt: Date;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+  @UpdateDateColumn()
+  updatedAt: Date;
 
-    @Column({ nullable: true })
-    resolvedAt: Date;
+  @Column({ nullable: true })
+  resolvedAt: Date;
 }
 
 // report-media.entity.ts
 @Entity('report_media')
 export class ReportMedia {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @ManyToOne(() => Report)
-    report: Report;
+  @ManyToOne(() => Report)
+  report: Report;
 
-    @Column()
-    mediaType: string;
+  @Column()
+  mediaType: string;
 
-    @Column()
-    url: string;
+  @Column()
+  url: string;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @CreateDateColumn()
+  createdAt: Date;
 }
 ```
 
@@ -183,42 +183,42 @@ export class ReportMedia {
 ```typescript
 // create-report.dto.ts
 export class CreateReportDto {
-    @IsString()
-    @MinLength(3)
-    @MaxLength(255)
-    title: string;
+  @IsString()
+  @MinLength(3)
+  @MaxLength(255)
+  title: string;
 
-    @IsString()
-    @MinLength(10)
-    description: string;
+  @IsString()
+  @MinLength(10)
+  description: string;
 
-    @ValidateNested()
-    @Type(() => LocationDto)
-    location: LocationDto;
+  @ValidateNested()
+  @Type(() => LocationDto)
+  location: LocationDto;
 
-    @IsEnum(ReportCategory)
-    category: ReportCategory;
+  @IsEnum(ReportCategory)
+  category: ReportCategory;
 
-    @IsEnum(ReportPriority)
-    priority: ReportPriority;
+  @IsEnum(ReportPriority)
+  priority: ReportPriority;
 
-    @IsOptional()
-    @ValidateNested({ each: true })
-    @Type(() => MediaUploadDto)
-    media?: MediaUploadDto[];
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => MediaUploadDto)
+  media?: MediaUploadDto[];
 }
 
 // location.dto.ts
 export class LocationDto {
-    @IsNumber()
-    @Min(-90)
-    @Max(90)
-    latitude: number;
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  latitude: number;
 
-    @IsNumber()
-    @Min(-180)
-    @Max(180)
-    longitude: number;
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  longitude: number;
 }
 ```
 
@@ -229,27 +229,27 @@ export class LocationDto {
 ```typescript
 // POST /api/auth/login
 interface LoginRequest {
-    email: string;
-    password: string;
+  email: string;
+  password: string;
 }
 
 interface LoginResponse {
-    token: string;
-    refreshToken: string;
-    user: {
-        id: string;
-        email: string;
-        role: string;
-    }
+  token: string;
+  refreshToken: string;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+  };
 }
 
 // POST /api/auth/refresh
 interface RefreshRequest {
-    refreshToken: string;
+  refreshToken: string;
 }
 
 interface RefreshResponse {
-    token: string;
+  token: string;
 }
 ```
 
@@ -258,43 +258,43 @@ interface RefreshResponse {
 ```typescript
 // POST /api/reports
 interface CreateReportRequest {
-    title: string;
-    description: string;
-    location: {
-        latitude: number;
-        longitude: number;
-    };
-    category: string;
-    priority: string;
-    media?: {
-        type: string;
-        base64: string;
-    }[];
+  title: string;
+  description: string;
+  location: {
+    latitude: number;
+    longitude: number;
+  };
+  category: string;
+  priority: string;
+  media?: {
+    type: string;
+    base64: string;
+  }[];
 }
 
 // GET /api/reports
 interface GetReportsQuery {
-    bounds?: {
-        north: number;
-        south: number;
-        east: number;
-        west: number;
-    };
-    category?: string[];
-    status?: string[];
-    priority?: string[];
-    startDate?: string;
-    endDate?: string;
-    page?: number;
-    limit?: number;
+  bounds?: {
+    north: number;
+    south: number;
+    east: number;
+    west: number;
+  };
+  category?: string[];
+  status?: string[];
+  priority?: string[];
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
 }
 
 // PUT /api/reports/:id
 interface UpdateReportRequest {
-    status?: string;
-    assignedTo?: string;
-    priority?: string;
-    resolution?: string;
+  status?: string;
+  assignedTo?: string;
+  priority?: string;
+  resolution?: string;
 }
 ```
 
@@ -306,21 +306,21 @@ interface UpdateReportRequest {
 // JWT Strategy
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-    constructor() {
-        super({
-            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-            secretOrKey: process.env.JWT_SECRET,
-            ignoreExpiration: false,
-        });
-    }
+  constructor() {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      secretOrKey: process.env.JWT_SECRET,
+      ignoreExpiration: false,
+    });
+  }
 
-    async validate(payload: JwtPayload) {
-        return { 
-            id: payload.sub, 
-            email: payload.email,
-            role: payload.role 
-        };
-    }
+  async validate(payload: JwtPayload) {
+    return {
+      id: payload.sub,
+      email: payload.email,
+      role: payload.role,
+    };
+  }
 }
 ```
 
@@ -329,17 +329,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 ```typescript
 @Injectable()
 export class RolesGuard implements CanActivate {
-    constructor(private reflector: Reflector) {}
+  constructor(private reflector: Reflector) {}
 
-    canActivate(context: ExecutionContext): boolean {
-        const requiredRoles = this.reflector.get<string[]>('roles', context.getHandler());
-        if (!requiredRoles) {
-            return true;
-        }
-
-        const { user } = context.switchToHttp().getRequest();
-        return requiredRoles.includes(user.role);
+  canActivate(context: ExecutionContext): boolean {
+    const requiredRoles = this.reflector.get<string[]>('roles', context.getHandler());
+    if (!requiredRoles) {
+      return true;
     }
+
+    const { user } = context.switchToHttp().getRequest();
+    return requiredRoles.includes(user.role);
+  }
 }
 ```
 
@@ -348,9 +348,9 @@ export class RolesGuard implements CanActivate {
 ```typescript
 // Rate limiting configuration
 export const rateLimitConfig = {
-    ttl: 60,
-    limit: 100,
-    keyPrefix: 'api_rate_limit'
+  ttl: 60,
+  limit: 100,
+  keyPrefix: 'api_rate_limit',
 };
 ```
 
@@ -361,28 +361,26 @@ export const rateLimitConfig = {
 ```typescript
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
-    catch(exception: unknown, host: ArgumentsHost) {
-        const ctx = host.switchToHttp();
-        const response = ctx.getResponse<Response>();
-        const request = ctx.getRequest<Request>();
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
 
-        let status = HttpStatus.INTERNAL_SERVER_ERROR;
-        let message = 'Internal server error';
+    let status = HttpStatus.INTERNAL_SERVER_ERROR;
+    let message = 'Internal server error';
 
-        if (exception instanceof HttpException) {
-            status = exception.getStatus();
-            message = exception.message;
-        }
-
-        response
-            .status(status)
-            .json({
-                statusCode: status,
-                message,
-                timestamp: new Date().toISOString(),
-                path: request.url,
-            });
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      message = exception.message;
     }
+
+    response.status(status).json({
+      statusCode: status,
+      message,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+    });
+  }
 }
 ```
 
@@ -390,11 +388,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
 ```typescript
 app.useGlobalPipes(
-    new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-    })
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  })
 );
 ```
 
@@ -434,18 +432,20 @@ CREATE INDEX idx_reports_created_at ON reports(created_at DESC);
 ```typescript
 // Efficient spatial queries
 const nearbyReports = await this.reportRepository
-    .createQueryBuilder('report')
-    .where(`ST_DWithin(
+  .createQueryBuilder('report')
+  .where(
+    `ST_DWithin(
         location,
         ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326),
         :distance
-    )`)
-    .setParameters({
-        latitude,
-        longitude,
-        distance: 1000  // meters
-    })
-    .getMany();
+    )`
+  )
+  .setParameters({
+    latitude,
+    longitude,
+    distance: 1000, // meters
+  })
+  .getMany();
 ```
 
 ## 7. Monitoring ve Logging
@@ -454,15 +454,12 @@ const nearbyReports = await this.reportRepository
 
 ```typescript
 const logger = winston.createLogger({
-    level: 'info',
-    format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.json()
-    ),
-    transports: [
-        new winston.transports.File({ filename: 'error.log', level: 'error' }),
-        new winston.transports.File({ filename: 'combined.log' })
-    ]
+  level: 'info',
+  format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
+  transports: [
+    new winston.transports.File({ filename: 'error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'combined.log' }),
+  ],
 });
 ```
 
@@ -471,21 +468,21 @@ const logger = winston.createLogger({
 ```typescript
 // Custom metrics
 const httpRequestDuration = new Histogram({
-    name: 'http_request_duration_seconds',
-    help: 'Duration of HTTP requests in seconds',
-    labelNames: ['method', 'route', 'status_code']
+  name: 'http_request_duration_seconds',
+  help: 'Duration of HTTP requests in seconds',
+  labelNames: ['method', 'route', 'status_code'],
 });
 
 // Middleware usage
 app.use((req, res, next) => {
-    const start = process.hrtime();
-    res.on('finish', () => {
-        const duration = process.hrtime(start);
-        httpRequestDuration
-            .labels(req.method, req.route?.path || req.path, res.statusCode)
-            .observe(duration[0] + duration[1] / 1e9);
-    });
-    next();
+  const start = process.hrtime();
+  res.on('finish', () => {
+    const duration = process.hrtime(start);
+    httpRequestDuration
+      .labels(req.method, req.route?.path || req.path, res.statusCode)
+      .observe(duration[0] + duration[1] / 1e9);
+  });
+  next();
 });
 ```
 
@@ -523,16 +520,16 @@ spec:
         app: urbanpulse-api
     spec:
       containers:
-      - name: api
-        image: urbanpulse/api:latest
-        ports:
-        - containerPort: 3000
-        env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: urbanpulse-secrets
-              key: database-url
+        - name: api
+          image: urbanpulse/api:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: urbanpulse-secrets
+                  key: database-url
 ```
 
 ### 8.3. GitHub Actions Workflow
@@ -542,32 +539,32 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Setup Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '18'
-    - name: Install dependencies
-      run: npm ci
-    - name: Run tests
-      run: npm test
+      - uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm test
 
   deploy:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-    - name: Deploy to production
-      run: |
-        # Deployment steps
+      - name: Deploy to production
+        run: |
+          # Deployment steps
 ```
 
 ## 9. Üçüncü Parti Servis Entegrasyonları
@@ -577,16 +574,16 @@ jobs:
 ```typescript
 // Harita konfigürasyonu
 const mapConfig = {
-    center: [41.0082, 28.9784], // Istanbul
-    zoom: 13,
-    minZoom: 10,
-    maxZoom: 18
+  center: [41.0082, 28.9784], // Istanbul
+  zoom: 13,
+  minZoom: 10,
+  maxZoom: 18,
 };
 
 // Tile layer konfigürasyonu
 const tileLayerConfig = {
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors'
+  url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  attribution: '© OpenStreetMap contributors',
 };
 ```
 
@@ -595,22 +592,22 @@ const tileLayerConfig = {
 ```typescript
 // Firebase konfigürasyonu
 const firebaseConfig = {
-    apiKey: process.env.FIREBASE_API_KEY,
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID
+  apiKey: process.env.FIREBASE_API_KEY,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
 };
 
 // Notification gönderme fonksiyonu
 async function sendPushNotification(token: string, data: NotificationData) {
-    const message = {
-        notification: {
-            title: data.title,
-            body: data.message
-        },
-        token
-    };
+  const message = {
+    notification: {
+      title: data.title,
+      body: data.message,
+    },
+    token,
+  };
 
-    return admin.messaging().send(message);
+  return admin.messaging().send(message);
 }
 ```
 
@@ -618,34 +615,34 @@ async function sendPushNotification(token: string, data: NotificationData) {
 
 ```typescript
 @WebSocketGateway({
-    cors: true,
-    namespace: 'reports',
+  cors: true,
+  namespace: 'reports',
 })
 export class ReportsGateway implements OnGateConnection, OnGatewayDisconnect {
-    @WebSocketServer()
-    server: Server;
+  @WebSocketServer()
+  server: Server;
 
-    handleConnection(client: Socket) {
-        // Handle connection
-    }
+  handleConnection(client: Socket) {
+    // Handle connection
+  }
 
-    handleDisconnect(client: Socket) {
-        // Handle disconnect
-    }
+  handleDisconnect(client: Socket) {
+    // Handle disconnect
+  }
 
-    @SubscribeMessage('joinReport')
-    handleJoinReport(client: Socket, reportId: string) {
-        client.join(`report:${reportId}`);
-    }
+  @SubscribeMessage('joinReport')
+  handleJoinReport(client: Socket, reportId: string) {
+    client.join(`report:${reportId}`);
+  }
 
-    @SubscribeMessage('leaveReport')
-    handleLeaveReport(client: Socket, reportId: string) {
-        client.leave(`report:${reportId}`);
-    }
+  @SubscribeMessage('leaveReport')
+  handleLeaveReport(client: Socket, reportId: string) {
+    client.leave(`report:${reportId}`);
+  }
 
-    notifyReportUpdate(reportId: string, data: any) {
-        this.server.to(`report:${reportId}`).emit('reportUpdated', data);
-    }
+  notifyReportUpdate(reportId: string, data: any) {
+    this.server.to(`report:${reportId}`).emit('reportUpdated', data);
+  }
 }
 ```
 

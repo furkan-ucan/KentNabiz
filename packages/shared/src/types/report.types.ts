@@ -8,7 +8,7 @@ export enum ReportStatus {
   SUBMITTED = 'submitted',
   IN_REVIEW = 'in_review',
   APPROVED = 'approved',
-  REJECTED = 'rejected'
+  REJECTED = 'rejected',
 }
 
 // Rapor tipi enum'u
@@ -16,7 +16,7 @@ export enum ReportType {
   INCIDENT = 'incident',
   MAINTENANCE = 'maintenance',
   INSPECTION = 'inspection',
-  FEEDBACK = 'feedback'
+  FEEDBACK = 'feedback',
 }
 
 // Rapor severity enum'u
@@ -24,7 +24,7 @@ export enum ReportSeverity {
   LOW = 'low',
   MEDIUM = 'medium',
   HIGH = 'high',
-  CRITICAL = 'critical'
+  CRITICAL = 'critical',
 }
 
 // Temel rapor arayüzü

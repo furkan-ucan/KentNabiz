@@ -3,9 +3,11 @@
 ## 📌 Adım 9.1: JWT Auth Sistemi
 
 ### Açıklama
+
 Access ve Refresh token tabanlı kimlik doğrulama sistemi.
 
 ### 🛠 Teknolojiler
+
 - @nestjs/jwt ^10.0.0
 - @nestjs/passport ^10.0.0
 - passport-jwt ^4.0.0
@@ -13,6 +15,7 @@ Access ve Refresh token tabanlı kimlik doğrulama sistemi.
 - redis ^4.0.0
 
 ### 📂 JWT Yapılandırması
+
 ```typescript
 // src/core/config/jwt.config.ts
 import { JwtModuleOptions } from '@nestjs/jwt';
@@ -21,8 +24,8 @@ export const jwtConfig: JwtModuleOptions = {
   secret: process.env.JWT_SECRET,
   signOptions: {
     expiresIn: '15m', // Access token: 15 dakika
-    issuer: 'kentnabiz'
-  }
+    issuer: 'kentnabiz',
+  },
 };
 
 // src/modules/auth/services/token.service.ts
@@ -40,7 +43,7 @@ export class TokenService {
   async generateTokens(userId: string) {
     const [accessToken, refreshToken] = await Promise.all([
       this.generateAccessToken(userId),
-      this.generateRefreshToken(userId)
+      this.generateRefreshToken(userId),
     ]);
 
     // Refresh token'ı Redis'e kaydet
@@ -62,7 +65,7 @@ export class TokenService {
   private async generateRefreshToken(userId: string) {
     const payload = { sub: userId, type: 'refresh' };
     return this.jwtService.signAsync(payload, {
-      expiresIn: '7d' // Refresh token: 7 gün
+      expiresIn: '7d', // Refresh token: 7 gün
     });
   }
 
@@ -98,13 +101,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   canActivate(context: ExecutionContext) {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(
-      IS_PUBLIC_KEY,
-      [
-        context.getHandler(),
-        context.getClass()
-      ]
-    );
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (isPublic) {
       return true;
@@ -116,6 +116,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Access token flow
 - [ ] Refresh token flow
 - [ ] Token revocation
@@ -123,6 +124,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 - [ ] RBAC integration
 
 ### 📌 Onay Gereksinimleri
+
 - Token rotation çalışıyor
 - Redis entegrasyonu başarılı
 - Auth bypass yok
@@ -130,14 +132,17 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 ## 📌 Adım 9.2: Rate Limiting ve Throttling
 
 ### Açıklama
+
 İstek sayısı sınırlaması ve DDoS koruması.
 
 ### 🛠 Teknolojiler
+
 - @nestjs/throttler ^5.0.0
 - Redis ^4.0.0
 - rate-limiter-flexible ^3.0.0
 
 ### 📂 Rate Limit Yapılandırması
+
 ```typescript
 // src/core/rate-limit/rate-limit.module.ts
 import { Module } from '@nestjs/common';
@@ -150,12 +155,12 @@ import { RateLimiterService } from './rate-limiter.service';
     ThrottlerModule.forRootAsync({
       useFactory: () => ({
         ttl: 60, // 1 dakika
-        limit: 100 // 100 istek
-      })
-    })
+        limit: 100, // 100 istek
+      }),
+    }),
   ],
   providers: [RateLimiterService],
-  exports: [RateLimiterService]
+  exports: [RateLimiterService],
 })
 export class RateLimitModule {}
 
@@ -174,7 +179,7 @@ export class RateLimiterService {
       keyPrefix: 'ratelimit',
       points: 100, // İstek sayısı
       duration: 60, // Süre (saniye)
-      blockDuration: 60 * 10 // Block süresi (10 dakika)
+      blockDuration: 60 * 10, // Block süresi (10 dakika)
     });
   }
 
@@ -199,13 +204,13 @@ export class RateLimitMiddleware implements NestMiddleware {
 
   async use(req: Request, res: Response, next: NextFunction) {
     const key = req.ip;
-    
+
     const allowed = await this.rateLimiter.checkRateLimit(key);
-    
+
     if (!allowed) {
       res.status(429).json({
         statusCode: 429,
-        message: 'Too Many Requests'
+        message: 'Too Many Requests',
       });
       return;
     }
@@ -216,6 +221,7 @@ export class RateLimitMiddleware implements NestMiddleware {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] Global rate limiting
 - [ ] Route-specific limits
 - [ ] Redis storage
@@ -223,6 +229,7 @@ export class RateLimitMiddleware implements NestMiddleware {
 - [ ] Whitelist/Blacklist
 
 ### 📌 Onay Gereksinimleri
+
 - Rate limit çalışıyor
 - Redis persistent
 - 429 response doğru
@@ -230,14 +237,17 @@ export class RateLimitMiddleware implements NestMiddleware {
 ## 📌 Adım 9.3: XSS ve CSRF Koruması
 
 ### Açıklama
+
 Cross-site scripting ve cross-site request forgery önlemleri.
 
 ### 🛠 Teknolojiler
+
 - helmet ^7.0.0
 - csurf ^1.11.0
 - xss-clean ^0.1.4
 
 ### 📂 Security Middleware
+
 ```typescript
 // src/core/security/security.module.ts
 import { Module } from '@nestjs/common';
@@ -250,10 +260,10 @@ import { SecurityInterceptor } from './security.interceptor';
     SecurityService,
     {
       provide: APP_INTERCEPTOR,
-      useClass: SecurityInterceptor
-    }
+      useClass: SecurityInterceptor,
+    },
   ],
-  exports: [SecurityService]
+  exports: [SecurityService],
 })
 export class SecurityModule {}
 
@@ -264,9 +274,7 @@ import { createHash } from 'crypto';
 @Injectable()
 export class SecurityService {
   generateCsrfToken(): string {
-    return createHash('sha256')
-      .update(Math.random().toString())
-      .digest('hex');
+    return createHash('sha256').update(Math.random().toString()).digest('hex');
   }
 
   validateCsrfToken(token: string, storedToken: string): boolean {
@@ -291,19 +299,19 @@ export const securityMiddleware = [
         fontSrc: ["'self'"],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'"],
-        frameSrc: ["'none'"]
-      }
+        frameSrc: ["'none'"],
+      },
     },
     xssFilter: true,
     noSniff: true,
-    referrerPolicy: { policy: 'same-origin' }
+    referrerPolicy: { policy: 'same-origin' },
   }),
-  csurf({ 
+  csurf({
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production'
-    }
-  })
+      secure: process.env.NODE_ENV === 'production',
+    },
+  }),
 ];
 
 // src/core/security/security.interceptor.ts
@@ -315,9 +323,7 @@ import * as xss from 'xss';
 @Injectable()
 export class SecurityInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    return next.handle().pipe(
-      map(data => this.sanitizeData(data))
-    );
+    return next.handle().pipe(map(data => this.sanitizeData(data)));
   }
 
   private sanitizeData(data: any): any {
@@ -339,6 +345,7 @@ export class SecurityInterceptor implements NestInterceptor {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] CSP headers
 - [ ] CSRF token validation
 - [ ] XSS sanitization
@@ -346,6 +353,7 @@ export class SecurityInterceptor implements NestInterceptor {
 - [ ] Cookie security
 
 ### 📌 Onay Gereksinimleri
+
 - Tüm XSS vektörleri engellendi
 - CSRF token rotation çalışıyor
 - Security headers aktif
@@ -353,14 +361,17 @@ export class SecurityInterceptor implements NestInterceptor {
 ## 📌 Adım 9.4: Input Validation ve Sanitization
 
 ### Açıklama
+
 Form ve API girdilerinin doğrulanması ve temizlenmesi.
 
 ### 🛠 Teknolojiler
+
 - class-validator ^0.14.0
 - class-transformer ^0.5.0
 - validator ^13.0.0
 
 ### 📂 Validation Yapılandırması
+
 ```typescript
 // src/core/validation/validation.pipe.ts
 import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from '@nestjs/common';
@@ -373,14 +384,14 @@ export class ValidationPipe implements PipeTransform<any> {
     if (!metatype || !this.toValidate(metatype)) {
       return value;
     }
-    
+
     const object = plainToInstance(metatype, value);
     const errors = await validate(object);
-    
+
     if (errors.length > 0) {
       throw new BadRequestException({
         message: 'Validation failed',
-        errors: this.formatErrors(errors)
+        errors: this.formatErrors(errors),
       });
     }
     return object;
@@ -395,7 +406,7 @@ export class ValidationPipe implements PipeTransform<any> {
     return errors.map(err => ({
       property: err.property,
       constraints: err.constraints,
-      value: err.value
+      value: err.value,
     }));
   }
 }
@@ -439,16 +450,16 @@ export function IsValidPhoneNumber(validationOptions?: ValidationOptions) {
       options: validationOptions,
       validator: {
         validate(value: any) {
-          return typeof value === 'string' && 
-                 /^[0-9]{10}$/.test(value);
-        }
-      }
+          return typeof value === 'string' && /^[0-9]{10}$/.test(value);
+        },
+      },
     });
   };
 }
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] DTO validation
 - [ ] Custom validators
 - [ ] Sanitization rules
@@ -456,6 +467,7 @@ export function IsValidPhoneNumber(validationOptions?: ValidationOptions) {
 - [ ] Type conversion
 
 ### 📌 Onay Gereksinimleri
+
 - Validation pipe aktif
 - Sanitization başarılı
 - Custom validators çalışıyor
@@ -463,14 +475,17 @@ export function IsValidPhoneNumber(validationOptions?: ValidationOptions) {
 ## 📌 Adım 9.5: File Upload Security
 
 ### Açıklama
+
 Güvenli dosya yükleme sistemi ve antivirüs entegrasyonu.
 
 ### 🛠 Teknolojiler
+
 - multer ^1.4.5
 - node-clamscan ^2.0.0
 - mime-types ^2.1.0
 
 ### 📂 Upload Security
+
 ```typescript
 // src/modules/media/services/file-scanner.service.ts
 import { Injectable } from '@nestjs/common';
@@ -486,13 +501,13 @@ export class FileScannerService {
       removeInfected: true,
       quarantineInfected: true,
       scanLog: '/var/log/clamav/scan.log',
-      debugMode: false
+      debugMode: false,
     });
   }
 
   async scanFile(filepath: string): Promise<boolean> {
     try {
-      const {isInfected, viruses} = await this.scanner.scanFile(filepath);
+      const { isInfected, viruses } = await this.scanner.scanFile(filepath);
       if (isInfected) {
         throw new Error(`Infected file detected: ${viruses.join(', ')}`);
       }
@@ -521,27 +536,23 @@ export class FileUploadMiddleware implements NestMiddleware {
       filename: (req, file, cb) => {
         const ext = mime.extension(file.mimetype);
         cb(null, `${uuid()}.${ext}`);
-      }
+      },
     });
 
     this.upload = multer({
       storage,
       limits: {
         fileSize: 5 * 1024 * 1024, // 5MB
-        files: 5
+        files: 5,
       },
       fileFilter: (req, file, cb) => {
         this.validateFile(file, cb);
-      }
+      },
     });
   }
 
   private validateFile(file: Express.Multer.File, cb: Function) {
-    const allowedMimes = [
-      'image/jpeg',
-      'image/png',
-      'application/pdf'
-    ];
+    const allowedMimes = ['image/jpeg', 'image/png', 'application/pdf'];
 
     if (!allowedMimes.includes(file.mimetype)) {
       return cb(new Error('Invalid file type'), false);
@@ -555,7 +566,7 @@ export class FileUploadMiddleware implements NestMiddleware {
       if (err) {
         return res.status(400).json({
           message: 'File upload failed',
-          error: err.message
+          error: err.message,
         });
       }
       next();
@@ -572,9 +583,7 @@ import { FileScannerService } from '../services/file-scanner.service';
 @Controller('upload')
 @UseGuards(JwtAuthGuard)
 export class UploadController {
-  constructor(
-    private readonly fileScannerService: FileScannerService
-  ) {}
+  constructor(private readonly fileScannerService: FileScannerService) {}
 
   @Post()
   @UseInterceptors(FileInterceptor('file'))
@@ -594,6 +603,7 @@ export class UploadController {
 ```
 
 ### ✅ Kontrol Noktaları
+
 - [ ] File type validation
 - [ ] Size limits
 - [ ] Virus scanning
@@ -601,6 +611,7 @@ export class UploadController {
 - [ ] Cleanup routines
 
 ### 📌 Onay Gereksinimleri
+
 - Güvenli dosya upload
 - Antivirüs entegrasyonu
 - Temp file cleanup
@@ -608,22 +619,26 @@ export class UploadController {
 ## 🔍 Faz 9 Sonuç ve Değerlendirme
 
 ### Security Metrics
+
 - Auth bypass: 0
 - XSS vectors: 0
 - CSRF bypass: 0
 - Upload vulnerabilities: 0
 
 ### Test Coverage
+
 - Unit tests: %95+
 - Integration tests: %90+
 - Security tests: %100
 
 ### Performance Impact
+
 - Auth overhead: <50ms
 - Rate limit check: <10ms
 - Upload scanning: <2s
 
 ### ⚠️ Önemli Notlar
+
 - JWT secret rotation planla
 - Rate limit fine-tuning yap
 - File scan timeout ayarla

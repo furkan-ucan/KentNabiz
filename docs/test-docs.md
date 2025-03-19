@@ -5,17 +5,21 @@
 ### 1.1. Genel Test Yaklaşımı
 
 #### Test Seviyeleri
+
 1. **Birim Testler**
+
    - Tekil bileşenlerin ve fonksiyonların testi
    - Her modül için minimum %80 test coverage hedefi
    - Jest ve React Testing Library kullanımı
 
 2. **Entegrasyon Testleri**
+
    - Modüller arası etkileşimlerin testi
    - API endpoint'leri ve veritabanı işlemleri
    - Supertest ve PostgreSQL test container kullanımı
 
 3. **E2E Testler**
+
    - Uçtan uca kullanıcı senaryoları
    - Cypress ile web uygulaması testleri
    - Detox ile mobil uygulama testleri
@@ -28,6 +32,7 @@
 ### 1.2. Test Ortamları
 
 #### Development Environment
+
 ```yaml
 URL: dev.urbanpulse.local
 Database: test_urbanpulse_dev
@@ -36,6 +41,7 @@ Monitoring: Full logging ve metrics
 ```
 
 #### Staging Environment
+
 ```yaml
 URL: staging.urbanpulse.local
 Database: test_urbanpulse_staging
@@ -44,6 +50,7 @@ Monitoring: Production seviyesi
 ```
 
 #### Production Environment
+
 ```yaml
 URL: api.urbanpulse.com
 Database: urbanpulse_prod
@@ -56,15 +63,16 @@ Monitoring: Critical metrics only
 ### 2.1. Backend Unit Tests
 
 #### Auth Service Tests
+
 ```typescript
 describe('AuthService', () => {
   describe('login', () => {
     it('should return JWT token for valid credentials', async () => {
       const result = await authService.login({
         email: 'test@example.com',
-        password: 'valid_password'
+        password: 'valid_password',
       });
-      
+
       expect(result).toHaveProperty('token');
       expect(result.token).toMatch(/^[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*$/);
     });
@@ -73,7 +81,7 @@ describe('AuthService', () => {
       await expect(
         authService.login({
           email: 'test@example.com',
-          password: 'wrong_password'
+          password: 'wrong_password',
         })
       ).rejects.toThrow(UnauthorizedException);
     });
@@ -82,6 +90,7 @@ describe('AuthService', () => {
 ```
 
 #### Report Service Tests
+
 ```typescript
 describe('ReportService', () => {
   describe('createReport', () => {
@@ -91,13 +100,13 @@ describe('ReportService', () => {
         description: 'Test Description',
         location: {
           latitude: 41.0082,
-          longitude: 28.9784
+          longitude: 28.9784,
         },
-        category: 'INFRASTRUCTURE'
+        category: 'INFRASTRUCTURE',
       };
 
       const result = await reportService.createReport(reportData);
-      
+
       expect(result).toHaveProperty('id');
       expect(result.title).toBe(reportData.title);
       expect(result.status).toBe('NEW');
@@ -109,13 +118,14 @@ describe('ReportService', () => {
 ### 2.2. Frontend Unit Tests
 
 #### Report Form Component Tests
+
 ```typescript
 describe('ReportForm', () => {
   it('should validate required fields', async () => {
     render(<ReportForm />);
-    
+
     fireEvent.click(screen.getByText('Submit'));
-    
+
     expect(await screen.findByText('Title is required')).toBeInTheDocument();
     expect(await screen.findByText('Location is required')).toBeInTheDocument();
   });
@@ -123,18 +133,18 @@ describe('ReportForm', () => {
   it('should call onSubmit with valid data', async () => {
     const onSubmit = jest.fn();
     render(<ReportForm onSubmit={onSubmit} />);
-    
+
     fireEvent.change(screen.getByLabelText('Title'), {
       target: { value: 'Test Report' }
     });
-    
+
     fireEvent.change(screen.getByLabelText('Description'), {
       target: { value: 'Test Description' }
     });
-    
+
     // Simulate map location selection
     fireEvent.click(screen.getByText('Submit'));
-    
+
     expect(onSubmit).toHaveBeenCalledWith({
       title: 'Test Report',
       description: 'Test Description',
@@ -147,6 +157,7 @@ describe('ReportForm', () => {
 ### 2.3. Integration Tests
 
 #### API Endpoint Tests
+
 ```typescript
 describe('Reports API', () => {
   describe('POST /api/reports', () => {
@@ -159,9 +170,9 @@ describe('Reports API', () => {
           description: 'Test Description',
           location: {
             latitude: 41.0082,
-            longitude: 28.9784
+            longitude: 28.9784,
           },
-          category: 'INFRASTRUCTURE'
+          category: 'INFRASTRUCTURE',
         });
 
       expect(response.status).toBe(201);
@@ -174,6 +185,7 @@ describe('Reports API', () => {
 ### 2.4. E2E Tests
 
 #### Web Application Tests (Cypress)
+
 ```typescript
 describe('Report Creation Flow', () => {
   beforeEach(() => {
@@ -182,29 +194,25 @@ describe('Report Creation Flow', () => {
 
   it('should create new report', () => {
     cy.visit('/reports/new');
-    
-    cy.get('[data-testid="title-input"]')
-      .type('E2E Test Report');
-    
-    cy.get('[data-testid="description-input"]')
-      .type('E2E Test Description');
-    
+
+    cy.get('[data-testid="title-input"]').type('E2E Test Report');
+
+    cy.get('[data-testid="description-input"]').type('E2E Test Description');
+
     // Simulate map interaction
-    cy.get('[data-testid="map"]')
-      .click(100, 100);
-    
-    cy.get('[data-testid="submit-button"]')
-      .click();
-    
-    cy.url()
-      .should('include', '/reports/');
-    
+    cy.get('[data-testid="map"]').click(100, 100);
+
+    cy.get('[data-testid="submit-button"]').click();
+
+    cy.url().should('include', '/reports/');
+
     cy.contains('Report created successfully');
   });
 });
 ```
 
 #### Mobile Application Tests (Detox)
+
 ```typescript
 describe('Mobile Report Creation', () => {
   beforeAll(async () => {
@@ -220,7 +228,7 @@ describe('Mobile Report Creation', () => {
     await element(by.id('report-description')).typeText('Mobile Test Description');
     await element(by.id('take-photo-button')).tap();
     await element(by.id('submit-report')).tap();
-    
+
     await expect(element(by.text('Report created successfully'))).toBeVisible();
   });
 });
@@ -231,6 +239,7 @@ describe('Mobile Report Creation', () => {
 ### 3.1. Yük Testi Senaryoları
 
 #### API Endpoint Yük Testi
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <jmeterTestPlan version="1.2" properties="5.0">
@@ -265,6 +274,7 @@ describe('Mobile Report Creation', () => {
 ### 3.2. Performans Metrikleri
 
 #### Hedef Metrikler
+
 - Sayfa yüklenme süresi: < 3 saniye
 - API yanıt süresi: < 200ms
 - Database query süresi: < 100ms
@@ -272,6 +282,7 @@ describe('Mobile Report Creation', () => {
 - CPU kullanımı: < %60
 
 #### Monitoring Dashboard (Grafana)
+
 ```yaml
 Panels:
   - Response Time:
@@ -280,13 +291,13 @@ Panels:
         - avg_response_time
         - p95_response_time
         - p99_response_time
-  
+
   - Error Rate:
       type: gauge
       metrics:
         - error_rate_percentage
         - success_rate_percentage
-  
+
   - System Resources:
       type: stat
       metrics:
@@ -298,6 +309,7 @@ Panels:
 ## 4. Güvenlik Testleri
 
 ### 4.1. OWASP Top 10 Testleri
+
 1. Injection Testing
 2. Broken Authentication
 3. Sensitive Data Exposure
@@ -310,6 +322,7 @@ Panels:
 10. Insufficient Logging & Monitoring
 
 ### 4.2. Penetrasyon Testi Senaryoları
+
 ```yaml
 Scenarios:
   - SQL Injection:
@@ -318,8 +331,8 @@ Scenarios:
         - /api/users
       payloads:
         - "' OR '1'='1"
-        - "; DROP TABLE users--"
-  
+        - '; DROP TABLE users--'
+
   - XSS Attacks:
       inputs:
         - "<script>alert('xss')</script>"
@@ -328,7 +341,7 @@ Scenarios:
         - Report title
         - Comments
         - User profile
-  
+
   - CSRF Tests:
       endpoints:
         - POST /api/reports
@@ -339,6 +352,7 @@ Scenarios:
 ## 5. Test Raporlama
 
 ### 5.1. Test Rapor Formatı
+
 ```json
 {
   "testSuite": "UrbanPulse API Tests",
@@ -365,17 +379,21 @@ Scenarios:
 ```
 
 ### 5.2. Hata Takip Süreci
+
 1. Hata Tespiti
+
    - Test sürecinde hata bulunması
    - Hata detaylarının kaydedilmesi
    - Severity belirlenmesi
 
 2. Hata Analizi
+
    - Root cause analysis
    - Etki analizi
    - Çözüm önerisi
 
 3. Çözüm Süreci
+
    - Fix implementasyonu
    - Code review
    - Regression testing
@@ -388,52 +406,56 @@ Scenarios:
 ## 6. CI/CD Test Pipeline
 
 ### 6.1. GitHub Actions Workflow
+
 ```yaml
 name: Test Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v2
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '18'
-    
-    - name: Install Dependencies
-      run: npm ci
-    
-    - name: Run Linter
-      run: npm run lint
-    
-    - name: Run Unit Tests
-      run: npm test
-    
-    - name: Run E2E Tests
-      run: npm run test:e2e
-    
-    - name: Upload Coverage
-      uses: codecov/codecov-action@v2
+      - uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Linter
+        run: npm run lint
+
+      - name: Run Unit Tests
+        run: npm test
+
+      - name: Run E2E Tests
+        run: npm run test:e2e
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v2
 ```
 
 ### 6.2. Test Automation Stratejisi
 
 #### Otomatik Test Seviyeleri
+
 1. **Her Commit**
+
    - Linting
    - Unit tests
    - Critical path tests
 
 2. **Pull Request**
+
    - Integration tests
    - E2E test subset
    - Security scans
