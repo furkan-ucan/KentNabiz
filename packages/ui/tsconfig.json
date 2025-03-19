@@ -6,8 +6,9 @@
     "baseUrl": "./src",
     "jsx": "react",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "composite": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist"]
 }

@@ -117,14 +117,64 @@
 - GitHub branch protection kuralları için `.github/ruleset.yml` dosyası oluşturuldu
 - Ruleset dosyasında PR gerekliliği, linear history ve force push koruması tanımlandı
 
+### Adım 6: Utility Paketleri Genişletme ve Test
+
+#### Geliştirilen Özellikler
+
+- Shared paketi için test altyapısı kurulumu yapıldı
+- Jest konfigürasyonu ve test dosyaları oluşturuldu
+- Utility fonksiyonları genişletildi ve iyileştirildi
+- TC Kimlik ve telefon numarası validasyonu için özel fonksiyonlar eklendi
+- Tarih, para birimi ve dosya boyutu formatlaması için genişletilmiş fonksiyonlar eklendi
+
+#### Karşılaşılan Hatalar
+
+- Jest testlerinde path sorunları
+- Function redeclaration hataları (isValidTcKimlik fonksiyonu)
+- Test örnekleriyle gerçek validasyon fonksiyonları arasında uyumsuzluklar
+- TypeScript derlemesinde bazı hatalar
+
+#### Hata Çözüm Yöntemi
+
+- Jest komutları için tam dizin yolu kullanıldı
+- Çakışan fonksiyon tanımları birleştirildi
+- Validation fonksiyonlarındaki mantık hataları düzeltildi
+- Test için özel geçerli TC Kimlik numaraları tanımlandı
+- Telefon validasyonu için minimum uzunluk kontrolü eklendi
+- Test ve kod uyumunu sağlamak için gerekli düzeltmeler yapıldı
+
+### Adım 7: Faz 2 Geçiş Hazırlıkları
+
+#### Geliştirilen Özellikler
+
+- Docker servisleri PostGIS desteği için güncellendi
+- PostgreSQL imajı PostGIS özellikleri ile değiştirildi
+- Veritabanı için PostGIS extension'ları aktif eden init script oluşturuldu
+- Shared paketlerin daha geniş kapsamlı kullanımı için hazırlıklar yapıldı
+- Jest ile test altyapısı genişletildi
+
+#### Karşılaşılan Hatalar
+
+- Docker imaj değişikliğinde bağımlılık sorunları
+- Test dosyalarında izin sorunları
+- Docker servislerinin yeniden yapılandırılma gereksinimleri
+
+#### Hata Çözüm Yöntemi
+
+- PostGIS uyumlu PostgreSQL imajı seçildi
+- Docker volume'leri temizlenerek yeniden oluşturuldu
+- Test dosyalarının uygun dizin yapısı içerisinde oluşturulması sağlandı
+- PostGIS test tablosu oluşturan init script hazırlandı
+
 ## Faz 1 Sonuç ve Değerlendirme
 
-Faz 1'in tüm gereksinimleri başarıyla tamamlandı:
+Faz 1'in tüm gereksinimleri başarıyla tamamlandı ve test edildi:
 
-1. Monorepo yapısı ve TurboRepo pipeline'ı hazır
-2. Shared paketler oluşturuldu ve kullanılabilir
-3. Docker servisleri ve environment yapılandırması tamam
-4. Git hooks ve commit standartları aktif
-5. CI/CD pipeline'ı çalışıyor
+1. Monorepo yapısı ve TurboRepo pipeline'ı hazır ve test edildi
+2. Shared paketler genişletildi, test edildi ve kullanıma hazır
+3. Docker servisleri (PostgreSQL/PostGIS, Redis, MinIO) kuruldu ve test edildi
+4. Git hooks ve commit standartları aktif ve test edildi
+5. CI/CD pipeline'ı çalışıyor ve test edildi
+6. Unit testler yazıldı ve başarıyla çalıştırıldı
 
-Bu adımlarla, KentNabız projesinin sağlam bir altyapısı oluşturuldu. Sonraki fazlarda, bu temel üzerine inşa edilecek özellikler eklenecek.
+Bu adımlarla, KentNabız projesinin sağlam, test edilmiş bir altyapısı oluşturuldu. Faz 2'de NestJS tabanlı API geliştirmeye başlanacak ve bu altyapı üzerine uygulama katmanları inşa edilecek.
