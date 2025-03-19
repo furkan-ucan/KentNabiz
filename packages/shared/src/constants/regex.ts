@@ -53,7 +53,7 @@ export const REGEX = {
   NUMERIC_ONLY: /^\d+$/,
 
   // HTML tag'i
-  HTML_TAG: /<\/?[\w\s="/.':;#-\/\?]+>/gi,
+  HTML_TAG: /<\/?[\w\s="/.':;#-?]+>/gi,
 
   // Dosya uzantısı
   FILE_EXTENSION: /\.([0-9a-z]+)(?:[?#]|$)/i,

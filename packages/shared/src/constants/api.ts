@@ -13,11 +13,11 @@ export const API_ENDPOINTS = {
   },
   USERS: {
     BASE: '/users',
-    BY_ID: (id: string) => `/users/${id}`,
+    BY_ID: (id: string): string => `/users/${id}`,
   },
   REPORTS: {
     BASE: '/reports',
-    BY_ID: (id: string) => `/reports/${id}`,
+    BY_ID: (id: string): string => `/reports/${id}`,
     ANALYTICS: '/reports/analytics',
   },
 };

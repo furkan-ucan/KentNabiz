@@ -46,11 +46,11 @@ export const AuthProvider = ({
   loginApi,
   logoutApi,
   checkAuthApi,
-}: AuthProviderProps) => {
+}: AuthProviderProps): JSX.Element => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const checkAuth = useCallback(async () => {
+  const checkAuth = useCallback(async (): Promise<boolean> => {
     try {
       setIsLoading(true);
       const userData = await checkAuthApi();
@@ -71,7 +71,7 @@ export const AuthProvider = ({
     }
   }, [checkAuthApi]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
       const userData = await loginApi(email, password);
@@ -85,7 +85,7 @@ export const AuthProvider = ({
     }
   };
 
-  const logout = async () => {
+  const logout = async (): Promise<void> => {
     try {
       setIsLoading(true);
       await logoutApi();
@@ -117,6 +117,6 @@ export const AuthProvider = ({
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = (): AuthContextType => useContext(AuthContext);
 
 export default useAuth;

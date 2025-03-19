@@ -1,6 +1,6 @@
 import { useState, useCallback, ChangeEvent } from 'react';
 
-export type ValidationRule<T> = (value: any, formValues: T) => string | undefined;
+export type ValidationRule<T> = (value: unknown, formValues: T) => string | undefined;
 
 export type FormErrors<T> = {
   [K in keyof T]?: string;
@@ -27,7 +27,7 @@ export interface UseFormReturn<T> {
   handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
   handleBlur: (e: ChangeEvent<HTMLInputElement>) => void;
   handleSubmit: (e: React.FormEvent) => Promise<void>;
-  setFieldValue: (name: keyof T, value: any) => void;
+  setFieldValue: <K extends keyof T>(name: K, value: T[K]) => void;
   setFieldError: (name: keyof T, error: string) => void;
   resetForm: () => void;
   validateForm: () => boolean;
@@ -38,7 +38,7 @@ export interface UseFormReturn<T> {
  * @param props Form özellikleri
  * @returns Form state ve işleyicileri
  */
-export function useForm<T extends Record<string, any>>({
+export function useForm<T extends Record<string, unknown>>({
   initialValues,
   onSubmit,
   validate,
@@ -55,7 +55,7 @@ export function useForm<T extends Record<string, any>>({
 
     // validationSchema ile doğrulama
     if (validationSchema) {
-      Object.keys(validationSchema).forEach((key) => {
+      Object.keys(validationSchema).forEach(key => {
         const fieldKey = key as keyof T;
         const fieldValue = values[fieldKey];
         const fieldRules = validationSchema[fieldKey] || [];
@@ -80,22 +80,19 @@ export function useForm<T extends Record<string, any>>({
   }, [values, validate, validationSchema]);
 
   // Form değişiklik işleyicisi
-  const handleChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
-      const { name, value, type, checked } = e.target;
-      const fieldValue = type === 'checkbox' ? checked : value;
+  const handleChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    const fieldValue = type === 'checkbox' ? checked : value;
 
-      setValues((prevValues) => ({
-        ...prevValues,
-        [name]: fieldValue,
-      }));
-    },
-    []
-  );
+    setValues(prevValues => ({
+      ...prevValues,
+      [name]: fieldValue,
+    }));
+  }, []);
 
   // Alan değerini manuel olarak ayarlama işlevi
-  const setFieldValue = useCallback((name: keyof T, value: any) => {
-    setValues((prevValues) => ({
+  const setFieldValue = useCallback(<K extends keyof T>(name: K, value: T[K]) => {
+    setValues(prevValues => ({
       ...prevValues,
       [name]: value,
     }));
@@ -103,7 +100,7 @@ export function useForm<T extends Record<string, any>>({
 
   // Alan hatası ayarlama işlevi
   const setFieldError = useCallback((name: keyof T, error: string) => {
-    setErrors((prevErrors) => ({
+    setErrors(prevErrors => ({
       ...prevErrors,
       [name]: error,
     }));
@@ -112,7 +109,7 @@ export function useForm<T extends Record<string, any>>({
   // Alan blur olayı işleyicisi
   const handleBlur = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const { name } = e.target;
-    setTouched((prevTouched) => ({
+    setTouched(prevTouched => ({
       ...prevTouched,
       [name]: true,
     }));

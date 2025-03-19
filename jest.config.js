@@ -5,8 +5,10 @@ const config = {
   transform: {
     '^.+\\.tsx?$': 'ts-jest',
   },
-  testMatch: ['**/__tests__/**/*.test.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  projects: ['<rootDir>/packages/*/jest.config.js'],
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  coverageDirectory: '<rootDir>/coverage',
 };
 
 module.exports = config;

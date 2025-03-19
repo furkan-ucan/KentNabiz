@@ -25,7 +25,7 @@ importers:
         specifier: ^19.8.0
         version: 19.8.0
       '@types/jest':
-        specifier: ^29.0.0
+        specifier: ^29.5.14
         version: 29.5.14
       '@typescript-eslint/eslint-plugin':
         specifier: ^6.21.0

@@ -3,20 +3,16 @@
 // Shared paketi importları
 import { isValidEmail, isPasswordStrong, User, UserRole } from '@kentnabiz/shared';
 
-// UI Paketi importları (React kullanılmayan bir ortamda sadece tip importları)
-import type { ButtonProps } from '@kentnabiz/ui';
-import type { UseFormProps } from '@kentnabiz/ui';
-
 // Test fonksiyonu
-function testSharedImports(): void {
-  console.log('Shared imports test:');
+function testSharedImports(): string {
+  let result = 'Shared imports test:\n';
 
   // Utility fonksiyonları test et
   const validEmail = isValidEmail('test@example.com');
-  console.log(`Email validation: ${validEmail}`);
+  result += `Email validation: ${validEmail}\n`;
 
   const strongPassword = isPasswordStrong('StrongPass123');
-  console.log(`Password validation: ${strongPassword}`);
+  result += `Password validation: ${strongPassword}\n`;
 
   // Tip kullanımı test et (sadece derleme zamanında kontrol edilir)
   const user: User = {
@@ -28,7 +24,9 @@ function testSharedImports(): void {
     updatedAt: new Date(),
   };
 
-  console.log(`User created: ${user.name} (${user.role})`);
+  result += `User created: ${user.name} (${user.role})`;
+
+  return result;
 }
 
 // Bu dosya çalıştırılabilir değil, sadece import testleri için
