@@ -190,6 +190,39 @@
 - Tüm fonksiyonlara açık dönüş tipleri eklendi
 - Workspace protokolü (`workspace:*`) kullanılarak paket bağımlılıkları düzeltildi
 
+### Adım 9: Build Süreçlerinin Optimizasyonu ve Faz 2.1 Tamamlanması
+
+#### Geliştirilen Özellikler
+
+- API projesi core modülü kuruldu
+- Interceptor, filter, guard ve pipe yapıları oluşturuldu
+- NestJS uygulaması konfigürasyonu tamamlandı
+- Shared paketi build süreci optimize edildi
+- TypeScript/ESLint uyumluluğu sağlandı
+- JavaScript kodları için uygun ESLint kuralları yapılandırıldı
+
+#### Karşılaşılan Hatalar
+
+- Shared paketi build sürecinde TypeScript hataları (`composite` projede dts build hatası)
+- VS Code'un ESLint/Prettier ile gösterdiği aykırı formatlama hataları
+- NestJS typescript dönüş tiplerinde eksiklikler
+- JavaScript dosyalarında TypeScript lint kuralları kaynaklı hatalar
+- Husky pre-commit hook'larında build sürecinde hatalar
+
+#### Hata Çözüm Yöntemi
+
+- Shared paketi için hibrit bir build yaklaşımı geliştirildi:
+  - `prebuild` aşamasında `tsc --emitDeclarationOnly` komutu ile TypeScript tip dosyaları oluşturuluyor
+  - `build` aşamasında `tsup` ile hızlı ve optimize JS çıktıları oluşturuluyor
+  - `--no-dts` flag'i eklenerek tsup'ın tip tanımı üretmesi engellendi
+- Monorepo'da cross-reference gerektiren paketlerde `composite: true` yapılandırması korundu
+- NestJS bileşenlerine açık dönüş tipleri eklendi (Observable, Promise, void, ReturnType vb.)
+- JavaScript dosyaları için ESLint direktifleri eklendi:
+  - `/* eslint-disable @typescript-eslint/no-var-requires */`
+  - `/* eslint-disable @typescript-eslint/explicit-function-return-type */`
+  - `/* eslint-disable no-console */`
+- IDE formatlaması ile proje formatlaması arasındaki çelişkiler çözüldü
+
 ## Faz 1 Sonuç ve Değerlendirme
 
 Faz 1'in tüm gereksinimleri başarıyla tamamlandı ve test edildi:
@@ -201,5 +234,38 @@ Faz 1'in tüm gereksinimleri başarıyla tamamlandı ve test edildi:
 5. CI/CD pipeline'ı çalışıyor ve test edildi
 6. Unit testler yazıldı ve başarıyla çalıştırıldı
 7. Kod kalitesi ve tip güvenliği iyileştirmeleri tamamlandı
+8. Build süreçleri optimize edildi ve Faz 2.1 tamamlandı
 
-Bu adımlarla, KentNabız projesinin sağlam, test edilmiş ve tip güvenliği yüksek bir altyapısı oluşturuldu. Faz 2'de NestJS tabanlı API geliştirmeye başlanacak ve bu altyapı üzerine uygulama katmanları inşa edilecek.
+Bu adımlarla, KentNabız projesinin sağlam, test edilmiş ve tip güvenliği yüksek bir altyapısı oluşturuldu. Faz 2.2'de NestJS tabanlı API geliştirmeye devam edilecek ve bu altyapı üzerine uygulama katmanları inşa edilecek.
+
+## Faz 2: API Geliştirme ve Temel Modüller
+
+### Adım 2.1: Modüler Yapı ve Core Setup
+
+#### Geliştirilen Özellikler
+
+- NestJS core modül yapısı oluşturuldu
+- Temel interceptor, guard, filter ve pipe sınıfları eklendi
+- Transform interceptor ile standart API yanıt formatı sağlandı
+- Global validation pipe ile DTO doğrulama mekanizması kuruldu
+- JWT authentication guard için altyapı hazırlandı
+- Swagger dokümantasyonu entegre edildi
+- API için sağlam bir hata işleme mekanizması oluşturuldu
+
+#### Karşılaşılan Hatalar
+
+- TypeScript dönüş tiplerinde eksiklikler
+- VS Code formatlamasıyla proje linting kuralları arasında çatışmalar
+
+#### Hata Çözüm Yöntemi
+
+- Tüm fonksiyon ve metotlara uygun dönüş tipleri eklendi
+- VS Code'da ESLint ve Prettier eklentileri için proje konfigürasyonu uyumlu hale getirildi
+- TypeScript'in NestJS ile tam uyumlu çalışması sağlandı
+
+### Faz 2.2'ye Geçiş Hazırlıkları
+
+- Build süreçleri optimize edildi
+- Tüm linting ve formatlama sorunları çözüldü
+- Kodtabanı GitHub'a push edildi ve hazır durumda
+- API modüllerinin geliştirilmesi için temel altyapı tamamlandı

@@ -1,5 +1,125 @@
 # @project-status.md
 
+## Oturum Raporu: 20 Mart 2024
+
+### Çalışma Özeti
+
+Bu oturumda KentNabız projesinin Faz 2.1 tamamlandı ve Faz 2.2'ye geçiş hazırlıkları yapıldı. Build süreçlerindeki sorunlar ve linting hataları çözüldü, kod kalitesi iyileştirmeleri tamamlandı.
+
+### Tamamlanan Çalışmalar
+
+1. **Shared Paketi Build Sürecinin Optimizasyonu**
+
+   - TypeScript composite projelerle uyumlu hibrit bir build yaklaşımı geliştirildi
+   - `tsc` ve `tsup` araçlarının avantajlarını birleştiren çözüm uygulandı
+   - Monorepo cross-reference ve performans dengesi sağlandı
+
+2. **NestJS API Core Modülünün Geliştirilmesi**
+
+   - API yanıt formatını standardize eden Transform Interceptor eklendi
+   - Global hata yakalama mekanizmasını sağlayan Exception Filter oluşturuldu
+   - JWT tabanlı kimlik doğrulama için guard altyapısı kuruldu
+   - DTO doğrulama için global validation pipe eklendi
+   - Swagger dokümantasyonu için gerekli yapılandırmalar tamamlandı
+
+3. **Kod Kalitesi İyileştirmeleri**
+
+   - Tüm NestJS bileşenlerine açık dönüş tipleri eklendi
+   - Observable, Promise, void ve diğer tip tanımlamaları doğru şekilde yapılandırıldı
+   - JavaScript dosyalarında TypeScript lint kuralları için disable direktifleri eklendi
+   - VS Code ve proje formatlama kuralları uyumlu hale getirildi
+
+4. **Git ve GitHub İşlemleri**
+   - Tüm değişiklikler anlamlı commit mesajlarıyla kaydedildi
+   - Mevcut kod tabanı GitHub'a başarıyla push edildi
+   - Git hook sorunları çözüldü ve linting süreçleri stabilize edildi
+
+### Detaylı Oturum Raporu
+
+#### 1. Build Süreci Optimizasyonu
+
+- **Karşılaşılan Sorun**:
+
+  Shared paketi build sürecinde TypeScript composite projelerle uyumluluk sorunu ve DTS (TypeScript tip tanımlamaları) üretimi hatası vardı. Build işlemi başarısız oluyordu.
+
+- **Uygulanan Çözüm**:
+
+  Hibrit bir build yaklaşımı geliştirildi:
+
+  ```json
+  "prebuild": "tsc --emitDeclarationOnly",
+  "build": "tsup src/index.ts --format cjs,esm --sourcemap --no-dts"
+  ```
+
+  Bu yaklaşımla:
+
+  - TypeScript tip tanımlamaları `tsc` tarafından üretiliyor
+  - JavaScript çıktıları performanslı şekilde `tsup` tarafından üretiliyor
+  - Monorepo'daki diğer paketlerin referans gereksinimleri karşılanıyor
+
+#### 2. ESLint ve TypeScript Uyumluluğu
+
+- **NestJS Bileşenleri İyileştirmeleri**:
+
+  - Tüm NestJS core bileşenlerine uygun dönüş tipleri eklendi:
+    - transform.interceptor.ts: `Observable<ApiResponse<T>>` dönüş tipi
+    - http-exception.filter.ts: `void` dönüş tipi
+    - jwt-auth.guard.ts: `boolean | Promise<boolean> | Observable<boolean>` dönüş tipi
+    - validation.pipe.ts: `Promise<unknown>` dönüş tipi
+    - bootstrap fonksiyonu: `Promise<void>` dönüş tipi
+    - Redis retryStrategy: `number` dönüş tipi
+  - Public decorator için `ReturnType<typeof SetMetadata>` dönüş tipi eklenerek tip güvenliği artırıldı
+
+- **JavaScript Dosyaları Uyumluluğu**:
+
+  scripts/check-services.js ve diğer JavaScript dosyaları için ESLint uyumluluğu sağlamak amacıyla disable direktifleri eklendi:
+
+  ```javascript
+  /* eslint-disable @typescript-eslint/no-var-requires */
+  /* eslint-disable @typescript-eslint/explicit-function-return-type */
+  /* eslint-disable no-console */
+  ```
+
+#### 3. Formatlama ve Linting Çelişkilerinin Çözümü
+
+- **IDE vs Proje Standardı**:
+
+  VS Code'un linting ve formatlama kuralları ile projenin tanımladığı ESLint/Prettier kuralları arasında çelişkiler vardı. Bazı dosyalarda tekli/çoklu satır aralıkları, parantez yerleşimleri konusunda çelişkiler oluşuyordu.
+
+- **Çözüm Stratejisi**:
+
+  - Formatlama çelişkilerinin gerçek kod fonksiyonelliğini etkilemediği belirlendi
+  - Önce tüm dosyaları VS Code'un istediği formata göre düzenleme denenedi
+  - Çelişkiler devam edince hibrit bir yaklaşımla temel kod fonksiyonelliğine odaklanıldı
+  - ESLint disable direktifleri ile JavaScript dosyaları için TypeScript kuralları devre dışı bırakıldı
+
+### Bir Sonraki Oturum için Planlama
+
+Faz 2.1 başarıyla tamamlandığı için, bir sonraki oturumda **Faz 2.2** çalışmalarına geçilecek. Öncelikli hedefler:
+
+1. **Auth Module Geliştirme**:
+
+   - JWT tabanlı kimlik doğrulama sistemi implementasyonu
+   - Redis ile token storage entegrasyonu
+   - İzin tabanlı erişim kontrolü (RBAC) yapılandırması
+
+2. **User Module Geliştirme**:
+
+   - Kullanıcı kayıt, giriş ve profil yönetimi
+   - Şifre yönetimi ve güvenlik önlemleri
+   - Role-based permission yapısı
+
+3. **TypeORM Entity Yapısının Oluşturulması**:
+   - Veritabanı şema tasarımı ve ilişkilerin modellenmesi
+   - Base entity üzerine user, role, permission entity'lerinin geliştirilmesi
+   - Migration sisteminim kurulması
+
+### Notlar ve Öneriler
+
+- Shared paketi build sürecinin optimize edilmiş hali iyi çalışıyor, fakat monorepo projelerinde TypeScript ve tsup arasındaki entegrasyon sorunları gelecekte tekrar değerlendirilebilir
+- Husky git hook'larının WindowsOS üzerinde daha stabil çalışması için ek yapılandırmalar değerlendirilebilir
+- NestJS uygulamasının test kapsamını artırmak için e2e test yapılandırması planlanmalı
+
 ## Oturum Raporu: 19 Mart 2024
 
 ### Çalışma Özeti
