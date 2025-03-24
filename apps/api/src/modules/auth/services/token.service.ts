@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRedis } from '@nestjs-modules/ioredis';
@@ -42,6 +42,19 @@ export class TokenService {
     };
   }
 
+  async refreshTokens(oldRefreshToken: string, payload: JwtPayload): Promise<Token> {
+    // Verify and extract payload from old token to get jti
+    const oldPayload = await this.verifyRefreshToken(oldRefreshToken);
+
+    // Blacklist the old token
+    if (oldPayload.jti) {
+      await this.blacklistToken(oldPayload.sub, oldPayload.jti);
+    }
+
+    // Generate new tokens with the updated payload
+    return this.generateTokens(payload);
+  }
+
   async verifyAccessToken(token: string): Promise<JwtPayload> {
     return this.jwtService.verifyAsync<JwtPayload>(token, {
       secret: this.configService.get<string>('JWT_SECRET'),
@@ -53,30 +66,60 @@ export class TokenService {
       secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
     });
 
-    // Check if token exists in Rediss
+    // Check if token exists in Redis
     const storedToken = await this.redis.get(`refresh_token:${payload.sub}:${payload.jti || ''}`);
     if (!storedToken || storedToken !== token) {
-      throw new Error('Invalid refresh token');
+      throw new UnauthorizedException('Invalid refresh token');
     }
 
     return payload;
   }
 
-  async invalidateToken(userId: string): Promise<void> {
-    await this.redis.del(`refresh_token:${userId}`);
+  async invalidateToken(userId: number): Promise<void> {
+    // Get all token IDs for the user
+    const tokenIds = await this.redis.smembers(`user_tokens:${userId}`);
+
+    // Add all tokens to blacklist
+    const blacklistPromises = tokenIds.map((jti) => this.blacklistToken(userId, jti));
+    await Promise.all(blacklistPromises);
+
+    // Clear user tokens set
+    await this.redis.del(`user_tokens:${userId}`);
   }
 
-  private async storeRefreshToken(userId: string, token: string, jti: string): Promise<void> {
+  async revokeTokensForUser(userId: number, token?: string): Promise<boolean> {
+    try {
+      if (token) {
+        // Get payload from token
+        const payload = await this.verifyAccessToken(token);
+        if (payload.jti) {
+          // Blacklist the specific token
+          await this.blacklistToken(userId, payload.jti);
+        }
+      } else {
+        // Invalidate all tokens for the user
+        await this.invalidateToken(userId);
+      }
+      return true;
+    } catch (/* eslint-disable @typescript-eslint/no-unused-vars */ error /* eslint-enable @typescript-eslint/no-unused-vars */) {
+      // Error handling: just return false on any token error
+      return false;
+    }
+  }
+
+  private async storeRefreshToken(userId: number, token: string, jti: string): Promise<void> {
     // Store token with 7 days expiry (same as the token)
     await this.redis.set(`refresh_token:${userId}:${jti}`, token, 'EX', 60 * 60 * 24 * 7);
     // Kullanıcının aktif token ID'lerini sakla
     await this.redis.sadd(`user_tokens:${userId}`, jti);
   }
 
-  async blacklistToken(userId: string, jti: string): Promise<void> {
+  async blacklistToken(userId: number, jti: string): Promise<void> {
     // Add to blacklist
     await this.redis.set(`blacklist:${jti}`, '1', 'EX', 60 * 60 * 24 * 7);
     // Remove from user's active tokens
     await this.redis.srem(`user_tokens:${userId}`, jti);
+    // Remove the actual token
+    await this.redis.del(`refresh_token:${userId}:${jti}`);
   }
 }

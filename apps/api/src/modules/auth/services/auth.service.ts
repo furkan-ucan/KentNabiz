@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { LoginDto } from '../dto/login.dto';
@@ -6,15 +11,10 @@ import { RegisterDto } from '../dto/register.dto';
 import { TokenService } from './token.service';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { Token } from '../interfaces/token.interface';
-import * as bcryptjs from 'bcryptjs';
-
-// Geçici kullanıcı tipi, daha sonra User entity ile değiştirilecek
-interface UserRecord {
-  id: string;
-  email: string;
-  password: string;
-  roles: string[];
-}
+import { UsersService } from '../../users/services/users.service';
+import { UserRepository } from '../../users/repositories/user.repository';
+import { User } from '../../users/entities/user.entity';
+import { CreateUserDto } from '../../users/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -22,21 +22,22 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private tokenService: TokenService,
+    private usersService: UsersService,
+    private userRepository: UserRepository,
   ) {}
 
-  async validateUser(
-    email: string,
-    password: string,
-  ): Promise<Omit<UserRecord, 'password'> | null> {
-    // TODO: Implement user validation with database
-    // This is a placeholder implementation
-    const user = await this.findUserByEmail(email);
-    if (user && (await bcryptjs.compare(password, user.password))) {
+  async validateUser(email: string, password: string): Promise<User | null> {
+    try {
+      const user = await this.usersService.findByEmail(email);
+      if (user && (await user.validatePassword(password))) {
+        return user;
+      }
+      return null;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password: _password, ...result } = user;
-      return result;
+    } catch (_error) {
+      // Errors are caught to prevent leaking info about user existence
+      return null;
     }
-    return null;
   }
 
   async login(loginDto: LoginDto): Promise<Token> {
@@ -45,64 +46,71 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Update last login time
+    await this.usersService.updateLastLogin(user.id);
+
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
-      roles: user.roles,
+      roles: user.roles.map((role) => role.toString()),
     };
 
     return this.tokenService.generateTokens(payload);
   }
 
   async register(registerDto: RegisterDto): Promise<Token> {
-    // TODO: Implement user registration with database
-    // This is a placeholder implementation
-    const hashedPassword = await bcryptjs.hash(registerDto.password, 10);
-    const user: UserRecord = {
-      id: '1', // This should come from database
+    // Check if email already exists
+    try {
+      await this.usersService.findByEmail(registerDto.email);
+      throw new ConflictException('Email already exists');
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      // Continue with registration if user not found (NotFoundException expected)
+      if (!(error instanceof NotFoundException)) {
+        throw error; // Re-throw unexpected errors
+      }
+    }
+
+    // Create user through user service
+    const createUserDto: CreateUserDto = {
       email: registerDto.email,
-      password: hashedPassword,
-      roles: ['user'],
+      password: registerDto.password,
+      fullName: registerDto.fullName || '', // Ensure fullName is a string
     };
 
+    const newUser = await this.userRepository.create(createUserDto);
+
     const payload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-      roles: user.roles,
+      sub: newUser.id,
+      email: newUser.email,
+      roles: newUser.roles.map((role) => role.toString()),
     };
 
     return this.tokenService.generateTokens(payload);
   }
 
-  async refreshToken(token: string): Promise<Token> {
-    try {
-      const payload = await this.tokenService.verifyRefreshToken(token);
-      // Eski token'ı blacklist'e ekle (güvenlik için)
-      if (payload.jti) {
-        await this.tokenService.blacklistToken(payload.sub, payload.jti);
-      }
-      // Yeni payload'ı oluştur (jti ve iat değerlerini kaldır)
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { jti, iat, exp, ...newPayload } = payload;
-      return this.tokenService.generateTokens(newPayload);
-    } catch {
-      throw new UnauthorizedException('Invalid refresh token');
+  async refreshToken(refreshToken: string): Promise<Token> {
+    const payload = await this.tokenService.verifyRefreshToken(refreshToken);
+
+    // Find user to confirm they still exist and have proper roles
+    const user = await this.userRepository.findById(payload.sub);
+
+    if (!user) {
+      throw new UnauthorizedException('User no longer exists');
     }
-  }
 
-  async logout(userId: string): Promise<void> {
-    // Eğer JwtPayload içinde jti kullanılıyorsa, burası da güncellenebilir
-    await this.tokenService.invalidateToken(userId);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private async findUserByEmail(_email: string): Promise<UserRecord> {
-    // TODO: Implement database query
-    return {
-      id: '1',
-      email: 'user@example.com',
-      password: await bcryptjs.hash('password123', 10),
-      roles: ['user'],
+    const newPayload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      roles: user.roles.map((role) => role.toString()),
     };
+
+    return this.tokenService.refreshTokens(refreshToken, newPayload);
+  }
+
+  async logout(userId: number, token: string): Promise<boolean> {
+    return await this.tokenService.revokeTokensForUser(userId, token);
   }
 }
