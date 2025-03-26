@@ -5,6 +5,7 @@ import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { MediaModule } from './modules/media/media.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     AuthModule,
     UsersModule,
     ReportsModule,
+    MediaModule,
   ],
 })
 export class AppModule {}
