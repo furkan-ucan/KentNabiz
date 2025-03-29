@@ -7,7 +7,7 @@ export class UploadFileDto {
     format: 'binary',
     description: 'The file to upload',
   })
-  file: Express.Multer.File;
+  file!: Express.Multer.File;
 
   @ApiPropertyOptional({
     type: Boolean,
@@ -36,7 +36,7 @@ export class UploadFilesDto {
     },
     description: 'The files to upload',
   })
-  files: Express.Multer.File[];
+  files!: Express.Multer.File[];
 
   @ApiPropertyOptional({
     type: Boolean,

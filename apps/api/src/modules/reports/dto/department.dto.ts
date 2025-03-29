@@ -9,14 +9,14 @@ export class DepartmentDto {
     example: MunicipalityDepartment.ROADS,
   })
   @IsEnum(MunicipalityDepartment)
-  code: MunicipalityDepartment;
+  code!: MunicipalityDepartment;
 
   @ApiProperty({
     description: 'Birim adı',
     example: 'Yollar ve Altyapı Hizmetleri Müdürlüğü',
   })
   @IsString()
-  name: string;
+  name!: string;
 
   @ApiProperty({
     description: 'Birim açıklaması',

@@ -4,8 +4,7 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+
 import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
 import { TokenService } from './token.service';
@@ -19,8 +18,6 @@ import { CreateUserDto } from '../../users/dto/create-user.dto';
 @Injectable()
 export class AuthService {
   constructor(
-    private jwtService: JwtService,
-    private configService: ConfigService,
     private tokenService: TokenService,
     private usersService: UsersService,
     private userRepository: UserRepository,

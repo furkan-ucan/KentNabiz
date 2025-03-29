@@ -12,6 +12,8 @@ import { MaxFileSizeValidator } from '@nestjs/common/pipes/file/max-file-size.va
 import { ParseFilePipe } from '@nestjs/common/pipes';
 import { Request } from 'express';
 
+// TODO: test file size/type validation scenarios - coverage: 46.42%
+
 interface RequestWithFile extends Request {
   file?: Express.Multer.File;
   files?: Express.Multer.File[];
@@ -35,6 +37,7 @@ export class FileUploadInterceptor implements NestInterceptor {
       allowedTypes?: RegExp;
     },
   ) {
+    // TODO: add tests for constructor options customization
     if (options) {
       this.validators = [];
 
@@ -63,6 +66,7 @@ export class FileUploadInterceptor implements NestInterceptor {
     if (request.file) {
       await this.validateFile(request.file);
     } else if (request.files) {
+      // TODO: add tests for multiple files validation
       // Check max count if provided
       if (this.options?.maxCount && request.files.length > this.options.maxCount) {
         throw new BadRequestException(
@@ -80,6 +84,7 @@ export class FileUploadInterceptor implements NestInterceptor {
   }
 
   private async validateFile(file: Express.Multer.File): Promise<void> {
+    // TODO: add tests for validation error handling
     try {
       const parseFilePipe = new ParseFilePipe({
         validators: this.validators,

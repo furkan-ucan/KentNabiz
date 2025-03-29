@@ -16,30 +16,35 @@ export enum MediaType {
 @Entity('media')
 export class Media {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: 'varchar', length: 255 })
-  filename: string;
+  filename!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  originalname: string;
+  originalname!: string;
 
   @Column({ type: 'varchar', length: 500 })
-  url: string;
+  url!: string;
 
   @Column({ type: 'varchar', length: 100 })
-  mimetype: string;
+  mimetype!: string;
 
-  @Column({ type: 'enum', enum: MediaType, default: MediaType.OTHER })
-  type: MediaType;
+  @Column({
+    type: 'enum',
+    enum: MediaType,
+    enumName: 'media_type_enum', // Veritabanı enum adıyla eşleşmeli
+    default: MediaType.OTHER,
+  })
+  type!: MediaType;
 
   @Column({ type: 'int' })
-  size: number;
+  size!: number;
 
   @Column({ type: 'jsonb', nullable: true })
-  metadata: Record<string, any>;
+  metadata!: Record<string, any>;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({ name: 'thumbnail_url', type: 'varchar', length: 500, nullable: true })
   thumbnailUrl?: string;
 
   @Column({ nullable: true })
@@ -48,12 +53,12 @@ export class Media {
   @Column({ nullable: true })
   height?: number;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'bucket_name', type: 'varchar', length: 255, nullable: true })
   bucketName?: string;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

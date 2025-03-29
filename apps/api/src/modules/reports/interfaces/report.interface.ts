@@ -1,3 +1,13 @@
+/**
+ * @file report.interface.ts
+ * @author [Your Name]
+ * @date [Date]
+ * @license [Your License]
+ * @version 1.0
+ * @description Bu dosya, raporlar için gerekli olan arayüzleri içerir.
+ * @module report.interface
+ */
+
 import { Point } from 'geojson';
 
 export enum ReportStatus {
@@ -26,14 +36,18 @@ export enum ReportType {
   ROAD_BLOCK = 'ROAD_BLOCK', // Yol Engeli
   TRAFFIC_LIGHT = 'TRAFFIC_LIGHT', // Trafik Lambası
   STREET_LIGHT = 'STREET_LIGHT', // Sokak Lambası
+  ELECTRICITY_OUTAGE = 'ELECTRICITY_OUTAGE', // Elektrik Kesintisi
+  WATER_LEAKAGE = 'WATER_LEAKAGE', // Su Sızıntısı
   LITTER = 'LITTER', // Çöp
   GRAFFITI = 'GRAFFITI', // Grafiti
   PARK_DAMAGE = 'PARK_DAMAGE', // Park Hasar
+  TREE_ISSUE = 'TREE_ISSUE', // Ağaç Sorunu
   PARKING_VIOLATION = 'PARKING_VIOLATION', // Park Yeri İhlali
   PUBLIC_TRANSPORT = 'PUBLIC_TRANSPORT', // Toplu Taşıma
   PUBLIC_TRANSPORT_VIOLATION = 'PUBLIC_TRANSPORT_VIOLATION', // Toplu Taşıma İhlali
   PUBLIC_TRANSPORT_STOP = 'PUBLIC_TRANSPORT_STOP', // Toplu Taşıma Durağı
   PUBLIC_TRANSPORT_VEHICLE = 'PUBLIC_TRANSPORT_VEHICLE', // Toplu Taşıma Araçları
+  GARBAGE_COLLECTION = 'GARBAGE_COLLECTION', // Çöp Toplama
   OTHER = 'OTHER',
 }
 
@@ -42,13 +56,15 @@ export enum MunicipalityDepartment {
   INFRASTRUCTURE = 'INFRASTRUCTURE', // Altyapı Hizmetleri
   ENVIRONMENTAL = 'ENVIRONMENTAL', // Çevre Temizlik
   PARKS = 'PARKS', // Park ve Bahçeler
-  PUBLIC_TRANSPORT = 'PUBLIC_TRANSPORT', // Toplu Taşıma
-  WATER = 'WATER', // Su İşleri
+  TRANSPORTATION = 'TRANSPORTATION', // Toplu Taşıma
+  WATER = 'WATER', // Su İşleri,
+  ELECTRICITY = 'ELECTRICITY', // Elektrik İşleri
   TRAFFIC = 'TRAFFIC', // Trafik
   BUILDING = 'BUILDING', // Yapı Kontrol
   MUNICIPALITY = 'MUNICIPALITY', // İdari İşler
   HEALTH = 'HEALTH', // Sağlık
   FIRE = 'FIRE', // İtfaiye
+  OTHER = 'OTHER', // Diğer
   GENERAL = 'GENERAL', // Genel (Belirsiz/Varsayılan)
 }
 

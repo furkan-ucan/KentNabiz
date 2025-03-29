@@ -21,7 +21,7 @@ export class CreateReportMediaDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  url: string;
+  url!: string;
 
   @ApiProperty({
     description: 'Type of media (image, video, etc.)',
@@ -30,7 +30,7 @@ export class CreateReportMediaDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  type: string;
+  type!: string;
 }
 
 export class CreateReportDto {
@@ -41,7 +41,7 @@ export class CreateReportDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
-  title: string;
+  title!: string;
 
   @ApiProperty({
     description: 'Detailed description of the issue',
@@ -49,7 +49,7 @@ export class CreateReportDto {
   })
   @IsString()
   @IsNotEmpty()
-  description: string;
+  description!: string;
 
   @ApiProperty({
     description: 'Location of the issue',
@@ -57,7 +57,7 @@ export class CreateReportDto {
   })
   @ValidateNested()
   @Type(() => LocationDto)
-  location: LocationDto;
+  location!: LocationDto;
 
   @ApiProperty({
     description: 'Street address or description of the location',
@@ -66,7 +66,7 @@ export class CreateReportDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  address: string;
+  address!: string;
 
   @ApiProperty({
     description: 'Type of the report (eski kategori sistemi)',
@@ -74,7 +74,7 @@ export class CreateReportDto {
     example: ReportType.POTHOLE,
   })
   @IsEnum(ReportType)
-  type: ReportType;
+  type!: ReportType;
 
   @ApiProperty({
     description: 'Kategori ID (yeni kategori sistemi)',

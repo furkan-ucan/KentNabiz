@@ -10,6 +10,8 @@ import { UpdateUserDto } from '../dto/update-user.dto';
 import { User } from '../entities/user.entity';
 import { UserProfileDto } from '../dto/user-profile.dto';
 
+// TODO: cover edge cases in user service logic - coverage: 70.73%
+
 @Injectable()
 export class UsersService {
   constructor(private readonly userRepository: UserRepository) {}
@@ -52,6 +54,7 @@ export class UsersService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<UserProfileDto> {
+    // TODO: add tests for user update edge cases
     // Check if user exists
     await this.findOne(id);
 
@@ -69,6 +72,7 @@ export class UsersService {
   }
 
   async remove(id: number): Promise<void> {
+    // TODO: add tests for user deletion
     // Check if user exists
     await this.findOne(id);
 
@@ -80,6 +84,7 @@ export class UsersService {
   }
 
   async changePassword(id: number, oldPassword: string, newPassword: string): Promise<void> {
+    // TODO: add tests for password change validation
     const user = await this.userRepository.findById(id);
 
     if (!user) {

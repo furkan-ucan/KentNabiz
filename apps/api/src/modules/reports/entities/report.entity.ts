@@ -17,16 +17,18 @@ import { DepartmentHistory } from './department-history.entity';
 import { ReportCategory } from './report-category.entity';
 import { MunicipalityDepartment, ReportStatus, ReportType } from '../interfaces/report.interface';
 
+// TODO: model/entity instantiation and relation validation
+
 @Entity('reports')
 export class Report {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: 'varchar', length: 100 })
-  title: string;
+  title!: string;
 
   @Column({ type: 'text' })
-  description: string;
+  description!: string;
 
   @Column({
     type: 'geography',
@@ -34,85 +36,88 @@ export class Report {
     srid: 4326,
   })
   @Index({ spatial: true })
-  location: Point;
+  location!: Point;
+  // TODO: add tests for geospatial data validation
 
   @Column({ type: 'varchar', length: 255 })
-  address: string;
+  address!: string;
 
   @Column({
     type: 'enum',
     enum: ReportType,
     default: ReportType.OTHER,
   })
-  type: ReportType;
+  type!: ReportType;
 
   // Yeni kategori ilişkisi
   @Column({ name: 'category_id', nullable: true })
-  categoryId: number;
+  categoryId!: number;
 
   @ManyToOne(() => ReportCategory)
   @JoinColumn({ name: 'category_id' })
-  category: ReportCategory;
+  category!: ReportCategory;
+  // TODO: add tests for category relationships
 
   @Column({
     type: 'enum',
     enum: ReportStatus,
     default: ReportStatus.REPORTED,
   })
-  status: ReportStatus;
+  status!: ReportStatus;
 
   @Column({
     type: 'enum',
     enum: MunicipalityDepartment,
     default: MunicipalityDepartment.GENERAL,
   })
-  department: MunicipalityDepartment;
+  department!: MunicipalityDepartment;
 
   @ManyToOne(() => Department, (department) => department.reports)
   @JoinColumn({ name: 'department_id' })
-  departmentEntity: Department;
+  departmentEntity!: Department;
 
   @Column({ name: 'department_id', nullable: true })
-  departmentId: number;
+  departmentId!: number;
 
   @Column({ nullable: true })
-  departmentChangeReason: string;
+  departmentChangeReason!: string;
 
   @Column({ nullable: true })
-  departmentChangedBy: number;
+  departmentChangedBy!: number;
 
   @Column({ type: 'timestamp', nullable: true })
-  departmentChangedAt: Date;
+  departmentChangedAt!: Date;
 
   @Column({ name: 'user_id' })
-  userId: number;
+  userId!: number;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user!: User;
+  // TODO: add tests for user relationship cascade operations
 
   @Column({ nullable: true })
-  adminId: number;
+  adminId!: number;
 
   @ManyToOne(() => User, { nullable: true })
-  admin: User;
+  admin!: User;
 
   @OneToMany(() => ReportMedia, (media) => media.report, {
     cascade: true,
   })
-  reportMedias: ReportMedia[];
+  reportMedias!: ReportMedia[];
 
   @OneToMany(() => DepartmentHistory, (history) => history.report, {
     cascade: true,
   })
-  departmentHistory: DepartmentHistory[];
+  departmentHistory!: DepartmentHistory[];
 
   @Column({ nullable: true })
-  previousDepartment: string;
+  previousDepartment!: string;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

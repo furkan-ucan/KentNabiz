@@ -13,13 +13,13 @@ import { Report } from './report.entity';
 @Entity('report_categories')
 export class ReportCategory {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: 'varchar', length: 100 })
-  name: string;
+  name!: string;
 
   @Column({ type: 'varchar', length: 50, unique: true })
-  code: string;
+  code!: string;
 
   @Column({ type: 'text', nullable: true })
   description?: string;
@@ -38,17 +38,17 @@ export class ReportCategory {
   children?: ReportCategory[];
 
   @OneToMany(() => Report, (report) => report.category)
-  reports: Report[];
+  reports!: Report[];
 
   @Column({ type: 'boolean', default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @Column({ type: 'integer', default: 0 })
-  sortOrder: number;
+  sortOrder!: number;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

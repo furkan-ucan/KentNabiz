@@ -12,33 +12,33 @@ import { MunicipalityDepartment, ReportType } from '../interfaces/report.interfa
 @Entity('departments')
 export class Department {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({
     type: 'enum',
     enum: MunicipalityDepartment,
     unique: true,
   })
-  code: MunicipalityDepartment;
+  code!: MunicipalityDepartment;
 
   @Column({ type: 'varchar', length: 100 })
-  name: string;
+  name!: string;
 
   @Column({ type: 'text', nullable: true })
-  description: string;
+  description!: string;
 
   @Column({ type: 'boolean', default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
-  @Column({ type: 'json', nullable: true })
-  responsibleReportTypes: ReportType[];
+  @Column({ type: 'jsonb', nullable: true })
+  responsibleReportTypes!: ReportType[];
 
   @OneToMany(() => Report, (report) => report.departmentEntity)
-  reports: Report[];
+  reports!: Report[];
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

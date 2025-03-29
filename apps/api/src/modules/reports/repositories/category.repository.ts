@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { ReportCategory } from '../entities/report-category.entity';
 
+// TODO: add unit tests for category repository methods - coverage: 22.72%
+
 @Injectable()
 export class CategoryRepository {
   constructor(
@@ -27,6 +29,7 @@ export class CategoryRepository {
   }
 
   async findMainCategories(): Promise<ReportCategory[]> {
+    // TODO: add tests for hierarchy queries
     return this.repository.find({
       where: { parentId: IsNull(), isActive: true },
       order: { sortOrder: 'ASC', name: 'ASC' },
@@ -34,6 +37,7 @@ export class CategoryRepository {
   }
 
   async findSubCategories(parentId: number): Promise<ReportCategory[]> {
+    // TODO: add tests for subcategory filtering
     return this.repository.find({
       where: { parentId, isActive: true },
       order: { sortOrder: 'ASC', name: 'ASC' },
@@ -56,6 +60,7 @@ export class CategoryRepository {
   }
 
   async getHierarchicalCategories(): Promise<ReportCategory[]> {
+    // TODO: add tests for hierarchical data fetching
     // Önce tüm ana kategorileri alalım
     const mainCategories = await this.findMainCategories();
 

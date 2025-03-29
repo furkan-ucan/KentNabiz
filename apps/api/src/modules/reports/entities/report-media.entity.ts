@@ -12,26 +12,26 @@ import { Report } from './report.entity';
 @Entity('report_medias')
 export class ReportMedia {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ name: 'report_id' })
-  reportId: number;
+  reportId!: number;
 
   @ManyToOne(() => Report, (report) => report.reportMedias, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'report_id' })
-  report: Report;
+  report!: Report;
 
   @Column({ type: 'varchar', length: 255 })
-  url: string;
+  url!: string;
 
   @Column({ type: 'varchar', length: 50 })
-  type: string;
+  type!: string;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

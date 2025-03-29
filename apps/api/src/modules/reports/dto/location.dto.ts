@@ -2,6 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 
+// TODO: basic validation tests for DTOs (optional)
+
 export class LocationDto {
   @ApiProperty({
     description: 'Latitude coordinate',
@@ -13,7 +15,7 @@ export class LocationDto {
   @Min(-90)
   @Max(90)
   @Type(() => Number)
-  latitude: number;
+  latitude!: number;
 
   @ApiProperty({
     description: 'Longitude coordinate',
@@ -25,7 +27,7 @@ export class LocationDto {
   @Min(-180)
   @Max(180)
   @Type(() => Number)
-  longitude: number;
+  longitude!: number;
 }
 
 export class RadiusSearchDto extends LocationDto {
@@ -39,5 +41,5 @@ export class RadiusSearchDto extends LocationDto {
   @Min(10)
   @Max(50000)
   @Type(() => Number)
-  radius: number;
+  radius!: number;
 }

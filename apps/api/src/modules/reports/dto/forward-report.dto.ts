@@ -9,14 +9,14 @@ export class ForwardReportDto {
     example: MunicipalityDepartment.ROADS,
   })
   @IsEnum(MunicipalityDepartment)
-  newDepartment: MunicipalityDepartment;
+  newDepartment!: MunicipalityDepartment;
 
   @ApiProperty({
     description: 'Rapor yönlendirme nedeni',
     example: 'Bu konu yollar ve altyapı birimimizin sorumluluk alanına giriyor.',
   })
   @IsString()
-  reason: string;
+  reason!: string;
 
   @ApiProperty({
     description: 'Yönlendirmeyi yapan departman kodu',

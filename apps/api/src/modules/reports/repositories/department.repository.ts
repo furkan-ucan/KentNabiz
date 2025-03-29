@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { Department } from '../entities/department.entity';
 import { MunicipalityDepartment, ReportType } from '../interfaces/report.interface';
 
+// TODO: add unit tests for department repository methods - coverage: 27.77%
+
 @Injectable()
 export class DepartmentRepository {
   constructor(
@@ -24,6 +26,7 @@ export class DepartmentRepository {
   }
 
   async findByReportType(reportType: ReportType): Promise<Department[]> {
+    // TODO: add tests for custom queryBuilder methods
     return this.departmentRepository
       .createQueryBuilder('department')
       .where(':reportType = ANY(department.responsibleReportTypes)', { reportType })

@@ -20,13 +20,13 @@ export class CategoryDto {
   @ApiProperty({ description: 'Kategori adı', example: 'Ulaşım İhbar' })
   @IsString()
   @Length(2, 100)
-  name: string;
+  name!: string;
 
   @ApiProperty({ description: 'Kategori kodu (benzersiz)', example: 'TRANSPORT' })
   @IsString()
   @Length(2, 50)
   @Matches(/^[A-Z0-9_]+$/, { message: 'Kod sadece büyük harf, rakam ve alt çizgi içerebilir' })
-  code: string;
+  code!: string;
 
   @ApiPropertyOptional({
     description: 'Kategori açıklaması',
@@ -63,18 +63,18 @@ export class UpdateCategoryDto extends PartialType(OmitType(CategoryDto, ['code'
 
 export class CategoryResponseDto extends CategoryDto {
   @ApiProperty({ description: 'Kategori ID', example: 1 })
-  id: number;
+  id!: number;
 }
 
 export class CategoryChildDto {
   @ApiProperty({ description: 'Kategori ID', example: 5 })
-  id: number;
+  id!: number;
 
   @ApiProperty({ description: 'Kategori adı', example: 'Otobüs' })
-  name: string;
+  name!: string;
 
   @ApiProperty({ description: 'Kategori kodu', example: 'TRANSPORT_BUS' })
-  code: string;
+  code!: string;
 
   @ApiPropertyOptional({ description: 'Kategori açıklaması' })
   description?: string;
@@ -88,13 +88,13 @@ export class CategoryChildDto {
 
 export class CategoryTreeDto {
   @ApiProperty({ description: 'Kategori ID', example: 1 })
-  id: number;
+  id!: number;
 
   @ApiProperty({ description: 'Kategori adı', example: 'Ulaşım İhbar' })
-  name: string;
+  name!: string;
 
   @ApiProperty({ description: 'Kategori kodu', example: 'TRANSPORT' })
-  code: string;
+  code!: string;
 
   @ApiPropertyOptional({ description: 'Kategori açıklaması' })
   description?: string;
@@ -106,7 +106,7 @@ export class CategoryTreeDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CategoryChildDto)
-  children: CategoryChildDto[];
+  children!: CategoryChildDto[];
 }
 
 // Birim değişikliği takibi için yeni DTO
@@ -118,7 +118,7 @@ export class DepartmentChangeDto {
   })
   @IsEnum(MunicipalityDepartment)
   @IsNotEmpty()
-  newDepartment: MunicipalityDepartment;
+  newDepartment!: MunicipalityDepartment;
 
   @ApiProperty({
     description: 'Birim değişiklik nedeni',
@@ -126,40 +126,40 @@ export class DepartmentChangeDto {
   })
   @IsString()
   @IsNotEmpty()
-  reason: string;
+  reason!: string;
 }
 
 // Departman değişiklik geçmişi yanıt DTO
 export class DepartmentHistoryResponseDto {
   @ApiProperty({ description: 'Geçmiş kaydı ID', example: 1 })
-  id: number;
+  id!: number;
 
   @ApiProperty({ description: 'Rapor ID', example: 123 })
-  reportId: number;
+  reportId!: number;
 
   @ApiProperty({
     description: 'Eski birim',
     enum: MunicipalityDepartment,
     example: MunicipalityDepartment.INFRASTRUCTURE,
   })
-  oldDepartment: MunicipalityDepartment;
+  oldDepartment!: MunicipalityDepartment;
 
   @ApiProperty({
     description: 'Yeni birim',
     enum: MunicipalityDepartment,
     example: MunicipalityDepartment.ROADS,
   })
-  newDepartment: MunicipalityDepartment;
+  newDepartment!: MunicipalityDepartment;
 
   @ApiProperty({
     description: 'Değişiklik nedeni',
     example: 'Bu sorun altyapı değil, yol problemidir.',
   })
-  reason: string;
+  reason!: string;
 
   @ApiProperty({ description: 'Değişikliği yapan kullanıcı ID', example: 42 })
-  changedByUserId: number;
+  changedByUserId!: number;
 
   @ApiProperty({ description: 'Değişiklik tarihi', example: '2025-03-29T12:00:00Z' })
-  createdAt: Date;
+  createdAt!: Date;
 }

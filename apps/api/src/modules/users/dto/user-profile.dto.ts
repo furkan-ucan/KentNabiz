@@ -3,13 +3,13 @@ import { User, UserRole } from '../entities/user.entity';
 
 export class UserProfileDto {
   @ApiProperty({ example: 1, description: 'User ID' })
-  id: number;
+  id!: number;
 
   @ApiProperty({ example: 'john.doe@example.com', description: 'Email address' })
-  email: string;
+  email!: string;
 
   @ApiProperty({ example: 'John Doe', description: 'Full name' })
-  fullName: string;
+  fullName!: string;
 
   @ApiPropertyOptional({ example: '+905551234567', description: 'Phone number' })
   phoneNumber?: string;
@@ -23,19 +23,19 @@ export class UserProfileDto {
     example: [UserRole.USER],
     description: 'User roles',
   })
-  roles: UserRole[];
+  roles!: UserRole[];
 
   @ApiProperty({ example: true, description: 'Email verification status' })
-  isEmailVerified: boolean;
+  isEmailVerified!: boolean;
 
   @ApiPropertyOptional({ description: 'Last login timestamp' })
   lastLoginAt?: Date;
 
   @ApiProperty({ description: 'Account creation date' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty({ description: 'Account last update date' })
-  updatedAt: Date;
+  updatedAt!: Date;
 
   constructor(partial: Partial<User>) {
     Object.assign(this, partial);

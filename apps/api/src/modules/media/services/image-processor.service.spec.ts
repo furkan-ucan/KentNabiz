@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ImageProcessorService } from './image-processor.service';
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 import type { Sharp } from 'sharp';
 
 // Mock tipi: Partial<Sharp> ile gerçek Sharp instance'ının gereksinimlerini kısmen karşılıyoruz

@@ -12,6 +12,8 @@ import {
   UpdateReportData,
 } from '../interfaces/report.interface';
 
+// TODO: add unit tests for custom repository methods - coverage: 9.67%
+
 // Type-safe interfaces for report data operations
 interface CreateReportData {
   title: string;
@@ -31,8 +33,6 @@ export class ReportRepository {
   constructor(
     @InjectRepository(Report)
     private reportRepository: Repository<Report>,
-    @InjectRepository(ReportMedia)
-    private reportMediaRepository: Repository<ReportMedia>,
     private dataSource: DataSource,
   ) {}
 
@@ -43,6 +43,7 @@ export class ReportRepository {
     type?: ReportType;
     status?: ReportStatus;
   }): Promise<ISpatialQueryResult> {
+    // TODO: add tests for pagination and filtering logic
     const limit = options?.limit || 10;
     const page = options?.page || 1;
     const skip = (page - 1) * limit;
@@ -94,6 +95,7 @@ export class ReportRepository {
       status?: ReportStatus;
     },
   ): Promise<ISpatialQueryResult> {
+    // TODO: add tests for spatial queries
     const limit = options?.limit || 10;
     const page = options?.page || 1;
     const skip = (page - 1) * limit;
@@ -148,6 +150,7 @@ export class ReportRepository {
    * Creates a new report with transactions for media handling
    */
   async create(data: CreateReportData, userId: number): Promise<Report> {
+    // TODO: add tests for transaction handling
     // Start a transaction
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -205,6 +208,7 @@ export class ReportRepository {
    * Updates a report with transactions for media handling
    */
   async update(id: number, updateData: UpdateReportData): Promise<Report | null> {
+    // TODO: add tests for update with media handling
     // Start a transaction
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -260,6 +264,7 @@ export class ReportRepository {
   }
 
   async findByOptions(options: IReportFindOptions): Promise<Report[]> {
+    // TODO: add tests for complex filtering options
     const queryBuilder = this.reportRepository
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.reportMedias', 'media');
