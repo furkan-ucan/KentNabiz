@@ -7,9 +7,10 @@ import {
   ValidateNested,
   IsOptional,
   IsArray,
+  IsNumber,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ReportType } from '../interfaces/report.interface';
+import { MunicipalityDepartment, ReportType } from '../interfaces/report.interface';
 import { LocationDto } from './location.dto';
 
 export class CreateReportMediaDto {
@@ -68,12 +69,31 @@ export class CreateReportDto {
   address: string;
 
   @ApiProperty({
-    description: 'Type of the report',
+    description: 'Type of the report (eski kategori sistemi)',
     enum: ReportType,
     example: ReportType.POTHOLE,
   })
   @IsEnum(ReportType)
   type: ReportType;
+
+  @ApiProperty({
+    description: 'Kategori ID (yeni kategori sistemi)',
+    example: 12,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  categoryId?: number;
+
+  @ApiProperty({
+    description: 'Municipal department responsible for the issue',
+    enum: MunicipalityDepartment,
+    example: MunicipalityDepartment.ROADS,
+    required: false,
+  })
+  @IsEnum(MunicipalityDepartment)
+  @IsOptional()
+  department?: MunicipalityDepartment;
 
   @ApiProperty({
     description: 'Media files related to the report',

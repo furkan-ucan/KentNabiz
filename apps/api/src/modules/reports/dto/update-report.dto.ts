@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, MaxLength, IsEnum, ValidateNested, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ReportType, ReportStatus } from '../interfaces/report.interface';
+import { MunicipalityDepartment, ReportType, ReportStatus } from '../interfaces/report.interface';
 import { LocationDto } from './location.dto';
 import { CreateReportMediaDto } from './create-report.dto';
 
@@ -58,6 +58,24 @@ export class UpdateReportDto {
   @IsEnum(ReportStatus)
   @IsOptional()
   status?: ReportStatus;
+
+  @ApiPropertyOptional({
+    description: 'Municipality department responsible for the issue',
+    enum: MunicipalityDepartment,
+    example: MunicipalityDepartment.ROADS,
+  })
+  @IsEnum(MunicipalityDepartment)
+  @IsOptional()
+  department?: MunicipalityDepartment;
+
+  @ApiPropertyOptional({
+    description: 'Reason for changing the department (if applicable)',
+    example: 'This is a water supply issue, not a road maintenance problem',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  departmentChangeReason?: string;
 
   @ApiPropertyOptional({
     description: 'Media files related to the report',

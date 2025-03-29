@@ -9,6 +9,7 @@ import {
   ISpatialQueryResult,
   ReportStatus,
   ReportType,
+  UpdateReportData,
 } from '../interfaces/report.interface';
 
 // Type-safe interfaces for report data operations
@@ -18,19 +19,6 @@ interface CreateReportData {
   location: Point;
   address: string;
   type: ReportType;
-  status?: ReportStatus;
-  reportMedias?: Array<{
-    url: string;
-    type: string;
-  }>;
-}
-
-interface UpdateReportData {
-  title?: string;
-  description?: string;
-  location?: Point;
-  address?: string;
-  type?: ReportType;
   status?: ReportStatus;
   reportMedias?: Array<{
     url: string;
@@ -170,7 +158,6 @@ export class ReportRepository {
       const newReport = queryRunner.manager.create(Report, {
         title: data.title,
         description: data.description,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         location: data.location, // TypeORM handles Point objects correctly
         address: data.address,
         type: data.type,
@@ -217,7 +204,7 @@ export class ReportRepository {
   /**
    * Updates a report with transactions for media handling
    */
-  async update(id: number, data: UpdateReportData): Promise<Report | null> {
+  async update(id: number, updateData: UpdateReportData): Promise<Report | null> {
     // Start a transaction
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -229,19 +216,19 @@ export class ReportRepository {
         return null;
       }
 
-      // Create a new object without reportMedias
-      const { reportMedias: mediaFiles, ...updateData } = data;
+      // Tip güvenli bir şekilde reportMedias özelliğini ayırın
+      const { reportMedias, ...reportUpdateData } = updateData;
 
       // Update the report
-      await queryRunner.manager.update(Report, id, updateData);
+      await queryRunner.manager.update(Report, id, reportUpdateData);
 
       // Handle media updates if provided
-      if (mediaFiles && mediaFiles.length > 0) {
+      if (reportMedias && reportMedias.length > 0) {
         // Delete existing media
         await queryRunner.manager.delete(ReportMedia, { reportId: id });
 
         // Create new media entities
-        const reportMediaEntities = mediaFiles.map((media) =>
+        const reportMediaEntities = reportMedias.map((media) =>
           queryRunner.manager.create(ReportMedia, {
             reportId: id,
             url: media.url,

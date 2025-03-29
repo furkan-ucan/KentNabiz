@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReportsService } from './reports.service';
 import { LocationService } from './location.service';
+import { DepartmentService } from './department.service';
 import { ReportRepository } from '../repositories/report.repository';
 import { DataSource } from 'typeorm';
 import { NotFoundException, UnauthorizedException, BadRequestException } from '@nestjs/common';
-import { ReportStatus, ReportType } from '../interfaces/report.interface';
+import { ReportStatus, ReportType, MunicipalityDepartment } from '../interfaces/report.interface';
 import { CreateReportDto } from '../dto/create-report.dto';
 import { UpdateReportDto } from '../dto/update-report.dto';
 import { LocationDto } from '../dto/location.dto';
@@ -23,10 +24,32 @@ describe('ReportsService', () => {
     address: 'Test Address',
     type: ReportType.POTHOLE,
     status: ReportStatus.REPORTED,
+    department: MunicipalityDepartment.GENERAL,
     userId: 1,
     reportMedias: [],
     createdAt: new Date(),
     updatedAt: new Date(),
+  };
+
+  const mockDepartment = {
+    id: 1,
+    code: MunicipalityDepartment.ROADS,
+    name: 'Yollar ve Altyapı Birimi',
+    description: 'Yol ve altyapı sorunlarından sorumlu birim',
+    isActive: true,
+    responsibleReportTypes: [ReportType.POTHOLE, ReportType.ROAD_DAMAGE],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const mockDepartmentHistory = {
+    id: 1,
+    reportId: 1,
+    oldDepartment: MunicipalityDepartment.GENERAL,
+    newDepartment: MunicipalityDepartment.ROADS,
+    reason: 'Yetki alanı değişikliği',
+    changedByUserId: 2,
+    createdAt: new Date(),
   };
 
   const mockReportRepository = {
@@ -45,6 +68,16 @@ describe('ReportsService', () => {
     calculateDistance: jest.fn(),
     extractCoordinates: jest.fn(),
     getBoundingBox: jest.fn(),
+  };
+
+  const mockDepartmentService = {
+    findAll: jest.fn(),
+    findById: jest.fn(),
+    findByCode: jest.fn(),
+    findDepartmentForReportType: jest.fn(),
+    suggestDepartmentForReport: jest.fn(),
+    forwardReport: jest.fn(),
+    getReportDepartmentHistory: jest.fn(),
   };
 
   const mockDataSource = {
@@ -74,6 +107,10 @@ describe('ReportsService', () => {
         {
           provide: LocationService,
           useValue: mockLocationService,
+        },
+        {
+          provide: DepartmentService,
+          useValue: mockDepartmentService,
         },
         {
           provide: DataSource,
@@ -145,20 +182,99 @@ describe('ReportsService', () => {
       // Use the location service mock to create a GeoJSON point
       mockLocationService.createPointFromDto.mockReturnValue(geoJSONPoint);
 
+      // Burada mockDepartmentService.suggestDepartmentForReport'u ayarlamamız gerekiyor
+      mockDepartmentService.suggestDepartmentForReport.mockResolvedValue(mockDepartment);
+
       mockReportRepository.create.mockResolvedValue(mockReport);
 
       const result = await service.create(createReportDto, 1);
 
       expect(result).toEqual(mockReport);
       expect(mockReportRepository.create).toHaveBeenCalledWith(
-        {
+        expect.objectContaining({
           title: 'New Report',
           description: 'New Description',
           location: geoJSONPoint,
           address: 'New Address',
           type: ReportType.POTHOLE,
           reportMedias: [],
-        },
+          department: MunicipalityDepartment.ROADS,
+          categoryId: undefined,
+        }),
+        1,
+      );
+    });
+  });
+
+  describe('create with department', () => {
+    it('should create a report with suggested department when not provided', async () => {
+      const createReportDto: CreateReportDto = {
+        title: 'New Report',
+        description: 'New Description',
+        location: new LocationDto(),
+        address: 'New Address',
+        type: ReportType.POTHOLE,
+        reportMedias: [],
+      };
+      createReportDto.location.latitude = 41.0082;
+      createReportDto.location.longitude = 28.9784;
+
+      const geoJSONPoint = {
+        type: 'Point',
+        coordinates: [28.9784, 41.0082],
+      };
+
+      mockLocationService.createPointFromDto.mockReturnValue(geoJSONPoint);
+      mockDepartmentService.suggestDepartmentForReport.mockResolvedValue(mockDepartment);
+      mockReportRepository.create.mockResolvedValue({
+        ...mockReport,
+        department: MunicipalityDepartment.ROADS,
+      });
+
+      const result = await service.create(createReportDto, 1);
+
+      expect(result.department).toEqual(MunicipalityDepartment.ROADS);
+      expect(mockDepartmentService.suggestDepartmentForReport).toHaveBeenCalledWith(
+        ReportType.POTHOLE,
+      );
+      expect(mockReportRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          department: MunicipalityDepartment.ROADS,
+        }),
+        1,
+      );
+    });
+
+    it('should use GENERAL department if suggestion fails', async () => {
+      const createReportDto: CreateReportDto = {
+        title: 'New Report',
+        description: 'New Description',
+        location: new LocationDto(),
+        address: 'New Address',
+        type: ReportType.POTHOLE,
+        reportMedias: [],
+      };
+      createReportDto.location.latitude = 41.0082;
+      createReportDto.location.longitude = 28.9784;
+
+      const geoJSONPoint = {
+        type: 'Point',
+        coordinates: [28.9784, 41.0082],
+      };
+
+      mockLocationService.createPointFromDto.mockReturnValue(geoJSONPoint);
+      mockDepartmentService.suggestDepartmentForReport.mockRejectedValue(
+        new Error('Service unavailable'),
+      );
+      mockReportRepository.create.mockResolvedValue(mockReport);
+
+      const result = await service.create(createReportDto, 1);
+
+      expect(result.department).toEqual(MunicipalityDepartment.GENERAL);
+      expect(mockReportRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          department: MunicipalityDepartment.GENERAL,
+        }),
         1,
       );
     });
@@ -283,6 +399,97 @@ describe('ReportsService', () => {
         limit: 10,
         userId: 1,
       });
+    });
+  });
+
+  describe('changeDepartment', () => {
+    it('should change a report department', async () => {
+      const updatedReport = {
+        ...mockReport,
+        department: MunicipalityDepartment.ROADS,
+        previousDepartment: MunicipalityDepartment.GENERAL,
+      };
+
+      // Her test başlangıcında mockları resetle
+      jest.clearAllMocks();
+
+      // Mock sırayı ayarla - önemli: mockResolvedValueOnce kullanımı
+      mockReportRepository.findById
+        // İlk çağrıda GENERAL departmanı olan raporu döndür
+        .mockResolvedValueOnce({
+          ...mockReport,
+          department: MunicipalityDepartment.GENERAL,
+        })
+        // İkinci çağrıda güncellenmiş raporu döndür (findOne metodu tarafından çağrılıyor)
+        .mockResolvedValueOnce(updatedReport);
+
+      mockDepartmentService.forwardReport.mockResolvedValue(updatedReport);
+
+      const result = await service.changeDepartment(
+        1,
+        MunicipalityDepartment.ROADS,
+        'Bu bir yol sorunu',
+      );
+
+      expect(result.department).toEqual(MunicipalityDepartment.ROADS);
+      expect(result.previousDepartment).toEqual(MunicipalityDepartment.GENERAL);
+      expect(mockDepartmentService.forwardReport).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({
+          newDepartment: MunicipalityDepartment.ROADS,
+          reason: 'Bu bir yol sorunu',
+          changedByDepartment: MunicipalityDepartment.GENERAL,
+        }),
+      );
+    });
+
+    it('should throw BadRequestException if reporting to same department', async () => {
+      // Mevcut departmanı ROADS olarak ayarla (burada hata olmalı zaten)
+      mockReportRepository.findById.mockResolvedValue({
+        ...mockReport,
+        department: MunicipalityDepartment.ROADS,
+      });
+
+      // Her çağrı öncesinde mockları temizle (reset)
+      jest.clearAllMocks();
+
+      await expect(
+        service.changeDepartment(1, MunicipalityDepartment.ROADS, 'Zaten bu birimde'),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockDepartmentService.forwardReport).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getDepartmentHistory', () => {
+    it('should get department history for a report', async () => {
+      mockReportRepository.findById.mockResolvedValue(mockReport);
+      mockDepartmentService.getReportDepartmentHistory.mockResolvedValue([mockDepartmentHistory]);
+
+      const result = await service.getDepartmentHistory(1);
+
+      expect(result).toEqual([mockDepartmentHistory]);
+      expect(mockReportRepository.findById).toHaveBeenCalledWith(1);
+      expect(mockDepartmentService.getReportDepartmentHistory).toHaveBeenCalledWith(1);
+    });
+
+    it('should throw NotFoundException when report does not exist', async () => {
+      mockReportRepository.findById.mockResolvedValue(null);
+
+      await expect(service.getDepartmentHistory(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('suggestDepartmentForReportType', () => {
+    it('should suggest department for a report type', async () => {
+      mockDepartmentService.suggestDepartmentForReport.mockResolvedValue(mockDepartment);
+
+      const result = await service.suggestDepartmentForReportType(ReportType.POTHOLE);
+
+      expect(result).toEqual(MunicipalityDepartment.ROADS);
+      expect(mockDepartmentService.suggestDepartmentForReport).toHaveBeenCalledWith(
+        ReportType.POTHOLE,
+      );
     });
   });
 });

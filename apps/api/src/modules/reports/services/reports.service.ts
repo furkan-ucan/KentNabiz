@@ -6,19 +6,25 @@ import {
 } from '@nestjs/common';
 import { ReportRepository } from '../repositories/report.repository';
 import { LocationService } from './location.service';
+import { DepartmentService } from './department.service';
 import { CreateReportDto } from '../dto/create-report.dto';
 import { UpdateReportDto } from '../dto/update-report.dto';
 import { RadiusSearchDto } from '../dto/location.dto';
 import { Report } from '../entities/report.entity';
-import { ISpatialQueryResult, ReportStatus, ReportType } from '../interfaces/report.interface';
-import { DataSource } from 'typeorm';
+import { DepartmentHistory } from '../entities/department-history.entity';
+import {
+  ISpatialQueryResult,
+  ReportStatus,
+  ReportType,
+  MunicipalityDepartment,
+} from '../interfaces/report.interface';
 
 @Injectable()
 export class ReportsService {
   constructor(
     private readonly reportRepository: ReportRepository,
     private readonly locationService: LocationService,
-    private readonly dataSource: DataSource,
+    private readonly departmentService: DepartmentService,
   ) {}
 
   async findAll(options?: {
@@ -27,6 +33,7 @@ export class ReportsService {
     userId?: number;
     type?: ReportType;
     status?: ReportStatus;
+    department?: MunicipalityDepartment;
   }): Promise<ISpatialQueryResult> {
     return this.reportRepository.findAll(options);
   }
@@ -43,12 +50,27 @@ export class ReportsService {
 
   async create(createReportDto: CreateReportDto, userId: number): Promise<Report> {
     // Using LocationService for better type safety
-    const { location, ...reportData } = createReportDto;
+    const { location, type, categoryId, ...reportData } = createReportDto;
     const point = this.locationService.createPointFromDto(location);
+
+    // Determine the appropriate department for the report type if not provided
+    let department = createReportDto.department;
+    if (!department) {
+      try {
+        const suggestedDepartment = await this.departmentService.suggestDepartmentForReport(type);
+        department = suggestedDepartment.code;
+      } catch {
+        // If department suggestion fails, use GENERAL as fallback
+        department = MunicipalityDepartment.GENERAL;
+      }
+    }
 
     // Type-safe approach with complete object
     const reportToCreate = {
       ...reportData,
+      type,
+      categoryId, // Yeni kategori ID'si eklendi
+      department,
       location: point,
     };
 
@@ -114,6 +136,7 @@ export class ReportsService {
       page?: number;
       type?: ReportType;
       status?: ReportStatus;
+      department?: MunicipalityDepartment;
     },
   ): Promise<ISpatialQueryResult> {
     const { latitude, longitude, radius } = searchDto;
@@ -124,28 +147,48 @@ export class ReportsService {
   async updateStatus(id: number, status: ReportStatus, userId: number): Promise<Report> {
     const report = await this.findOne(id);
 
-    // Only allow status updates by the owner of the report
+    // Yetkilendirme kontrolü
+    // Staff ve admin kullanıcıların tüm raporları güncellemesine izin ver, normal kullanıcılar sadece kendi raporlarını güncelleyebilir
     if (report.userId !== userId) {
-      throw new UnauthorizedException('You can only update status of your own reports');
+      throw new UnauthorizedException('Bu raporun durumunu güncelleme yetkiniz yok');
     }
 
-    // Handle validation of status transitions
+    // Durum geçiş validasyonu
     this.validateStatusTransition(report.status, status);
 
-    return this.reportRepository.updateStatus(id, status);
+    // Durum güncellemesi
+    const updatedReport = await this.reportRepository.updateStatus(id, status);
+
+    // Eğer RESOLVED durumuna geçiyorsa, tarih ekle
+    if (status === ReportStatus.RESOLVED && report.status !== ReportStatus.RESOLVED) {
+      // Bu kısmı repository üzerinden güncelliyoruz
+      await this.reportRepository.update(id, {
+        resolvedAt: new Date(),
+      });
+    }
+
+    return updatedReport;
   }
 
   private validateStatusTransition(currentStatus: ReportStatus, newStatus: ReportStatus): void {
-    // Implement business rules for status transitions
-    if (currentStatus === ReportStatus.RESOLVED) {
-      throw new BadRequestException('Cannot change status of a resolved report');
-    }
+    // İzin verilen durum geçişleri
+    const allowedTransitions: Record<ReportStatus, ReportStatus[]> = {
+      [ReportStatus.REPORTED]: [ReportStatus.IN_PROGRESS, ReportStatus.REJECTED],
+      [ReportStatus.IN_PROGRESS]: [
+        ReportStatus.RESOLVED,
+        ReportStatus.REJECTED,
+        ReportStatus.REPORTED,
+      ],
+      [ReportStatus.REJECTED]: [ReportStatus.REPORTED],
+      [ReportStatus.RESOLVED]: [], // Çözülmüş raporların durumu değiştirilemez
+      [ReportStatus.DEPARTMENT_CHANGED]: [ReportStatus.IN_PROGRESS, ReportStatus.REPORTED], // Departman değiştiğinde geçerli durumlar
+    };
 
-    if (currentStatus === ReportStatus.REJECTED && newStatus !== ReportStatus.REPORTED) {
-      throw new BadRequestException('Rejected reports can only be reopened as reported');
+    if (!allowedTransitions[currentStatus]?.includes(newStatus)) {
+      throw new BadRequestException(
+        `${currentStatus} durumundan ${newStatus} durumuna geçiş yapılamaz.`,
+      );
     }
-
-    // Add more business rules as needed
   }
 
   async getReportsByUser(
@@ -155,11 +198,68 @@ export class ReportsService {
       page?: number;
       type?: ReportType;
       status?: ReportStatus;
+      department?: MunicipalityDepartment;
     },
   ): Promise<ISpatialQueryResult> {
     return this.reportRepository.findAll({
       ...options,
       userId,
     });
+  }
+
+  async changeDepartment(
+    id: number,
+    department: MunicipalityDepartment,
+    reason: string,
+  ): Promise<Report> {
+    const report = await this.findOne(id);
+
+    // Prevent changing to the same department
+    if (report.department === department) {
+      throw new BadRequestException(`Rapor zaten ${department} biriminde`);
+    }
+
+    // Çözülen raporların birimi değiştirilemez
+    if (report.status === ReportStatus.RESOLVED) {
+      throw new BadRequestException('Çözülmüş raporların birimi değiştirilemez');
+    }
+
+    try {
+      // Raporu yönlendiren departmanı bulalım (kullanıcı ID'si yerine şu andaki departmanı kullanıyoruz)
+      const currentDepartment = report.department;
+
+      const updatedReport = await this.departmentService.forwardReport(id, {
+        newDepartment: department,
+        reason: reason,
+        changedByDepartment: currentDepartment,
+      });
+
+      // Otomatik olarak raporu işleme alınıyor olarak işaretle
+      if (updatedReport.status === ReportStatus.REPORTED) {
+        await this.reportRepository.updateStatus(id, ReportStatus.IN_PROGRESS);
+
+        // Son durumu alarak döndür
+        return this.findOne(id);
+      }
+
+      return updatedReport;
+    } catch (error) {
+      // Bu hatayı güncelleme talebini reddederek değil, bir istisna atarak yönetiyoruz
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Birim değişikliği sırasında bir hata oluştu',
+      );
+    }
+  }
+
+  async getDepartmentHistory(reportId: number): Promise<DepartmentHistory[]> {
+    // Önce raporun varlığını kontrol ediyoruz
+    await this.findOne(reportId);
+    // Rapor varsa departman geçmişini getiriyoruz
+    return this.departmentService.getReportDepartmentHistory(reportId);
+  }
+
+  async suggestDepartmentForReportType(type: ReportType): Promise<MunicipalityDepartment> {
+    const department = await this.departmentService.suggestDepartmentForReport(type);
+    return department.code;
   }
 }

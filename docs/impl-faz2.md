@@ -153,7 +153,7 @@ modules/users/
 
 ### Açıklama
 
-Rapor yönetimi ve PostGIS entegrasyonunun implementasyonu.
+Rapor yönetimi, PostGIS entegrasyonu ve birim yönlendirme sisteminin implementasyonu.
 
 ### 🛠 Teknolojiler
 
@@ -169,18 +169,24 @@ modules/reports/
 │   └── reports.controller.ts
 ├── services/
 │   ├── reports.service.ts
-│   └── location.service.ts
+│   ├── location.service.ts
+│   └── department.service.ts
 ├── repositories/
-│   └── report.repository.ts
+│   ├── report.repository.ts
+│   └── department.repository.ts
 ├── entities/
 │   ├── report.entity.ts
-│   └── report-media.entity.ts
+│   ├── report-media.entity.ts
+│   └── department.entity.ts
 ├── dto/
 │   ├── create-report.dto.ts
 │   ├── update-report.dto.ts
-│   └── location.dto.ts
+│   ├── location.dto.ts
+│   ├── department.dto.ts
+│   └── forward-report.dto.ts
 └── interfaces/
-    └── report.interface.ts
+    ├── report.interface.ts
+    └── department.interface.ts
 ```
 
 ### ✅ Kontrol Noktaları
@@ -189,12 +195,33 @@ modules/reports/
 - [ ] PostGIS queries
 - [ ] Spatial indexing
 - [ ] Transaction yönetimi
+- [ ] Birim seçme ve yönlendirme sistemi
+- [ ] Rapor durumu takibi
 
 ### 📌 Onay Gereksinimleri
 
 - PostGIS sorgular optimize
 - Transaction handling doğru
 - API performans testleri başarılı
+- Birim yönlendirme mekanizması çalışıyor
+- Rapor durumu takip edilebiliyor
+
+### 🧪 Test Senaryoları
+
+```
+ReportService
+  ✓ should create a report with correct department assignment
+  ✓ should update report status when forwarded to another department
+  ✓ should track report history across departments
+  ✓ should handle incorrect department assignments gracefully
+  ✓ should validate geographic data before persisting
+
+DepartmentService
+  ✓ should return available departments for report submission
+  ✓ should validate if a department can handle specific report types
+  ✓ should forward reports between departments with proper authorization
+  ✓ should reject invalid department forwarding requests
+```
 
 ## 📌 Adım 2.5: Media Module İmplementasyonu
 
