@@ -3,6 +3,8 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { setupSwagger } from './config/swagger.config';
 import { ConfigService } from '@nestjs/config';
+// Multer tipleri için referans import
+import './modules/media/interfaces/multer-file.interface';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
