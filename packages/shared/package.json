@@ -9,10 +9,12 @@
     "dist"
   ],
   "scripts": {
-    "prebuild": "tsc --emitDeclarationOnly",
-    "build": "tsup src/index.ts --format cjs,esm --sourcemap --no-dts",
+    "prebuild": "rimraf dist *.tsbuildinfo",
+    "build:code": "tsup src/index.ts --format cjs,esm --sourcemap --no-dts",
+    "build:types": "tsc -b --emitDeclarationOnly",
+    "build": "pnpm run build:code && pnpm run build:types",
     "dev": "tsup src/index.ts --format cjs,esm --watch",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist *.tsbuildinfo",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

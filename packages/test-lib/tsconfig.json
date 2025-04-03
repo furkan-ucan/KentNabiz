@@ -3,12 +3,18 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "baseUrl": "./",
-    "incremental": true,
-    "noEmit": false,
+    "baseUrl": ".",
+    "paths": {
+      "@kentnabiz/shared": ["../shared/dist"],
+      "@kentnabiz/shared/*": ["../shared/dist/*"],
+      "@kentnabiz/ui": ["../ui/dist"],
+      "@kentnabiz/ui/*": ["../ui/dist/*"]
+    },
     "composite": true,
-    "declaration": true
+    "declaration": true,
+    "noEmit": false
   },
-  "include": ["src/**/*", "eslint.config.ts", "jest.config.ts"],
-  "exclude": ["node_modules", "dist", "coverage"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "coverage", "*.config.ts"],
+  "references": [{ "path": "../shared" }, { "path": "../ui" }]
 }
