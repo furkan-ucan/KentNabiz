@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { MulterFile } from '../interfaces/multer-file.interface';
 
 export class UploadFileDto {
   @ApiProperty({
@@ -7,7 +8,7 @@ export class UploadFileDto {
     format: 'binary',
     description: 'The file to upload',
   })
-  file!: Express.Multer.File;
+  file!: MulterFile;
 
   @ApiPropertyOptional({
     type: Boolean,
@@ -36,7 +37,7 @@ export class UploadFilesDto {
     },
     description: 'The files to upload',
   })
-  files!: Express.Multer.File[];
+  files!: MulterFile[];
 
   @ApiPropertyOptional({
     type: Boolean,

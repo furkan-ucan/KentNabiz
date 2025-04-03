@@ -4,9 +4,10 @@ import { MediaService } from '../services/media.service';
 import { BadRequestException } from '@nestjs/common';
 import { Media, MediaType } from '../entities/media.entity';
 import { Readable } from 'stream';
+import { MulterFile } from '../interfaces/multer-file.interface';
 
-// Mock dosyası oluşturma yardımcı fonksiyonu
-const createMockFile = (options?: Partial<Express.Multer.File>): Express.Multer.File => {
+// Yardımcı: Mock dosya oluşturma fonksiyonu
+const createMockFile = (options?: Partial<MulterFile>): MulterFile => {
   return {
     fieldname: 'file',
     originalname: 'test-image.jpg',
@@ -17,12 +18,12 @@ const createMockFile = (options?: Partial<Express.Multer.File>): Express.Multer.
     destination: '',
     filename: '',
     path: '',
-    stream: {} as unknown as Readable, // any yerine unknown kullanarak no-unsafe-assignment hatasını giderdik
+    stream: {} as unknown as Readable, // Tip güvenliğini sağlamak için
     ...options,
   };
 };
 
-// MediaService mock
+// MediaService için mock nesnesi
 const mockMediaService = {
   uploadFile: jest.fn(),
   uploadMultipleFiles: jest.fn(),
@@ -35,7 +36,8 @@ const mockMediaService = {
 describe('MediaController', () => {
   let controller: MediaController;
   let mediaService: MediaService;
-  // Spy tanımları
+
+  // Spy tanımlamaları
   let uploadFileSpy: jest.SpyInstance;
   let uploadMultipleFilesSpy: jest.SpyInstance;
   let findAllSpy: jest.SpyInstance;
@@ -57,7 +59,7 @@ describe('MediaController', () => {
     controller = module.get<MediaController>(MediaController);
     mediaService = module.get<MediaService>(MediaService);
 
-    // Spy tanımları - unbound-method hatasını gidermek için
+    // Metodları spy ile sarmala
     uploadFileSpy = jest.spyOn(mediaService, 'uploadFile');
     uploadMultipleFilesSpy = jest.spyOn(mediaService, 'uploadMultipleFiles');
     findAllSpy = jest.spyOn(mediaService, 'findAll');
@@ -65,7 +67,7 @@ describe('MediaController', () => {
     getPresignedUrlSpy = jest.spyOn(mediaService, 'getPresignedUrl');
     removeSpy = jest.spyOn(mediaService, 'remove');
 
-    // Mock değerlerini sıfırla
+    // Test başlamadan önce tüm mock'ları temizle
     jest.clearAllMocks();
   });
 
@@ -82,7 +84,7 @@ describe('MediaController', () => {
       // Mock dosya oluştur
       const mockFile = createMockFile();
 
-      // Mock MediaEntity oluştur
+      // Beklenen MediaEntity örneği
       const mockMediaEntity: Media = {
         id: 1,
         filename: 'timestamp-123456789.jpg',
@@ -97,40 +99,38 @@ describe('MediaController', () => {
         updatedAt: new Date(),
       };
 
-      // mediaService.uploadFile'ın mockMediaEntity döndürmesini sağla
+      // MediaService.uploadFile metodunun mockMediaEntity döndürmesi sağlanıyor
       uploadFileSpy.mockResolvedValue(mockMediaEntity);
 
       // Controller metodunu çağır
       const result = await controller.uploadFile(mockFile, true);
 
-      // Spy kullanarak unbound-method hatasını giderdik
+      // Metodun doğru argümanlarla çağrıldığını doğrula
       expect(uploadFileSpy).toHaveBeenCalledWith(mockFile, true);
-
-      // Sonucun beklenen media entity olduğunu doğrula
+      // Sonuç beklenen media entity ile aynı olmalı
       expect(result).toEqual(mockMediaEntity);
     });
 
     it('should throw BadRequestException when no file is uploaded', async () => {
-      // Tip uyumsuzluğunu gidermek için cast işlemi uyguluyoruz
-      const undefinedFile = undefined as unknown as Express.Multer.File;
+      // Tip uyumsuzluğunu gidermek için tanımsız dosyayı cast ediyoruz
+      const undefinedFile = undefined as unknown as MulterFile;
 
-      // Dosya olmadan çağrı yap
       await expect(controller.uploadFile(undefinedFile, true)).rejects.toThrow(BadRequestException);
 
-      // Spy kullanarak unbound-method hatasını giderdik
+      // uploadFile metodunun çağrılmadığını doğrula
       expect(uploadFileSpy).not.toHaveBeenCalled();
     });
   });
 
   describe('uploadMultipleFiles', () => {
     it('should upload multiple files successfully', async () => {
-      // Mock dosyalar dizisi oluştur
+      // Birden fazla mock dosya oluştur
       const mockFiles = [
         createMockFile({ originalname: 'test-image-1.jpg' }),
         createMockFile({ originalname: 'test-image-2.jpg' }),
       ];
 
-      // Mock MediaEntity dizisi oluştur
+      // Beklenen MediaEntity dizisi
       const mockMediaEntities: Media[] = [
         {
           id: 1,
@@ -160,49 +160,37 @@ describe('MediaController', () => {
         },
       ];
 
-      // uploadMultipleFilesSpy'ın mockMediaEntities döndürmesini sağla
+      // MediaService.uploadMultipleFiles metodunun mockMediaEntities döndürmesi sağlanıyor
       uploadMultipleFilesSpy.mockResolvedValue(mockMediaEntities);
 
       // Controller metodunu çağır
       const result = await controller.uploadMultipleFiles(mockFiles, true);
 
-      // Spy kullanarak unbound-method hatasını giderdik
       expect(uploadMultipleFilesSpy).toHaveBeenCalledWith(mockFiles, true);
-
-      // Sonucun beklenen media entity dizisi olduğunu doğrula
       expect(result).toEqual(mockMediaEntities);
     });
 
     it('should throw BadRequestException when no files are uploaded', async () => {
-      // Boş dosya dizisini doğru tipte belirtiyoruz
-      const emptyFiles: Express.Multer.File[] = [];
+      const emptyFiles: MulterFile[] = [];
 
-      // Boş dosya dizisi ile çağrı yap
       await expect(controller.uploadMultipleFiles(emptyFiles, true)).rejects.toThrow(
         BadRequestException,
       );
-
-      // Spy kullanarak unbound-method hatasını giderdik
       expect(uploadMultipleFilesSpy).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when files is undefined', async () => {
-      // Tip uyumsuzluğunu gidermek için cast işlemi uyguluyoruz
-      const undefinedFiles = undefined as unknown as Express.Multer.File[];
+      const undefinedFiles = undefined as unknown as MulterFile[];
 
-      // Tanımsız dosya dizisi ile çağrı yap
       await expect(controller.uploadMultipleFiles(undefinedFiles, true)).rejects.toThrow(
         BadRequestException,
       );
-
-      // Spy kullanarak unbound-method hatasını giderdik
       expect(uploadMultipleFilesSpy).not.toHaveBeenCalled();
     });
   });
 
   describe('findAll', () => {
     it('should return an array of media entities', async () => {
-      // Mock MediaEntity dizisi oluştur
       const mockMediaEntities: Media[] = [
         {
           id: 1,
@@ -232,23 +220,17 @@ describe('MediaController', () => {
         },
       ];
 
-      // findAllSpy'ın mockMediaEntities döndürmesini sağla
       findAllSpy.mockResolvedValue(mockMediaEntities);
 
-      // Controller metodunu çağır
       const result = await controller.findAll();
 
-      // Spy kullanarak unbound-method hatasını giderdik
       expect(findAllSpy).toHaveBeenCalled();
-
-      // Sonucun beklenen media entity dizisi olduğunu doğrula
       expect(result).toEqual(mockMediaEntities);
     });
   });
 
   describe('findOne', () => {
     it('should return a media entity by ID', async () => {
-      // Mock MediaEntity oluştur
       const mockMediaEntity: Media = {
         id: 1,
         filename: 'test-file.jpg',
@@ -263,16 +245,11 @@ describe('MediaController', () => {
         updatedAt: new Date(),
       };
 
-      // findOneSpy'ın mockMediaEntity döndürmesini sağla
       findOneSpy.mockResolvedValue(mockMediaEntity);
 
-      // Controller metodunu çağır
       const result = await controller.findOne(1);
 
-      // Spy kullanarak unbound-method hatasını giderdik
       expect(findOneSpy).toHaveBeenCalledWith(1);
-
-      // Sonucun beklenen media entity olduğunu doğrula
       expect(result).toEqual(mockMediaEntity);
     });
   });
@@ -281,32 +258,22 @@ describe('MediaController', () => {
     it('should return a presigned URL for a private file', async () => {
       const mockPresignedUrl = 'https://presigned-url.example.com/file.jpg?token=abc123';
 
-      // getPresignedUrlSpy'ın mockPresignedUrl döndürmesini sağla
       getPresignedUrlSpy.mockResolvedValue(mockPresignedUrl);
 
-      // Controller metodunu çağır
       const result = await controller.getPresignedUrl(1, 3600);
 
-      // Spy kullanarak unbound-method hatasını giderdik
       expect(getPresignedUrlSpy).toHaveBeenCalledWith(1, 3600);
-
-      // Sonucun beklenen URL nesnesini içerdiğini doğrula
       expect(result).toEqual({ url: mockPresignedUrl });
     });
   });
 
   describe('remove', () => {
     it('should remove a media file successfully', async () => {
-      // removeSpy'ın başarılı tamamlanmasını sağla
       removeSpy.mockResolvedValue(undefined);
 
-      // Controller metodunu çağır
       const result = await controller.remove(1);
 
-      // Spy kullanarak unbound-method hatasını giderdik
       expect(removeSpy).toHaveBeenCalledWith(1);
-
-      // Sonucun başarı mesajı içerdiğini doğrula
       expect(result).toEqual({ success: true });
     });
   });

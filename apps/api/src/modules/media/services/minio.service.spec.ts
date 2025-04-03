@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { MinioService } from './minio.service';
 import * as Minio from 'minio';
+import { MulterFile } from '../interfaces/multer-file.interface';
 
 // Jest tiplemeleri için tanım
 type JestMockCalls = Array<any[]>;
@@ -128,7 +129,7 @@ describe('MinioService', () => {
         buffer: Buffer.from('test image data'),
         size: 1024,
         mimetype: 'image/jpeg',
-      } as Express.Multer.File;
+      } as MulterFile;
 
       minioClient.putObject.mockResolvedValue(undefined);
 
@@ -157,7 +158,7 @@ describe('MinioService', () => {
         buffer: Buffer.from('test document data'),
         size: 2048,
         mimetype: 'application/pdf',
-      } as Express.Multer.File;
+      } as MulterFile;
 
       minioClient.putObject.mockResolvedValue(undefined);
       minioClient.presignedGetObject.mockResolvedValue('https://presigned-url.example.com');
@@ -180,7 +181,7 @@ describe('MinioService', () => {
         buffer: Buffer.from('test image data'),
         size: 1024,
         mimetype: 'image/jpeg',
-      } as Express.Multer.File;
+      } as MulterFile;
 
       minioClient.putObject.mockRejectedValue(new Error('Upload failed'));
 

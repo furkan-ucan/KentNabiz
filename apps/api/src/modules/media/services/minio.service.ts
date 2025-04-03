@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as Minio from 'minio';
+import { MulterFile } from '../interfaces/multer-file.interface';
 
 @Injectable()
 export class MinioService implements OnModuleInit {
@@ -61,7 +62,7 @@ export class MinioService implements OnModuleInit {
   }
 
   async uploadFile(
-    file: Express.Multer.File,
+    file: MulterFile,
     bucketName: string = this.buckets.public,
     objectName = '',
   ): Promise<string> {

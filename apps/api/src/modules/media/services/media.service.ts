@@ -5,6 +5,7 @@ import { Media, MediaType } from '../entities/media.entity';
 import { MinioService } from './minio.service';
 import { ImageProcessorService } from './image-processor.service';
 import { FileMetadata } from '../interfaces/file-metadata.interface';
+import { MulterFile } from '../interfaces/multer-file.interface';
 
 @Injectable()
 export class MediaService {
@@ -17,11 +18,11 @@ export class MediaService {
     private readonly imageProcessorService: ImageProcessorService,
   ) {}
 
-  async uploadFile(file: Express.Multer.File, isPublic: boolean = true): Promise<Media> {
+  async uploadFile(file: MulterFile, isPublic: boolean = true): Promise<Media> {
     try {
-      // Determine file type
       const type = this.determineFileType(file.mimetype);
       const bucketName = this.minioService.getBucketName(isPublic);
+
       let metadata: FileMetadata = {
         size: file.size,
         mimetype: file.mimetype,
@@ -31,7 +32,6 @@ export class MediaService {
       let processedBuffer = file.buffer;
       let thumbnailUrl = '';
 
-      // If it's an image, process it and generate thumbnail
       if (type === MediaType.IMAGE && this.imageProcessorService.isImage(file.mimetype)) {
         const { buffer, metadata: imageMetadata } = await this.imageProcessorService.processImage(
           file.buffer,
@@ -47,9 +47,9 @@ export class MediaService {
         processedBuffer = buffer;
         metadata = { ...metadata, ...imageMetadata };
 
-        // Generate and upload thumbnail
         const thumbnailBuffer = await this.imageProcessorService.generateThumbnail(file.buffer);
-        const thumbnailName = `thumb_${Date.now()}-${Math.round(Math.random() * 1e9)}.jpg`;
+        const thumbnailName = `thumb_${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
+
         thumbnailUrl = await this.minioService.uploadFile(
           { ...file, buffer: thumbnailBuffer, size: thumbnailBuffer.length },
           bucketName,
@@ -57,15 +57,13 @@ export class MediaService {
         );
       }
 
-      // Upload the file to MinIO
-      const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}.${file.originalname.split('.').pop()}`;
+      const filename = `${Date.now()}-${Math.random().toString(36).substring(2)}.${file.originalname.split('.').pop()}`;
       const url = await this.minioService.uploadFile(
         { ...file, buffer: processedBuffer, size: processedBuffer.length },
         bucketName,
         filename,
       );
 
-      // Create and save media record
       const media = this.mediaRepository.create({
         filename,
         originalname: file.originalname,
@@ -92,35 +90,23 @@ export class MediaService {
     }
   }
 
-  async uploadMultipleFiles(
-    files: Express.Multer.File[],
-    isPublic: boolean = true,
-  ): Promise<Media[]> {
-    const uploadPromises = files.map((file) => this.uploadFile(file, isPublic));
-    return Promise.all(uploadPromises);
+  async uploadMultipleFiles(files: MulterFile[], isPublic: boolean = true): Promise<Media[]> {
+    return Promise.all(files.map((file) => this.uploadFile(file, isPublic)));
   }
 
   async findAll(): Promise<Media[]> {
-    return this.mediaRepository.find({
-      order: { createdAt: 'DESC' },
-    });
+    return this.mediaRepository.find({ order: { createdAt: 'DESC' } });
   }
 
   async findOne(id: number): Promise<Media> {
     const media = await this.mediaRepository.findOneBy({ id });
-    if (!media) {
-      throw new BadRequestException(`Media with ID ${id} not found`);
-    }
+    if (!media) throw new BadRequestException(`Media with ID ${id} not found`);
     return media;
   }
 
-  async getPresignedUrl(id: number, expiresIn: number = 3600): Promise<string> {
+  async getPresignedUrl(id: number, expiresIn = 3600): Promise<string> {
     const media = await this.findOne(id);
-
-    // Extract object name from URL
-    const url = new URL(media.url);
-    const objectName = url.pathname.substring(url.pathname.lastIndexOf('/') + 1);
-
+    const objectName = new URL(media.url).pathname.split('/').pop()!;
     return this.minioService.getPresignedUrl(media.bucketName || '', objectName, expiresIn);
   }
 
@@ -128,23 +114,14 @@ export class MediaService {
     const media = await this.findOne(id);
 
     try {
-      // Get object names from URLs
-      const urlObj = new URL(media.url);
-      const objectName = urlObj.pathname.substring(urlObj.pathname.lastIndexOf('/') + 1);
-
-      // Delete file from MinIO
+      const objectName = new URL(media.url).pathname.split('/').pop()!;
       await this.minioService.deleteFile(media.bucketName || '', objectName);
 
-      // If thumbnail exists, delete it too
       if (media.thumbnailUrl) {
-        const thumbUrlObj = new URL(media.thumbnailUrl);
-        const thumbObjectName = thumbUrlObj.pathname.substring(
-          thumbUrlObj.pathname.lastIndexOf('/') + 1,
-        );
+        const thumbObjectName = new URL(media.thumbnailUrl).pathname.split('/').pop()!;
         await this.minioService.deleteFile(media.bucketName || '', thumbObjectName);
       }
 
-      // Delete record from database
       await this.mediaRepository.delete(id);
     } catch (error) {
       this.logger.error(
@@ -158,17 +135,14 @@ export class MediaService {
   }
 
   private determineFileType(mimetype: string): MediaType {
-    if (mimetype.startsWith('image/')) {
-      return MediaType.IMAGE;
-    } else if (mimetype.startsWith('video/')) {
-      return MediaType.VIDEO;
-    } else if (
-      mimetype.startsWith('application/pdf') ||
-      mimetype.startsWith('application/msword') ||
+    if (mimetype.startsWith('image/')) return MediaType.IMAGE;
+    if (mimetype.startsWith('video/')) return MediaType.VIDEO;
+    if (
+      mimetype === 'application/pdf' ||
+      mimetype === 'application/msword' ||
       mimetype.includes('document')
-    ) {
+    )
       return MediaType.DOCUMENT;
-    }
     return MediaType.OTHER;
   }
 }

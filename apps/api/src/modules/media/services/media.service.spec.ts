@@ -6,6 +6,7 @@ import { MinioService } from './minio.service';
 import { ImageProcessorService } from './image-processor.service';
 import { Media, MediaType } from '../entities/media.entity';
 import { Readable } from 'stream';
+import { MulterFile } from '../interfaces/multer-file.interface';
 
 // Media entity tipi
 type MockMedia = Partial<Media>;
@@ -49,7 +50,7 @@ const mockImageProcessorService = (): Partial<ImageProcessorService> => ({
 });
 
 // Mock file object
-const mockFile: Express.Multer.File = {
+const mockFile: MulterFile = {
   fieldname: 'file',
   originalname: 'test-image.jpg',
   encoding: '7bit',

@@ -26,15 +26,16 @@ import { FileUploadInterceptor } from '../interceptors/file-upload.interceptor';
 import { UploadFileDto, UploadFilesDto } from '../dto/upload-file.dto';
 import { Media } from '../entities/media.entity';
 import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
+import { MulterFile } from '../interfaces/multer-file.interface';
 
 @ApiTags('media')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 @Controller('media')
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
   @Post('upload')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Upload a single file' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -54,7 +55,7 @@ export class MediaController {
     }),
   )
   async uploadFile(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: MulterFile,
     @Query('isPublic') isPublic: boolean = true,
   ): Promise<Media> {
     if (!file) {
@@ -64,8 +65,6 @@ export class MediaController {
   }
 
   @Post('upload/multiple')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Upload multiple files' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -78,15 +77,15 @@ export class MediaController {
     type: [Media],
   })
   @UseInterceptors(
-    FilesInterceptor('files', 10), // Max 10 files
+    FilesInterceptor('files', 10),
     new FileUploadInterceptor({
       maxCount: 10,
-      maxSize: 10 * 1024 * 1024, // 10MB
+      maxSize: 10 * 1024 * 1024,
       allowedTypes: /(jpg|jpeg|png|gif|webp|pdf|doc|docx|xls|xlsx|txt)$/,
     }),
   )
   async uploadMultipleFiles(
-    @UploadedFiles() files: Express.Multer.File[],
+    @UploadedFiles() files: MulterFile[],
     @Query('isPublic') isPublic: boolean = true,
   ): Promise<Media[]> {
     if (!files || files.length === 0) {
@@ -96,8 +95,6 @@ export class MediaController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all media files' })
   @ApiResponse({
     status: 200,
@@ -109,8 +106,6 @@ export class MediaController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get media by ID' })
   @ApiResponse({
     status: 200,
@@ -122,13 +117,15 @@ export class MediaController {
   }
 
   @Get(':id/presigned')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get a presigned URL for a private file' })
   @ApiResponse({
     status: 200,
     description: 'Presigned URL',
-    type: String,
+    schema: {
+      example: {
+        url: 'https://s3.bucket.com/media/abc.jpg?token=abc123',
+      },
+    },
   })
   async getPresignedUrl(
     @Param('id', ParseIntPipe) id: number,
@@ -139,12 +136,15 @@ export class MediaController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a media file' })
   @ApiResponse({
     status: 200,
     description: 'The file has been successfully deleted',
+    schema: {
+      example: {
+        success: true,
+      },
+    },
   })
   async remove(@Param('id', ParseIntPipe) id: number): Promise<{ success: boolean }> {
     await this.mediaService.remove(id);

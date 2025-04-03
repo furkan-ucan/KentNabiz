@@ -11,12 +11,13 @@ import { FileTypeValidator } from '@nestjs/common/pipes/file/file-type.validator
 import { MaxFileSizeValidator } from '@nestjs/common/pipes/file/max-file-size.validator';
 import { ParseFilePipe } from '@nestjs/common/pipes';
 import { Request } from 'express';
+import { MulterFile } from '../interfaces/multer-file.interface';
 
 // TODO: test file size/type validation scenarios - coverage: 46.42%
 
 interface RequestWithFile extends Request {
-  file?: Express.Multer.File;
-  files?: Express.Multer.File[];
+  file?: MulterFile;
+  files?: MulterFile[];
 }
 
 @Injectable()
@@ -83,7 +84,7 @@ export class FileUploadInterceptor implements NestInterceptor {
     return next.handle();
   }
 
-  private async validateFile(file: Express.Multer.File): Promise<void> {
+  private async validateFile(file: MulterFile): Promise<void> {
     // TODO: add tests for validation error handling
     try {
       const parseFilePipe = new ParseFilePipe({
