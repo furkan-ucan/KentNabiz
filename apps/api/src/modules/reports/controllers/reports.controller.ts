@@ -38,6 +38,7 @@ import { Report } from '../entities/report.entity';
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
+  // TODO: Response tipi interface yerine DTO kullanılarak Swagger çıktısı daha zengin hale getirilebilir.
   @Get()
   @ApiOperation({
     summary: 'Get all reports',
@@ -214,6 +215,7 @@ export class ReportsController {
     return this.reportsService.findOne(id);
   }
 
+  // TODO: Response tipi interface yerine DTO kullanılarak Swagger çıktısı daha zengin hale getirilebilir.
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

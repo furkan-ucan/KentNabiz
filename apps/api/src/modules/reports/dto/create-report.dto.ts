@@ -107,3 +107,4 @@ export class CreateReportDto {
   @Type(() => CreateReportMediaDto)
   reportMedias?: CreateReportMediaDto[];
 }
+// TODO: Geriye dönen veriler için ayrı bir ReportResponseDto oluşturulması değerlendirilebilir.

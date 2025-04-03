@@ -148,6 +148,8 @@ export interface ISpatialQueryResult {
   limit: number;
 }
 
+// TODO: Bu interface, UpdateReportDto olarak class yapısında tanımlanmalı.
+// Böylece class-validator ile doğrulama ve Swagger dokümantasyonu sağlanabilir.
 export interface UpdateReportData {
   title?: string;
   description?: string;
@@ -165,3 +167,6 @@ export interface UpdateReportData {
     type: string;
   }>;
 }
+
+// TODO: response veri modeli ayrı bir DTO class yapısına dönüştürülebilir (Swagger & versionlama için).
+// Örneğin: ReportResponseDto, DepartmentHistoryResponseDto gibi class yapıları tanımlanabilir.
