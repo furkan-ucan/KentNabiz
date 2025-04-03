@@ -17,7 +17,6 @@ export enum UserRole {
   USER = 'user',
   MODERATOR = 'moderator',
 }
-
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
@@ -26,10 +25,10 @@ export class User {
   @Column({ unique: true })
   email!: string;
 
-  @Column()
+  @Column({ name: 'full_name' })
   fullName!: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'phone_number', nullable: true })
   phoneNumber?: string;
 
   @Column({ nullable: true })
@@ -42,25 +41,25 @@ export class User {
   @Exclude()
   password!: string;
 
-  @Column({ default: false })
+  @Column({ name: 'is_email_verified', default: false })
   isEmailVerified!: boolean;
 
-  @Column({ nullable: true })
+  @Column({ name: 'email_verification_token', nullable: true })
   emailVerificationToken?: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'password_reset_token', nullable: true })
   passwordResetToken?: string;
 
-  @Column({ nullable: true, type: 'timestamp' })
+  @Column({ name: 'password_reset_expires', nullable: true, type: 'timestamp' })
   passwordResetExpires?: Date;
 
-  @Column({ nullable: true, type: 'timestamp' })
+  @Column({ name: 'last_login_at', nullable: true, type: 'timestamp' })
   lastLoginAt?: Date;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 
   @BeforeInsert()

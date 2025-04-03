@@ -7,6 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+// Keep import for type hints
 import { Report } from './report.entity';
 
 @Entity('report_medias')
@@ -17,7 +18,8 @@ export class ReportMedia {
   @Column({ name: 'report_id' })
   reportId!: number;
 
-  @ManyToOne(() => Report, (report) => report.reportMedias, {
+  // --- FIX: Use string name for Report relationship ---
+  @ManyToOne('Report', (report: Report) => report.reportMedias, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'report_id' })

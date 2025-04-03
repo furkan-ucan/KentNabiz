@@ -1,17 +1,3 @@
-/**
- * @file department-history.entity.ts
- * @description This entity represents the history of department changes for reports.
- * It includes the old and new department, the reason for the change, and the department that made the change.
- * This is used to track the history of department assignments for reports in the system.
- * @author Furkan Uçan
- * @date 2025-03-31
- * @version 1.0
- * @module reports
- * @see {@link Report} for the report entity
- * @see {@link MunicipalityDepartment} for the department enum
- * @see {@link DepartmentHistory} for the department history entity
- */
-
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -20,6 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+// Keep import for type hints
 import { Report } from './report.entity';
 import { MunicipalityDepartment } from '../interfaces/report.interface';
 
@@ -31,7 +18,10 @@ export class DepartmentHistory {
   @Column({ name: 'report_id' })
   reportId!: number;
 
-  @ManyToOne(() => Report, (report) => report.departmentHistory, { onDelete: 'CASCADE' })
+  // --- FIX: Use string name for Report relationship ---
+  @ManyToOne('Report', (report: Report) => report.departmentHistory, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'report_id' })
   report!: Report;
 

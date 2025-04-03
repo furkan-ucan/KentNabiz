@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
+// Keep import for type hints
 import { Report } from './report.entity';
 import { MunicipalityDepartment, ReportType } from '../interfaces/report.interface';
 
@@ -27,14 +28,15 @@ export class Department {
   @Column({ type: 'text', nullable: true })
   description!: string;
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 
-  @Column({ type: 'jsonb', nullable: true })
-  responsibleReportTypes!: ReportType[];
+  @Column({ name: 'responsible_report_types', type: 'jsonb', nullable: true })
+  responsibleReportTypes!: ReportType[]; // Assuming ReportType is correctly defined elsewhere
 
-  @OneToMany(() => Report, (report) => report.departmentEntity)
-  reports!: Report[];
+  // --- FIX: Use string name for Report relationship ---
+  @OneToMany('Report', (report: Report) => report.departmentEntity) // Use string "Report" and type hint
+  reports!: Report[]; // Type hint still uses imported class
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

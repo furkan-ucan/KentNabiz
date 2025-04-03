@@ -10,14 +10,14 @@ import {
   Index,
 } from 'typeorm';
 import { Point } from 'geojson';
+// Keep imports for type hints
 import { User } from '../../users/entities/user.entity';
 import { ReportMedia } from './report-media.entity';
-import { Department } from './department.entity';
 import { DepartmentHistory } from './department-history.entity';
-import { ReportCategory } from './report-category.entity';
+import { Department } from './department.entity';
+import { ReportCategory } from './report-category.entity'; // Keep for type hints
+// Other necessary imports
 import { MunicipalityDepartment, ReportStatus, ReportType } from '../interfaces/report.interface';
-
-// TODO: model/entity instantiation and relation validation
 
 @Entity('reports')
 export class Report {
@@ -37,7 +37,6 @@ export class Report {
   })
   @Index({ spatial: true })
   location!: Point;
-  // TODO: add tests for geospatial data validation
 
   @Column({ type: 'varchar', length: 255 })
   address!: string;
@@ -49,14 +48,17 @@ export class Report {
   })
   type!: ReportType;
 
-  // Yeni kategori ilişkisi
   @Column({ name: 'category_id', nullable: true })
   categoryId!: number;
 
-  @ManyToOne(() => ReportCategory)
+  // --- FIX: Use string name for ReportCategory relationship ---
+  @ManyToOne('ReportCategory', (category: ReportCategory) => category.reports, {
+    // <-- Use string name. Added example inverse side function. Adjust if needed.
+    nullable: true, // Assuming category can be optional based on categoryId being nullable
+    onDelete: 'SET NULL', // Example: Set FK to NULL if category is deleted
+  })
   @JoinColumn({ name: 'category_id' })
-  category!: ReportCategory;
-  // TODO: add tests for category relationships
+  category!: ReportCategory; // Type hint still uses imported class
 
   @Column({
     type: 'enum',
@@ -70,49 +72,54 @@ export class Report {
     enum: MunicipalityDepartment,
     default: MunicipalityDepartment.GENERAL,
   })
-  department!: MunicipalityDepartment;
+  department!: MunicipalityDepartment; // Enum representing current department code
 
-  @ManyToOne(() => Department, (department) => department.reports)
+  @Column({ name: 'department_id', nullable: true })
+  departmentId!: number; // Foreign key column
+
+  // String names applied in previous fix
+  @ManyToOne('Department', (department: Department) => department.reports)
   @JoinColumn({ name: 'department_id' })
   departmentEntity!: Department;
 
-  @Column({ name: 'department_id', nullable: true })
-  departmentId!: number;
-
-  @Column({ nullable: true })
+  @Column({ name: 'department_change_reason', nullable: true })
   departmentChangeReason!: string;
 
-  @Column({ nullable: true })
-  departmentChangedBy!: number;
+  @Column({ name: 'department_changed_by', nullable: true })
+  departmentChangedBy!: number; // Should this relate to User?
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'department_changed_at', type: 'timestamp', nullable: true })
   departmentChangedAt!: Date;
 
   @Column({ name: 'user_id' })
   userId!: number;
 
+  // Keep arrow function unless User creates a circular dependency
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user!: User;
-  // TODO: add tests for user relationship cascade operations
 
-  @Column({ nullable: true })
+  @Column({ name: 'admin_id', nullable: true })
   adminId!: number;
 
+  // Keep arrow function unless User creates a circular dependency
   @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'admin_id' })
   admin!: User;
 
-  @OneToMany(() => ReportMedia, (media) => media.report, {
+  // String names applied in previous fix
+  @OneToMany('ReportMedia', (media: ReportMedia) => media.report, {
     cascade: true,
   })
   reportMedias!: ReportMedia[];
 
-  @OneToMany(() => DepartmentHistory, (history) => history.report, {
+  // String names applied in previous fix
+  @OneToMany('DepartmentHistory', (history: DepartmentHistory) => history.report, {
     cascade: true,
   })
   departmentHistory!: DepartmentHistory[];
 
-  @Column({ nullable: true })
+  @Column({ name: 'previous_department', nullable: true })
   previousDepartment!: string;
 
   @CreateDateColumn({ name: 'created_at' })
