@@ -29,7 +29,7 @@ export class AddPerformanceIndexes1680269200000 implements MigrationInterface {
     // Bölgesel sorguları hızlandırmak için coğrafi indeks iyileştirmesi
     // ST_GeoHash fonksiyonu ile fazla sayıda aynı noktanın bulunduğu bölgeler için performans artışı
     await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS "IDX_reports_location_geohash" ON "reports" (ST_GeoHash(geography::geometry, 5))
+      CREATE INDEX IF NOT EXISTS "IDX_reports_location_geohash" ON "reports" (ST_GeoHash(location::geometry, 5))
     `);
 
     // Medya dosyaları için ek indeks

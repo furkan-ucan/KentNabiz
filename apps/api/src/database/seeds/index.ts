@@ -4,6 +4,7 @@ import { DepartmentsSeed } from './departments.seed';
 import { CategoriesSeed } from './categories.seed';
 import { ReportsSeed } from './reports.seed';
 import { ensurePostgisExtensions } from '../ormconfig';
+import { fileURLToPath } from 'url';
 
 /**
  * Tüm database seed işlemlerini sıralı olarak gerçekleştiren ana fonksiyon
@@ -37,9 +38,10 @@ export async function runSeeds(dataSource: DataSource): Promise<void> {
 }
 
 /**
- * CLI'dan çalıştırıldığında seed işlemini başlat
+ * Bu modül doğrudan CLI'dan çalıştırıldığında seed işlemini başlatır.
+ * ESM ortamında ana modül kontrolü için fileURLToPath(import.meta.url) kullanılır.
  */
-if (require.main === module) {
+if (fileURLToPath(import.meta.url) === process.argv[1]) {
   import('../ormconfig')
     .then(async ({ AppDataSource }) => {
       // Veritabanı bağlantısını başlat

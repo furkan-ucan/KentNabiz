@@ -1,87 +1,92 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { config } from 'dotenv';
-import { join } from 'path';
+import { join, dirname } from 'path'; // Import dirname
+import { fileURLToPath } from 'url'; // Import fileURLToPath
 
-config();
+config(); // Load .env variables
 
+// --- ESM compatible __dirname calculation ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+// --- End ESM compatible __dirname calculation ---
+
+// Using ConfigService directly might be okay for CLI, but relies on .env being loaded
 const configService = new ConfigService();
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
-  host: configService.get<string>('DB_HOST', 'localhost'),
-  port: configService.get<number>('DB_PORT', 5432),
-  username: configService.get<string>('DB_USERNAME', 'postgres'),
-  password: configService.get<string>('DB_PASSWORD', 'postgres'),
-  database: configService.get<string>('DB_DATABASE', 'kentnabiz'),
-  entities: [join(__dirname, '..', '**', '*.entity.{ts,js}')],
-  migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
-  synchronize: false,
-  logging: configService.get<string>('NODE_ENV') === 'development',
-  ssl:
-    configService.get<string>('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
-  // Performans iyileştirmeleri
+  // Prefer using process.env directly after dotenv.config() for CLI tools
+  // or ensure ConfigService correctly reads them without full Nest app bootstrap.
+  host: process.env.DB_HOST || 'localhost', // Example using process.env
+  port: parseInt(process.env.DB_PORT || '5432', 10),
+  username: process.env.DB_USERNAME || 'postgres',
+  password: process.env.DB_PASSWORD || 'postgres',
+  database: process.env.DB_DATABASE || 'kentnabiz',
+  // Use the calculated __dirname
+  entities: [join(__dirname, '..', '**', '*.entity.{ts,js}')], // Correct path relative to this file's location
+  migrations: [join(__dirname, 'migrations', '*.{ts,js}')], // Correct path relative to this file's location
+  synchronize: false, // Should be false for migrations
+  logging: process.env.NODE_ENV === 'development',
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  // Performance options (adjust as needed)
   connectTimeoutMS: 10000,
-  maxQueryExecutionTime: 1000,
-  poolSize: 20,
-  cache: {
-    duration: 30000, // 30 saniye
-  },
+  // maxQueryExecutionTime: 1000, // Be careful with this in production
+  poolSize: parseInt(process.env.DB_POOL_SIZE || '20', 10), // Allow config via env
+  // Cache options (consider if needed for CLI)
+  // cache: {
+  //   duration: 30000, // 30 seconds
+  // },
 };
 
+// Export the DataSource instance for TypeORM CLI and potentially the app
 export const AppDataSource = new DataSource(dataSourceOptions);
 
-// 🔧 PostGIS uzantılarını ayrı initialize sonrası çalıştırmak için yardımcı fonksiyon
+// 🔧 Helper function to ensure PostGIS extensions exist (can be called elsewhere)
 export async function ensurePostgisExtensions() {
-  if (!AppDataSource.isInitialized) {
-    await AppDataSource.initialize();
-  }
-
-  const queryRunner = AppDataSource.createQueryRunner();
-  await queryRunner.connect();
-
-  await queryRunner.query('CREATE EXTENSION IF NOT EXISTS postgis');
-  await queryRunner.query('CREATE EXTENSION IF NOT EXISTS postgis_topology');
-  await queryRunner.query('CREATE EXTENSION IF NOT EXISTS fuzzystrmatch');
-  // Coğrafi sorgular için ek uzantılar
-  await queryRunner.query('CREATE EXTENSION IF NOT EXISTS postgis_tiger_geocoder');
-  await queryRunner.query('CREATE EXTENSION IF NOT EXISTS address_standardizer');
-
-  await queryRunner.release();
-}
-
-// Migration işlemlerini kolaylaştıran yardımcı fonksiyon
-export async function runMigrations() {
-  if (!AppDataSource.isInitialized) {
-    await AppDataSource.initialize();
-  }
+  // Initialize only if not already done
+  const dataSource = AppDataSource.isInitialized ? AppDataSource : await AppDataSource.initialize();
+  const queryRunner = dataSource.createQueryRunner();
 
   try {
-    const pendingMigrations = await AppDataSource.showMigrations();
+    await queryRunner.connect();
+    console.log('Ensuring PostGIS extensions...');
+    await queryRunner.query('CREATE EXTENSION IF NOT EXISTS postgis');
+    await queryRunner.query('CREATE EXTENSION IF NOT EXISTS postgis_topology');
+    await queryRunner.query('CREATE EXTENSION IF NOT EXISTS fuzzystrmatch');
+    await queryRunner.query('CREATE EXTENSION IF NOT EXISTS postgis_tiger_geocoder');
+    await queryRunner.query('CREATE EXTENSION IF NOT EXISTS address_standardizer');
+    console.log('PostGIS extensions check complete.');
+  } catch (error) {
+    console.error('Error ensuring PostGIS extensions:', error);
+  } finally {
+    await queryRunner.release();
+  }
+}
+
+// Helper function to run migrations (can be called elsewhere)
+export async function runMigrations() {
+  // Initialize only if not already done
+  const dataSource = AppDataSource.isInitialized ? AppDataSource : await AppDataSource.initialize();
+
+  try {
+    const pendingMigrations = await dataSource.showMigrations();
     if (pendingMigrations) {
-      console.log('📦 Bekleyen migrations işlemleri bulundu, çalıştırılıyor...');
-      const migrations = await AppDataSource.runMigrations();
-      console.log(`✅ ${migrations.length} migrations başarıyla uygulandı!`);
+      console.log('📦 Pending migrations found, running...');
+      const migrations = await dataSource.runMigrations();
+      console.log(`✅ ${migrations.length} migration(s) successfully applied!`);
       return migrations;
     } else {
-      console.log('✅ Tüm migrations işlemleri güncel.');
+      console.log('✅ All migrations are up to date.');
       return [];
     }
   } catch (error) {
-    console.error('❌ Migrations işlemleri sırasında hata oluştu:', error);
-    throw error;
+    console.error('❌ Error during migration run:', error);
+    throw error; // Re-throw to indicate failure
   }
 }
 
-// CLI'dan doğrudan çalıştırılırsa migrations işlemlerini başlat
-if (require.main === module) {
-  runMigrations()
-    .then(() => {
-      console.log('📋 Migration işlemleri tamamlandı');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('Migration işlemi başarısız oldu:', error);
-      process.exit(1);
-    });
-}
+// --- Removed `if (require.main === module)` block ---
+// This block is CommonJS specific and shouldn't be in a config file
+// intended for ESM or import by other tools/applications.
+// Run migrations explicitly via TypeORM CLI commands.

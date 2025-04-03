@@ -12,8 +12,9 @@ export class AddPostGISAndDepartments1680268900000 implements MigrationInterface
     // Municipality birim enum'ını oluştur
     await queryRunner.query(`
       CREATE TYPE "public"."municipality_department_enum" AS ENUM(
-        'GENERAL', 'ROADS', 'WATER', 'ELECTRICITY', 'PARKS', 
-        'ENVIRONMENT', 'INFRASTRUCTURE', 'TRANSPORTATION', 'OTHER'
+        'GENERAL', 'ROADS', 'WATER', 'ELECTRICITY', 'PARKS','FIRE', 'HEALTH',
+        'BUILDING', 'MUNICIPALITY',
+        'ENVIRONMENTAL', 'INFRASTRUCTURE', 'TRANSPORTATION', 'TRAFFIC', 'OTHER'
       );
     `);
 

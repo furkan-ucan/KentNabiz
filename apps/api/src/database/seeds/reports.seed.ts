@@ -110,22 +110,12 @@ export const ReportsSeed = async (dataSource: DataSource): Promise<void> => {
       coordinates: [coord.lng, coord.lat],
     };
 
-    const fakeStreet: string = (
-      faker.location as unknown as { streetName: () => string }
-    ).streetName();
-    const fakeParagraph: string = (
-      faker.lorem as unknown as { paragraph: () => string }
-    ).paragraph();
-    const fakeAddress: string = (
-      faker.location as unknown as { streetAddress: () => string }
-    ).streetAddress();
-    const randomStatus: ReportStatus = (
-      faker.helpers as unknown as {
-        arrayElement<T>(input: T[]): T;
-      }
-    ).arrayElement(Object.values(ReportStatus));
-    const randomDate: Date = (faker.date as unknown as { recent(days: number): Date }).recent(30);
+    const fakeStreet: string = faker.address.street();
+    const fakeParagraph: string = faker.lorem.paragraph();
+    const fakeAddress: string = faker.address.streetAddress();
 
+    const randomStatus: ReportStatus = faker.helpers.arrayElement(Object.values(ReportStatus));
+    const randomDate: Date = faker.date.recent({ days: 3 });
     const report = reportRepository.create({
       title: `${reportTitles[randIndex]} - ${fakeStreet}`,
       description: `${reportDescriptions[randIndex]} ${fakeParagraph}`,

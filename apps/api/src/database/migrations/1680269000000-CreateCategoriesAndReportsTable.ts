@@ -26,7 +26,7 @@ export class CreateCategoriesAndReportsTable1680269000000 implements MigrationIn
         "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
         CONSTRAINT "UQ_report_categories_code" UNIQUE ("code"),
         CONSTRAINT "PK_report_categories" PRIMARY KEY ("id"),
-        CONSTRAINT "FK_report_categories_parent" FOREIGN KEY ("parent_id") 
+        CONSTRAINT "FK_report_categories_parent" FOREIGN KEY ("parent_id")
           REFERENCES "report_categories" ("id") ON DELETE SET NULL
       )
     `);
@@ -45,10 +45,10 @@ export class CreateCategoriesAndReportsTable1680269000000 implements MigrationIn
     // Report Type enum oluştur
     await queryRunner.query(`
       CREATE TYPE "public"."report_type_enum" AS ENUM(
-        'POTHOLE', 'ROAD_DAMAGE', 'WATER_LEAKAGE', 'ELECTRICITY_OUTAGE', 
-        'TREE_ISSUE', 'GARBAGE_COLLECTION', 'TRAFFIC_LIGHT', 'STREET_LIGHT', 
-        'LITTER', 'GRAFFITI', 'PARK_DAMAGE', 'PARKING_VIOLATION', 
-        'PUBLIC_TRANSPORT', 'PUBLIC_TRANSPORT_VIOLATION', 'PUBLIC_TRANSPORT_STOP', 
+        'POTHOLE', 'ROAD_DAMAGE', 'WATER_LEAKAGE', 'ELECTRICITY_OUTAGE',
+        'TREE_ISSUE', 'GARBAGE_COLLECTION', 'TRAFFIC_LIGHT', 'STREET_LIGHT',
+        'LITTER', 'GRAFFITI', 'PARK_DAMAGE', 'PARKING_VIOLATION',
+        'PUBLIC_TRANSPORT', 'PUBLIC_TRANSPORT_VIOLATION', 'PUBLIC_TRANSPORT_STOP',
         'PUBLIC_TRANSPORT_VEHICLE', 'OTHER'
       );
     `);
@@ -56,7 +56,8 @@ export class CreateCategoriesAndReportsTable1680269000000 implements MigrationIn
     // Report Status enum oluştur
     await queryRunner.query(`
       CREATE TYPE "public"."report_status_enum" AS ENUM(
-        'REPORTED', 'PENDING', 'IN_PROGRESS', 'RESOLVED', 'REJECTED', 'DUPLICATE'
+        'REPORTED', 'IN_PROGRESS', 'DEPARTMENT_CHANGED', 'RESOLVED',
+        'REJECTED'
       );
     `);
 
@@ -82,13 +83,13 @@ export class CreateCategoriesAndReportsTable1680269000000 implements MigrationIn
         "created_at" TIMESTAMP NOT NULL DEFAULT now(),
         "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
         CONSTRAINT "PK_reports" PRIMARY KEY ("id"),
-        CONSTRAINT "FK_reports_category" FOREIGN KEY ("category_id") 
+        CONSTRAINT "FK_reports_category" FOREIGN KEY ("category_id")
           REFERENCES "report_categories" ("id") ON DELETE SET NULL,
-        CONSTRAINT "FK_reports_department" FOREIGN KEY ("department_id") 
+        CONSTRAINT "FK_reports_department" FOREIGN KEY ("department_id")
           REFERENCES "departments" ("id") ON DELETE SET NULL,
-        CONSTRAINT "FK_reports_user" FOREIGN KEY ("user_id") 
+        CONSTRAINT "FK_reports_user" FOREIGN KEY ("user_id")
           REFERENCES "users" ("id") ON DELETE CASCADE,
-        CONSTRAINT "FK_reports_admin" FOREIGN KEY ("admin_id") 
+        CONSTRAINT "FK_reports_admin" FOREIGN KEY ("admin_id")
           REFERENCES "users" ("id") ON DELETE SET NULL
       )
     `);
@@ -125,7 +126,7 @@ export class CreateCategoriesAndReportsTable1680269000000 implements MigrationIn
         "created_at" TIMESTAMP NOT NULL DEFAULT now(),
         "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
         CONSTRAINT "PK_report_medias" PRIMARY KEY ("id"),
-        CONSTRAINT "FK_report_medias_report" FOREIGN KEY ("report_id") 
+        CONSTRAINT "FK_report_medias_report" FOREIGN KEY ("report_id")
           REFERENCES "reports" ("id") ON DELETE CASCADE
       )
     `);
@@ -146,7 +147,7 @@ export class CreateCategoriesAndReportsTable1680269000000 implements MigrationIn
         "changed_by_department" "public"."municipality_department_enum" NOT NULL,
         "created_at" TIMESTAMP NOT NULL DEFAULT now(),
         CONSTRAINT "PK_department_history" PRIMARY KEY ("id"),
-        CONSTRAINT "FK_department_history_report" FOREIGN KEY ("report_id") 
+        CONSTRAINT "FK_department_history_report" FOREIGN KEY ("report_id")
           REFERENCES "reports" ("id") ON DELETE CASCADE
       )
     `);
