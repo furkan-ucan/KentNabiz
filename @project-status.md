@@ -1,5 +1,59 @@
 # @project-status.md
 
+## Oturum Raporu: 2 Nisan 2025
+
+### Çalışma Özeti
+
+Bu oturumda KentNabız projesinin monorepo yapısındaki kritik bir TypeScript derleme sorunu başarıyla çözüldü. Shared ve test-lib paketleri arasındaki tip referansı sorunu tespit edildi ve paketlerin doğru şekilde birbirlerini referans alması sağlandı.
+
+### Tamamlanan Çalışmalar
+
+1. **TypeScript Tanımlama Dosyalarının Sorunlarının Çözümü**
+
+   - Shared paketinde d.ts dosyalarının oluşturulmaması sorunu tespit edildi
+   - TypeScript composite proje yapılandırması ve tsup dts oluşturma uyumsuzluğu çözüldü
+   - İki aşamalı derleme stratejisi (tsc + tsup) implementasyonu tamamlandı
+   - paketler arası tip referansları başarıyla sağlandı
+
+2. **Monorepo Paket Bağımlılıklarının İyileştirilmesi**
+
+   - Test-lib paketinin shared paketine bağımlılığı düzgün yapılandırıldı
+   - TypeScript proje referansları (references) doğru şekilde kullanıldı
+   - Module çözümleme için path ayarları düzeltildi
+   - Workspace protokolü (workspace:\*) ile bağımlılıklar tanımlandı
+
+3. **Build Sürecinin Optimize Edilmesi**
+
+   - Hibrit build yaklaşımı geliştirildi: TypeScript için tsc, JS için tsup
+   - noEmit ayarları ve composite proje bayrakları doğru yapılandırıldı
+   - Turbo pipeline'ı ile paketlerin doğru sırayla derlenmesi sağlandı
+
+### Detaylı Oturum Raporu
+
+#### 1. TypeScript Tip Tanımlama Dosyaları Sorunu ve Çözümü
+
+- **Karşılaşılan Sorun**:
+
+  Shared paketi JavaScript kodu üretirken .d.ts (TypeScript tip tanımlamaları) dosyalarını üretmiyordu. Bu durum test-lib paketinin shared paketine referans verdiği durumda tip bilgilerini bulamama hatasına yol açıyordu:
+  error TS7016: Could not find a declaration file for module '@kentnabiz/shared'
+
+  - **Temel Neden**:
+
+  Composite projeksi olan bir TypeScript yapılandırmasında tsup'ın --dts bayrağının düzgün çalışmaması. Hata mesajı:
+  error TS5074: Option '--incremental' can only be specified using tsconfig, emitting to single file or when option '--tsBuildInfoFile' is specified. src/index.ts(7,15): error TS6307: File '...src/constants/index.ts' is not listed within the file list of project ''.
+
+      - **Uygulanan Çözüm**:
+
+      İki aşamalı derleme stratejisi:
+
+      ```json
+      "scripts": {
+        "prebuild": "rimraf dist *.tsbuildinfo",
+        "build:code": "tsup src/index.ts --format cjs,esm --sourcemap --no-dts",
+        "build:types": "tsc -b --emitDeclarationOnly",
+        "build": "pnpm run build:code && pnpm run build:types"
+      }
+
 ## Oturum Raporu: 20 Mart 2024
 
 ### Çalışma Özeti

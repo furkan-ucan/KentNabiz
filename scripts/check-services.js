@@ -1,17 +1,18 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
-/* eslint-disable no-console */
-const { Client } = require('pg');
-const Redis = require('redis');
-const Minio = require('minio');
-const fs = require('fs');
-const path = require('path');
+import pg from 'pg';
+import * as Redis from 'redis';
+import * as Minio from 'minio';
+import fs from 'fs';
+import path from 'path';
 
-// Load environment variables from .env if it exists
+import dotenv from 'dotenv';
+
+const { Client } = pg;
+
+// .env dosyasını yükle (mevcutsa)
 try {
   const envPath = path.resolve(process.cwd(), '.env');
   if (fs.existsSync(envPath)) {
-    require('dotenv').config();
+    dotenv.config();
   } else {
     console.log('.env file not found, using default values');
   }
@@ -96,6 +97,7 @@ async function main() {
   }
 }
 
+// ES Module uyumlu main çağrısı
 main().catch(error => {
   console.error('An error occurred:', error);
   process.exit(1);

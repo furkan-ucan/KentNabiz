@@ -2,15 +2,17 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": ".",
-    "baseUrl": "./",
-    "incremental": true,
-    "noEmit": false,
+    "rootDir": "./src",
+    "jsx": "react-jsx",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
     "composite": true,
     "declaration": true,
-    "jsx": "react-jsx",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"] // DOM'u ekleyin
+    "noEmit": false
   },
-  "include": ["src/**/*", "eslint.config.ts", "jest.config.ts"],
-  "exclude": ["node_modules", "dist", "coverage"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
 }

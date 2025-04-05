@@ -12,18 +12,26 @@ export interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void> | void;
   checkAuth: () => Promise<boolean>;
 }
 
+// --- REMOVE async from login and checkAuth here ---
 const defaultContext: AuthContextType = {
   user: null,
   isLoading: true,
   isAuthenticated: false,
-  login: async () => false,
+  login: /*async*/ () => {
+    // Remove async
+    return Promise.resolve(false); // Return a resolved promise to match the type
+  },
   logout: () => {},
-  checkAuth: async () => false,
+  checkAuth: /*async*/ () => {
+    // Remove async
+    return Promise.resolve(false); // Return a resolved promise to match the type
+  },
 };
+// --- END CHANGE ---
 
 export const AuthContext = createContext<AuthContextType>(defaultContext);
 
@@ -39,15 +47,15 @@ export const AuthProvider = ({
   loginApi,
   logoutApi,
   checkAuthApi,
-}: AuthProviderProps): JSX.Element => {
+}: AuthProviderProps): React.ReactElement => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Keep async here - this is the real implementation
   const checkAuth = useCallback(async (): Promise<boolean> => {
     try {
       setIsLoading(true);
       const userData = await checkAuthApi();
-
       if (userData) {
         setUser(userData);
         return true;
@@ -64,6 +72,7 @@ export const AuthProvider = ({
     }
   }, [checkAuthApi]);
 
+  // Keep async here - this is the real implementation
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
@@ -78,7 +87,8 @@ export const AuthProvider = ({
     }
   };
 
-  const logout = async (): Promise<void> => {
+  // Keep async here - this is the real implementation
+  const logout = useCallback(async (): Promise<void> => {
     try {
       setIsLoading(true);
       await logoutApi();
@@ -88,10 +98,10 @@ export const AuthProvider = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [logoutApi]);
 
   useEffect(() => {
-    checkAuth();
+    void checkAuth();
   }, [checkAuth]);
 
   return (
@@ -111,5 +121,3 @@ export const AuthProvider = ({
 };
 
 export const useAuth = (): AuthContextType => useContext(AuthContext);
-
-export default useAuth;

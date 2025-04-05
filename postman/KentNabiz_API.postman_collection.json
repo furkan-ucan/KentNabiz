@@ -1,0 +1,396 @@
+{
+  "info": {
+    "_postman_id": "YOUR_UNIQUE_COLLECTION_ID",
+    "name": "KentNabiz API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Postman collection for the KentNabiz Monorepo API"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication related endpoints",
+      "item": [
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse the response body",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "// Check if login was successful and tokens exist",
+                  "if (pm.response.code === 201 && jsonData && jsonData.data && jsonData.data.accessToken) {",
+                  "    console.log('Login successful, saving tokens...');",
+                  "    // Save tokens to the active environment",
+                  "    pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
+                  "    pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
+                  "    console.log('Access Token Set:', pm.environment.get(\"accessToken\")); ",
+                  "} else if (pm.response.code === 200 && jsonData && jsonData.accessToken) { // Handle cases where response might not be nested under 'data'",
+                  "    console.log('Login successful (direct response), saving tokens...');",
+                  "    pm.environment.set(\"accessToken\", jsonData.accessToken);",
+                  "    pm.environment.set(\"refreshToken\", jsonData.refreshToken);",
+                  "    console.log('Access Token Set:', pm.environment.get(\"accessToken\")); ",
+                  "} else {",
+                  "    console.error('Login failed or tokens not found in response. Status:', pm.response.code, 'Body:', pm.response.text());",
+                  "    // Optional: Clear old tokens if login fails",
+                  "    // pm.environment.unset(\"accessToken\");",
+                  "    // pm.environment.unset(\"refreshToken\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"user@kentnabiz.com\",\n    \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Logs in a user and retrieves access/refresh tokens. The Tests script automatically saves these tokens to the environment."
+          },
+          "response": []
+        },
+        {
+          "name": "Register New User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"newuser@example.com\",\n    \"password\": \"Password123!\",\n    \"fullName\": \"New Test User\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Registers a new user. You might want to run the Login request afterwards to get tokens for this user."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Uses the refresh token stored in the environment to get new access/refresh tokens. You'll need to update the environment manually or re-run the Login test script after this."
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "profile"]
+            },
+            "description": "Gets the profile of the currently logged-in user (using the accessToken from the environment)."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logs out the current user by potentially invalidating tokens server-side (implementation dependent)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "User management endpoints (likely requires Auth, potentially Admin role)",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Requires appropriate authentication (likely Admin)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "1"]
+            },
+            "description": "Requires appropriate authentication. Replace '1' with a valid user ID."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "description": "Report management and query endpoints",
+      "item": [
+        {
+          "name": "Create Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Test Report Title from Postman\",\n    \"description\": \"Detailed description of the issue.\",\n    \"location\": {\n        \"type\": \"Point\",\n        \"coordinates\": [ 28.9784, 41.0082 ] \n    },\n    \"address\": \"123 Test Street, Example City\",\n    \"type\": \"POTHOLE\",\n    \"categoryId\": 7 \n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports"]
+            },
+            "description": "Creates a new report. Requires authentication. Adjust categoryId etc."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Reports (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reports?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Gets a list of reports. Often requires auth, might be public depending on config."
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reports/my-reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "my-reports"]
+            },
+            "description": "Gets reports created by the logged-in user. Requires auth."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Report Categories",
+      "item": [
+        {
+          "name": "Get Category Tree",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/report-categories/tree",
+              "host": ["{{baseUrl}}"],
+              "path": ["report-categories", "tree"]
+            },
+            "description": "Gets categories in a tree structure. Might require auth."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Report Analytics",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/report-analytics/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["report-analytics", "dashboard"]
+            },
+            "description": "Gets dashboard analytics. Likely requires Admin/Moderator role."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Media",
+      "description": "File upload and management",
+      "item": [
+        {
+          "name": "Upload Single File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/media/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["media", "upload"]
+            },
+            "description": "Uploads a single file. Requires auth. Select a file in the 'Body' tab -> 'form-data'."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Media By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/media/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["media", "1"]
+            },
+            "description": "Gets metadata for a media item. Replace '1' with a valid media ID. Requires auth."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Media Presigned URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/media/1/presigned",
+              "host": ["{{baseUrl}}"],
+              "path": ["media", "1", "presigned"]
+            },
+            "description": "Gets a temporary downloadable URL for a media item. Replace '1' with a valid media ID. Requires auth."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": []
+}

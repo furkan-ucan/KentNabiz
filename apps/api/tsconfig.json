@@ -1,21 +1,28 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "target": "ES2023",
-    "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
-    "incremental": true,
-    "skipLibCheck": true,
-    "strictNullChecks": true,
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": true,
-    "strictBindCallApply": true,
-    "noFallthroughCasesInSwitch": true
-  }
+    "module": "CommonJS", // CORRECT
+    "moduleResolution": "node", // CORRECT
+    "target": "ES2020", // Or suitable target
+    "outDir": "./dist", // CORRECT
+    "rootDir": "./src", // CORRECT
+    "baseUrl": ".", // Often needed
+    "emitDecoratorMetadata": true, // REQUIRED
+    "experimentalDecorators": true, // REQUIRED
+    "esModuleInterop": true, // Recommended
+    "sourceMap": true, // Recommended
+    "declaration": true, // Optional: good practice
+    "strict": true, // Recommended
+    "noEmit": false // REQUIRED: Must generate output
+    // ... other options like lib, typeRoots, paths if needed ...
+  },
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.js" // Exclude JS from TS compilation pass
+  ]
+  // Remove any "ts-node": { "esm": true } block
 }
