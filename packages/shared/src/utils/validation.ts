@@ -66,7 +66,9 @@ export const isValidUrl = (url: string): boolean => {
   try {
     new URL(url);
     return true;
-  } catch (error) {
+    // --- REMOVE PARAMETER ---
+  } catch {
+    // --- END CHANGE ---
     return false;
   }
 };

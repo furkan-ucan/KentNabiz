@@ -133,7 +133,7 @@ describe('ImageProcessorService', () => {
       });
 
       await expect(service.processImage(buffer, originalname, mimetype)).rejects.toThrow(
-        'Image processing failed',
+        'Image processing failed'
       );
     });
   });
@@ -199,9 +199,8 @@ describe('ImageProcessorService', () => {
 
       expect(sharpInstance.png).toHaveBeenCalledWith(
         expect.objectContaining({
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           quality: expect.closeTo(expectedPngQuality, 0.1),
-        }),
+        })
       );
 
       expect(Buffer.isBuffer(result)).toBe(true);
@@ -236,11 +235,11 @@ describe('ImageProcessorService', () => {
         }),
       };
       (sharp as jest.MockedFunction<typeof sharp>).mockReturnValueOnce(
-        partialMock as unknown as Sharp,
+        partialMock as unknown as Sharp
       );
 
       await expect(service.getImageDimensions(buffer)).rejects.toThrow(
-        'Could not determine image dimensions',
+        'Could not determine image dimensions'
       );
     });
   });

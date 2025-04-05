@@ -15,7 +15,7 @@ export class ImageProcessorService {
       quality?: number;
       format?: 'jpeg' | 'png' | 'webp' | 'avif';
       extractMetadata?: boolean;
-    } = {},
+    } = {}
   ): Promise<{ buffer: Buffer; metadata: FileMetadata }> {
     try {
       const {
@@ -91,10 +91,10 @@ export class ImageProcessorService {
     } catch (error) {
       this.logger.error(
         `Error processing image: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        error instanceof Error ? error.stack : undefined,
+        error instanceof Error ? error.stack : undefined
       );
       throw new Error(
-        `Image processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Image processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -106,7 +106,7 @@ export class ImageProcessorService {
       height?: number;
       quality?: number;
       format?: 'jpeg' | 'png' | 'webp';
-    } = {},
+    } = {}
   ): Promise<Buffer> {
     try {
       const { width = 200, height = 200, quality = 70, format = 'jpeg' } = options;
@@ -135,10 +135,10 @@ export class ImageProcessorService {
     } catch (error) {
       this.logger.error(
         `Error generating thumbnail: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        error instanceof Error ? error.stack : undefined,
+        error instanceof Error ? error.stack : undefined
       );
       throw new Error(
-        `Thumbnail generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Thumbnail generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -156,10 +156,10 @@ export class ImageProcessorService {
     } catch (error) {
       this.logger.error(
         `Error getting image dimensions: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        error instanceof Error ? error.stack : undefined,
+        error instanceof Error ? error.stack : undefined
       );
       throw new Error(
-        `Failed to get image dimensions: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to get image dimensions: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }

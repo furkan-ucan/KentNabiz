@@ -17,7 +17,7 @@ export class DepartmentService {
     private reportRepository: Repository<Report>,
     @InjectRepository(DepartmentHistory)
     private departmentHistoryRepository: Repository<DepartmentHistory>,
-    private connection: DataSource,
+    private connection: DataSource
   ) {}
 
   async findAll(): Promise<Department[]> {

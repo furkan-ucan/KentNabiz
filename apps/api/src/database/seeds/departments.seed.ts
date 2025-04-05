@@ -100,7 +100,7 @@ export const DepartmentsSeed = async (dataSource: DataSource): Promise<void> => 
   ];
 
   // Departmanları oluştur ve kaydet
-  const departmentEntities = departments.map((dept) => departmentRepository.create(dept));
+  const departmentEntities = departments.map(dept => departmentRepository.create(dept));
   await departmentRepository.save(departmentEntities);
 
   console.log('Birim seed işlemi tamamlandı!');

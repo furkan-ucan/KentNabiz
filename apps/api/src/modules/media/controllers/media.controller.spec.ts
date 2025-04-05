@@ -174,7 +174,7 @@ describe('MediaController', () => {
       const emptyFiles: MulterFile[] = [];
 
       await expect(controller.uploadMultipleFiles(emptyFiles, true)).rejects.toThrow(
-        BadRequestException,
+        BadRequestException
       );
       expect(uploadMultipleFilesSpy).not.toHaveBeenCalled();
     });
@@ -183,7 +183,7 @@ describe('MediaController', () => {
       const undefinedFiles = undefined as unknown as MulterFile[];
 
       await expect(controller.uploadMultipleFiles(undefinedFiles, true)).rejects.toThrow(
-        BadRequestException,
+        BadRequestException
       );
       expect(uploadMultipleFilesSpy).not.toHaveBeenCalled();
     });

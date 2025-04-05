@@ -20,19 +20,35 @@ export class AuthService {
   constructor(
     private tokenService: TokenService,
     private usersService: UsersService,
-    private userRepository: UserRepository,
+    private userRepository: UserRepository
   ) {}
 
+  // apps/api/src/modules/auth/services/auth.service.ts
+
   async validateUser(email: string, password: string): Promise<User | null> {
+    console.log(`>>> [AuthService.validateUser] Email doğrulanıyor: ${email}`);
     try {
       const user = await this.usersService.findByEmail(email);
+
+      if (!user) {
+        console.log(`>>> [AuthService.validateUser] Kullanıcı bulunamadı: ${email}`);
+      } else {
+        console.log(`>>> [AuthService.validateUser] Kullanıcı bulundu: ${email}, ID: ${user.id}`);
+        console.log(`>>> [AuthService.validateUser] Kullanıcı nesnesi: ${JSON.stringify(user)}`);
+        console.log(`>>> [AuthService.validateUser] user.password değeri: ${user.password}`);
+      }
+
       if (user && (await user.validatePassword(password))) {
+        console.log(`>>> [AuthService.validateUser] Şifre doğrulama BAŞARILI: ${email}`);
         return user;
       }
+
+      console.log(
+        `>>> [AuthService.validateUser] Şart (user && await user.validatePassword) başarısız oldu: ${email}`
+      );
       return null;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
-      // Errors are caught to prevent leaking info about user existence
+    } catch (error) {
+      console.error(`>>> [AuthService.validateUser] HATA oluştu: ${email}`, error);
       return null;
     }
   }
@@ -49,7 +65,7 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
-      roles: user.roles.map((role) => role.toString()),
+      roles: user.roles.map(role => role.toString()),
     };
 
     return this.tokenService.generateTokens(payload);
@@ -82,7 +98,7 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: newUser.id,
       email: newUser.email,
-      roles: newUser.roles.map((role) => role.toString()),
+      roles: newUser.roles.map(role => role.toString()),
     };
 
     return this.tokenService.generateTokens(payload);
@@ -101,7 +117,7 @@ export class AuthService {
     const newPayload: JwtPayload = {
       sub: user.id,
       email: user.email,
-      roles: user.roles.map((role) => role.toString()),
+      roles: user.roles.map(role => role.toString()),
     };
 
     return this.tokenService.refreshTokens(refreshToken, newPayload);

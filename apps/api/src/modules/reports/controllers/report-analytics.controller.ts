@@ -127,7 +127,7 @@ export class ReportAnalyticsController {
   })
   @ApiResponse({ status: 200, description: 'Çözülme süreleri başarıyla getirildi' })
   async getResolutionTimeByDepartment(
-    @Query() filter?: IAnalyticsFilter,
+    @Query() filter?: IAnalyticsFilter
   ): Promise<IResolutionTime[]> {
     return this.reportAnalyticsService.getResolutionTimeByDepartment(filter);
   }
@@ -155,7 +155,7 @@ export class ReportAnalyticsController {
   })
   @ApiResponse({ status: 200, description: 'En çok rapor edilen bölgeler başarıyla getirildi' })
   async getMostReportedDistricts(
-    @Query() filter?: IAnalyticsFilter & { limit?: number },
+    @Query() filter?: IAnalyticsFilter & { limit?: number }
   ): Promise<{ district: string; count: number }[]> {
     const limit = filter?.limit ? parseInt(filter.limit.toString(), 10) : 10;
     delete filter?.limit;
@@ -204,14 +204,14 @@ export class ReportAnalyticsController {
         acc[dept] = (acc[dept] || 0) + 1;
         return acc;
       },
-      {} as Record<string, number>,
+      {} as Record<string, number>
     );
 
     // Her departman için performans skoru hesaplayalım
     // (düşük çözüm süresi, yüksek çözüm oranı = yüksek performans)
-    return departmentDistribution.map((dept) => {
+    return departmentDistribution.map(dept => {
       const resolutionData = resolutionTimeByDepartment.find(
-        (r) => r.department === dept.department,
+        r => r.department === dept.department
       ) || { averageResolutionTime: 0, reportsCount: 0 };
 
       const totalReports = dept.count;
@@ -262,7 +262,7 @@ export class ReportAnalyticsController {
 
     // Kategoriye göre grupla
     const countByCategory: Record<number, number> = {};
-    reports.forEach((report) => {
+    reports.forEach(report => {
       const categoryId = report.categoryId;
       countByCategory[categoryId] = (countByCategory[categoryId] || 0) + 1;
     });
@@ -292,11 +292,11 @@ export class ReportAnalyticsController {
     // Toplam ortalama çözüm süresi
     const totalResolved = resolutionTimeByDepartment.reduce(
       (sum, dept) => sum + dept.reportsCount,
-      0,
+      0
     );
     const weightedSum = resolutionTimeByDepartment.reduce(
       (sum, dept) => sum + dept.averageResolutionTime * dept.reportsCount,
-      0,
+      0
     );
 
     const overallAverageTime = totalResolved > 0 ? weightedSum / totalResolved : 0;
@@ -321,11 +321,11 @@ export class ReportAnalyticsController {
       monthlyTrend: trendsData,
       fastestDepartment:
         resolutionTimeByDepartment
-          .filter((dept) => dept.reportsCount > 0)
+          .filter(dept => dept.reportsCount > 0)
           .sort((a, b) => a.averageResolutionTime - b.averageResolutionTime)[0] || null,
       slowestDepartment:
         resolutionTimeByDepartment
-          .filter((dept) => dept.reportsCount > 0)
+          .filter(dept => dept.reportsCount > 0)
           .sort((a, b) => b.averageResolutionTime - a.averageResolutionTime)[0] || null,
     };
   }

@@ -1,92 +1,143 @@
+import 'reflect-metadata'; // Keep for TypeORM runtime decorator reflection if needed
 import { DataSource, DataSourceOptions } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
 import { config } from 'dotenv';
-import { join, dirname } from 'path'; // Import dirname
-import { fileURLToPath } from 'url'; // Import fileURLToPath
+import { join } from 'path'; // Use Node's path module
 
-config(); // Load .env variables
+config(); // Load .env variables from the root of the project or current working directory
 
-// --- ESM compatible __dirname calculation ---
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-// --- End ESM compatible __dirname calculation ---
+// --- NO ESM __dirname calculation needed ---
+// In CommonJS modules (which TS compiles to with "module": "CommonJS"),
+// __dirname is a built-in global variable representing the directory of the current file.
 
-// Using ConfigService directly might be okay for CLI, but relies on .env being loaded
-const configService = new ConfigService();
+// --- Define paths relative to the COMPILED location of this file ---
+// Assuming this file compiles to: dist/database/ormconfig.js
+// Entities compile to: dist/modules/**/*.entity.js (adjust 'modules' if different)
+// Migrations compile to: dist/database/migrations/*.js
+
+const entitiesPath = join(__dirname, '..', '**', '*.entity.js');
+// Explanation:
+// __dirname = dist/database
+// '..' = go up to dist/
+// '**' = search recursively in all subdirectories
+// '*.entity.js' = find files ending with .entity.js
+
+const migrationsPath = join(__dirname, 'migrations', '*.js');
+// Explanation:
+// __dirname = dist/database
+// 'migrations' = look inside the sibling migrations folder
+// '*.js' = find files ending with .js
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
-  // Prefer using process.env directly after dotenv.config() for CLI tools
-  // or ensure ConfigService correctly reads them without full Nest app bootstrap.
-  host: process.env.DB_HOST || 'localhost', // Example using process.env
+  // Use process.env directly, as dotenv.config() has been called.
+  // This is generally safer and simpler for CLI tools than using Nest's ConfigService.
+  host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432', 10),
   username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
+  password: process.env.DB_PASSWORD || 'postgres', // Ensure this is set in your .env!
   database: process.env.DB_DATABASE || 'kentnabiz',
-  // Use the calculated __dirname
-  entities: [join(__dirname, '..', '**', '*.entity.{ts,js}')], // Correct path relative to this file's location
-  migrations: [join(__dirname, 'migrations', '*.{ts,js}')], // Correct path relative to this file's location
-  synchronize: false, // Should be false for migrations
-  logging: process.env.NODE_ENV === 'development',
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  // Performance options (adjust as needed)
-  connectTimeoutMS: 10000,
-  // maxQueryExecutionTime: 1000, // Be careful with this in production
-  poolSize: parseInt(process.env.DB_POOL_SIZE || '20', 10), // Allow config via env
-  // Cache options (consider if needed for CLI)
-  // cache: {
-  //   duration: 30000, // 30 seconds
-  // },
+
+  // Point to the compiled JavaScript files
+  entities: [entitiesPath],
+  migrations: [migrationsPath],
+
+  migrationsTableName: 'typeorm_migrations', // Optional: Explicitly name the migrations table
+
+  synchronize: false, // MUST be false if you are using migrations
+  logging: process.env.NODE_ENV === 'development', // Log SQL only in dev
+
+  // SSL configuration example (adjust as needed for your hosting provider)
+  ssl:
+    process.env.NODE_ENV === 'production'
+      ? { rejectUnauthorized: false } // Common for some providers like Heroku, Render; check provider docs
+      : false,
+
+  // Connection Pool options (optional, adjust based on load)
+  poolSize: parseInt(process.env.DB_POOL_SIZE || '10', 10), // Default to 10 connections
+
+  // Connection Timeout (optional)
+  connectTimeoutMS: parseInt(process.env.DB_CONNECT_TIMEOUT_MS || '10000', 10), // 10 seconds
 };
 
-// Export the DataSource instance for TypeORM CLI and potentially the app
+// Export the DataSource instance. TypeORM CLI tools look for this export.
 export const AppDataSource = new DataSource(dataSourceOptions);
 
-// 🔧 Helper function to ensure PostGIS extensions exist (can be called elsewhere)
+// --- Helper Functions (optional, can be kept if used elsewhere) ---
+
+/**
+ * Ensures necessary PostGIS extensions are enabled in the database.
+ * Connects using AppDataSource.
+ */
 export async function ensurePostgisExtensions() {
-  // Initialize only if not already done
-  const dataSource = AppDataSource.isInitialized ? AppDataSource : await AppDataSource.initialize();
+  const isInitialized = AppDataSource.isInitialized;
+  const dataSource = isInitialized ? AppDataSource : await AppDataSource.initialize();
   const queryRunner = dataSource.createQueryRunner();
 
   try {
     await queryRunner.connect();
     console.log('Ensuring PostGIS extensions...');
-    await queryRunner.query('CREATE EXTENSION IF NOT EXISTS postgis');
-    await queryRunner.query('CREATE EXTENSION IF NOT EXISTS postgis_topology');
-    await queryRunner.query('CREATE EXTENSION IF NOT EXISTS fuzzystrmatch');
-    await queryRunner.query('CREATE EXTENSION IF NOT EXISTS postgis_tiger_geocoder');
-    await queryRunner.query('CREATE EXTENSION IF NOT EXISTS address_standardizer');
+    // Add relevant extensions - ensure your DB user has permissions
+    await queryRunner.query('CREATE EXTENSION IF NOT EXISTS postgis;');
+    // Add other extensions if used (e.g., postgis_topology)
+    // await queryRunner.query('CREATE EXTENSION IF NOT EXISTS postgis_topology;');
     console.log('PostGIS extensions check complete.');
   } catch (error) {
-    console.error('Error ensuring PostGIS extensions:', error);
+    console.error(
+      'Error ensuring PostGIS extensions:',
+      error instanceof Error ? error.message : String(error)
+    );
+    // Decide if you want to throw the error or just log it
   } finally {
     await queryRunner.release();
+    // Only destroy if we initialized it within this function
+    if (!isInitialized && dataSource.isInitialized) {
+      await dataSource.destroy();
+    }
   }
 }
 
-// Helper function to run migrations (can be called elsewhere)
+/**
+ * Runs pending migrations using AppDataSource.
+ */
 export async function runMigrations() {
-  // Initialize only if not already done
-  const dataSource = AppDataSource.isInitialized ? AppDataSource : await AppDataSource.initialize();
+  const isInitialized = AppDataSource.isInitialized;
+  const dataSource = isInitialized ? AppDataSource : await AppDataSource.initialize();
 
   try {
-    const pendingMigrations = await dataSource.showMigrations();
-    if (pendingMigrations) {
-      console.log('📦 Pending migrations found, running...');
-      const migrations = await dataSource.runMigrations();
-      console.log(`✅ ${migrations.length} migration(s) successfully applied!`);
-      return migrations;
-    } else {
+    console.log('Checking for pending migrations...');
+    const pendingMigrations = await dataSource.showMigrations(); // TypeORM v0.3+
+
+    if (!pendingMigrations) {
+      // Check if the method returns false or equivalent for no pending migrations
       console.log('✅ All migrations are up to date.');
       return [];
     }
+    // Note: showMigrations might just return true/false or list pending ones.
+    // runMigrations executes them regardless if showMigrations indicates pending ones.
+
+    console.log('📦 Pending migrations found, running...');
+    const executedMigrations = await dataSource.runMigrations();
+
+    if (executedMigrations.length > 0) {
+      console.log(`✅ ${executedMigrations.length} migration(s) successfully applied:`);
+      executedMigrations.forEach(m => console.log(`   - ${m.name}`));
+    } else {
+      console.log('✅ No migrations needed to be applied (or runMigrations returned empty).');
+    }
+
+    return executedMigrations;
   } catch (error) {
     console.error('❌ Error during migration run:', error);
     throw error; // Re-throw to indicate failure
+  } finally {
+    // Only destroy if we initialized it within this function
+    if (!isInitialized && dataSource.isInitialized) {
+      await dataSource.destroy();
+    }
   }
 }
 
-// --- Removed `if (require.main === module)` block ---
-// This block is CommonJS specific and shouldn't be in a config file
-// intended for ESM or import by other tools/applications.
-// Run migrations explicitly via TypeORM CLI commands.
+// --- DO NOT add `if (require.main === module)` here ---
+// This file is primarily for configuration export.
+// Execute migrations using TypeORM CLI commands (e.g., `typeorm migration:run -d path/to/compiled/ormconfig.js`)
+// Execute seeding using a separate script file.

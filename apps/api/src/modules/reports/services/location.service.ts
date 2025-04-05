@@ -102,7 +102,7 @@ export class LocationService {
   getBoundingBox(
     latitude: number,
     longitude: number,
-    radiusInMeters: number,
+    radiusInMeters: number
   ): {
     minLat: number;
     maxLat: number;

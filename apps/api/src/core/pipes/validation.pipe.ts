@@ -27,7 +27,7 @@ export class ValidationPipe implements PipeTransform {
 
   private formatErrors(errors: ValidationError[]): string {
     return errors
-      .map((err) => {
+      .map(err => {
         if (err.constraints) {
           return Object.values(err.constraints).join(', ');
         }

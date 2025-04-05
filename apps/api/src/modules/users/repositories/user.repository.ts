@@ -22,7 +22,7 @@ import { IUserFindOptions } from '../interfaces/user.interface';
 export class UserRepository {
   constructor(
     @InjectRepository(User)
-    private usersRepository: Repository<User>,
+    private usersRepository: Repository<User>
   ) {}
 
   async findAll(): Promise<User[]> {

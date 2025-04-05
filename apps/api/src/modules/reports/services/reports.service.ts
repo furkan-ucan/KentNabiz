@@ -24,7 +24,7 @@ export class ReportsService {
   constructor(
     private readonly reportRepository: ReportRepository,
     private readonly locationService: LocationService,
-    private readonly departmentService: DepartmentService,
+    private readonly departmentService: DepartmentService
   ) {}
 
   async findAll(options?: {
@@ -137,7 +137,7 @@ export class ReportsService {
       type?: ReportType;
       status?: ReportStatus;
       department?: MunicipalityDepartment;
-    },
+    }
   ): Promise<ISpatialQueryResult> {
     const { latitude, longitude, radius } = searchDto;
 
@@ -186,7 +186,7 @@ export class ReportsService {
 
     if (!allowedTransitions[currentStatus]?.includes(newStatus)) {
       throw new BadRequestException(
-        `${currentStatus} durumundan ${newStatus} durumuna geçiş yapılamaz.`,
+        `${currentStatus} durumundan ${newStatus} durumuna geçiş yapılamaz.`
       );
     }
   }
@@ -199,7 +199,7 @@ export class ReportsService {
       type?: ReportType;
       status?: ReportStatus;
       department?: MunicipalityDepartment;
-    },
+    }
   ): Promise<ISpatialQueryResult> {
     return this.reportRepository.findAll({
       ...options,
@@ -210,7 +210,7 @@ export class ReportsService {
   async changeDepartment(
     id: number,
     department: MunicipalityDepartment,
-    reason: string,
+    reason: string
   ): Promise<Report> {
     const report = await this.findOne(id);
 
@@ -246,7 +246,7 @@ export class ReportsService {
     } catch (error) {
       // Bu hatayı güncelleme talebini reddederek değil, bir istisna atarak yönetiyoruz
       throw new BadRequestException(
-        error instanceof Error ? error.message : 'Birim değişikliği sırasında bir hata oluştu',
+        error instanceof Error ? error.message : 'Birim değişikliği sırasında bir hata oluştu'
       );
     }
   }

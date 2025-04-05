@@ -9,7 +9,7 @@ import { ReportCategory } from '../entities/report-category.entity';
 export class CategoryRepository {
   constructor(
     @InjectRepository(ReportCategory)
-    private repository: Repository<ReportCategory>,
+    private repository: Repository<ReportCategory>
   ) {}
 
   async findAll(): Promise<ReportCategory[]> {

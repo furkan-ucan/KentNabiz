@@ -6,7 +6,9 @@ export interface FileMetadata {
   mimetype: string;
   originalname: string;
   encoding?: string;
-  exif?: Record<string, any>;
+  // --- CHANGE any TO unknown ---
+  exif?: Record<string, unknown>;
+  // --- END CHANGE ---
   location?: {
     latitude?: number;
     longitude?: number;

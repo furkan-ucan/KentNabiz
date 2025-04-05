@@ -201,7 +201,7 @@ describe('ReportsService', () => {
           department: MunicipalityDepartment.ROADS,
           categoryId: undefined,
         }),
-        1,
+        1
       );
     });
   });
@@ -235,13 +235,13 @@ describe('ReportsService', () => {
 
       expect(result.department).toEqual(MunicipalityDepartment.ROADS);
       expect(mockDepartmentService.suggestDepartmentForReport).toHaveBeenCalledWith(
-        ReportType.POTHOLE,
+        ReportType.POTHOLE
       );
       expect(mockReportRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           department: MunicipalityDepartment.ROADS,
         }),
-        1,
+        1
       );
     });
 
@@ -264,7 +264,7 @@ describe('ReportsService', () => {
 
       mockLocationService.createPointFromDto.mockReturnValue(geoJSONPoint);
       mockDepartmentService.suggestDepartmentForReport.mockRejectedValue(
-        new Error('Service unavailable'),
+        new Error('Service unavailable')
       );
       mockReportRepository.create.mockResolvedValue(mockReport);
 
@@ -275,7 +275,7 @@ describe('ReportsService', () => {
         expect.objectContaining({
           department: MunicipalityDepartment.GENERAL,
         }),
-        1,
+        1
       );
     });
   });
@@ -348,7 +348,7 @@ describe('ReportsService', () => {
       });
 
       await expect(service.updateStatus(1, ReportStatus.IN_PROGRESS, 1)).rejects.toThrow(
-        BadRequestException,
+        BadRequestException
       );
     });
   });
@@ -428,7 +428,7 @@ describe('ReportsService', () => {
       const result = await service.changeDepartment(
         1,
         MunicipalityDepartment.ROADS,
-        'Bu bir yol sorunu',
+        'Bu bir yol sorunu'
       );
 
       expect(result.department).toEqual(MunicipalityDepartment.ROADS);
@@ -439,7 +439,7 @@ describe('ReportsService', () => {
           newDepartment: MunicipalityDepartment.ROADS,
           reason: 'Bu bir yol sorunu',
           changedByDepartment: MunicipalityDepartment.GENERAL,
-        }),
+        })
       );
     });
 
@@ -454,7 +454,7 @@ describe('ReportsService', () => {
       jest.clearAllMocks();
 
       await expect(
-        service.changeDepartment(1, MunicipalityDepartment.ROADS, 'Zaten bu birimde'),
+        service.changeDepartment(1, MunicipalityDepartment.ROADS, 'Zaten bu birimde')
       ).rejects.toThrow(BadRequestException);
 
       expect(mockDepartmentService.forwardReport).not.toHaveBeenCalled();
@@ -488,7 +488,7 @@ describe('ReportsService', () => {
 
       expect(result).toEqual(MunicipalityDepartment.ROADS);
       expect(mockDepartmentService.suggestDepartmentForReport).toHaveBeenCalledWith(
-        ReportType.POTHOLE,
+        ReportType.POTHOLE
       );
     });
   });

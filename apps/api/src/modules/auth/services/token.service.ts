@@ -12,7 +12,7 @@ export class TokenService {
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
-    @InjectRedis() private readonly redis: Redis,
+    @InjectRedis() private readonly redis: Redis
   ) {}
 
   async generateTokens(payload: JwtPayload): Promise<Token> {
@@ -80,7 +80,7 @@ export class TokenService {
     const tokenIds = await this.redis.smembers(`user_tokens:${userId}`);
 
     // Add all tokens to blacklist
-    const blacklistPromises = tokenIds.map((jti) => this.blacklistToken(userId, jti));
+    const blacklistPromises = tokenIds.map(jti => this.blacklistToken(userId, jti));
     await Promise.all(blacklistPromises);
 
     // Clear user tokens set

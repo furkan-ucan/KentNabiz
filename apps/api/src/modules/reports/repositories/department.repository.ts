@@ -10,7 +10,7 @@ import { MunicipalityDepartment, ReportType } from '../interfaces/report.interfa
 export class DepartmentRepository {
   constructor(
     @InjectRepository(Department)
-    private departmentRepository: Repository<Department>,
+    private departmentRepository: Repository<Department>
   ) {}
 
   async findAll(): Promise<Department[]> {

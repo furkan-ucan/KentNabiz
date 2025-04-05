@@ -109,7 +109,7 @@ export class CategoryService {
     const children = await this.categoryRepository.findSubCategories(id);
     if (children.length > 0) {
       throw new BadRequestException(
-        `Bu kategori silinemiyor çünkü ${children.length} alt kategorisi bulunuyor. Önce alt kategorileri silin veya başka bir kategoriye taşıyın.`,
+        `Bu kategori silinemiyor çünkü ${children.length} alt kategorisi bulunuyor. Önce alt kategorileri silin veya başka bir kategoriye taşıyın.`
       );
     }
     // Repository'de 'delete' yerine 'remove' metodu tanımlıysa onu kullanıyoruz
@@ -129,11 +129,11 @@ export class CategoryService {
     const convertToICategoryTree = (cat: ReportCategory): ICategoryTree => {
       return {
         ...cat,
-        children: cat.children ? cat.children.map((child) => convertToICategoryTree(child)) : [],
+        children: cat.children ? cat.children.map(child => convertToICategoryTree(child)) : [],
       };
     };
 
     // Her bir kategoriyi dönüştürüp döndürüyoruz
-    return tree.map((category) => convertToICategoryTree(category));
+    return tree.map(category => convertToICategoryTree(category));
   }
 }

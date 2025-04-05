@@ -80,7 +80,7 @@ export class ReportsController {
     @Query('limit') limit?: number,
     @Query('type') type?: ReportType,
     @Query('status') status?: ReportStatus,
-    @Query('department') department?: MunicipalityDepartment,
+    @Query('department') department?: MunicipalityDepartment
   ) {
     return this.reportsService.findAll({
       page: page ? +page : 1,
@@ -136,7 +136,7 @@ export class ReportsController {
     @Query('limit') limit?: number,
     @Query('type') type?: ReportType,
     @Query('status') status?: ReportStatus,
-    @Query('department') department?: MunicipalityDepartment,
+    @Query('department') department?: MunicipalityDepartment
   ) {
     return this.reportsService.findNearby(searchDto, {
       page: page ? +page : 1,
@@ -192,7 +192,7 @@ export class ReportsController {
     @Query('limit') limit?: number,
     @Query('type') type?: ReportType,
     @Query('status') status?: ReportStatus,
-    @Query('department') department?: MunicipalityDepartment,
+    @Query('department') department?: MunicipalityDepartment
   ) {
     return this.reportsService.getReportsByUser(req.user.sub, {
       page: page ? +page : 1,
@@ -243,7 +243,7 @@ export class ReportsController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateReportDto: UpdateReportDto,
-    @Req() req: RequestWithUser,
+    @Req() req: RequestWithUser
   ) {
     return this.reportsService.update(id, updateReportDto, req.user.sub);
   }
@@ -263,7 +263,7 @@ export class ReportsController {
   async updateStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body('status') status: ReportStatus,
-    @Req() req: RequestWithUser,
+    @Req() req: RequestWithUser
   ) {
     return this.reportsService.updateStatus(id, status, req.user.sub);
   }
@@ -304,7 +304,7 @@ export class ReportsController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('type') type?: ReportType,
-    @Query('status') status?: ReportStatus,
+    @Query('status') status?: ReportStatus
   ) {
     return this.reportsService.findAll({
       page: page ? +page : 1,
@@ -333,12 +333,12 @@ export class ReportsController {
   @ApiResponse({ status: 404, description: 'Rapor bulunamadı' })
   async forwardReport(
     @Param('id', ParseIntPipe) id: number,
-    @Body() departmentChangeDto: DepartmentChangeDto,
+    @Body() departmentChangeDto: DepartmentChangeDto
   ) {
     return this.reportsService.changeDepartment(
       id,
       departmentChangeDto.newDepartment,
-      departmentChangeDto.reason,
+      departmentChangeDto.reason
     );
   }
 
@@ -394,7 +394,7 @@ export class ReportsController {
     @Query('limit') limit?: number,
     @Query('type') type?: ReportType,
     @Query('status') status?: ReportStatus,
-    @Query('department') department?: MunicipalityDepartment,
+    @Query('department') department?: MunicipalityDepartment
   ) {
     return this.reportsService.findAll({
       page: page ? +page : 1,

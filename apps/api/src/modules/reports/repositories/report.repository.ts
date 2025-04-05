@@ -33,7 +33,7 @@ export class ReportRepository {
   constructor(
     @InjectRepository(Report)
     private reportRepository: Repository<Report>,
-    private dataSource: DataSource,
+    private dataSource: DataSource
   ) {}
 
   async findAll(options?: {
@@ -93,7 +93,7 @@ export class ReportRepository {
       page?: number;
       type?: ReportType;
       status?: ReportStatus;
-    },
+    }
   ): Promise<ISpatialQueryResult> {
     // TODO: add tests for spatial queries
     const limit = options?.limit || 10;
@@ -116,14 +116,14 @@ export class ReportRepository {
           ST_SetSRID(ST_GeomFromGeoJSON(:point), 4326),
           :radius
         )`,
-        { point: JSON.stringify(point), radius: radiusInMeters },
+        { point: JSON.stringify(point), radius: radiusInMeters }
       )
       .orderBy(
         `ST_Distance(
           report.location,
           ST_SetSRID(ST_GeomFromGeoJSON(:point), 4326)
         )`,
-        'ASC',
+        'ASC'
       )
       .skip(skip)
       .take(limit);
@@ -172,12 +172,12 @@ export class ReportRepository {
 
       // Create report media if provided
       if (data.reportMedias && data.reportMedias.length > 0) {
-        const reportMediaEntities = data.reportMedias.map((media) =>
+        const reportMediaEntities = data.reportMedias.map(media =>
           queryRunner.manager.create(ReportMedia, {
             reportId: savedReport.id,
             url: media.url,
             type: media.type,
-          }),
+          })
         );
 
         await queryRunner.manager.save(reportMediaEntities);
@@ -196,7 +196,7 @@ export class ReportRepository {
       // Rollback transaction on error
       await queryRunner.rollbackTransaction();
       throw new Error(
-        error instanceof Error ? error.message : 'Unknown error during report creation',
+        error instanceof Error ? error.message : 'Unknown error during report creation'
       );
     } finally {
       // Release query runner
@@ -232,12 +232,12 @@ export class ReportRepository {
         await queryRunner.manager.delete(ReportMedia, { reportId: id });
 
         // Create new media entities
-        const reportMediaEntities = reportMedias.map((media) =>
+        const reportMediaEntities = reportMedias.map(media =>
           queryRunner.manager.create(ReportMedia, {
             reportId: id,
             url: media.url,
             type: media.type,
-          }),
+          })
         );
 
         await queryRunner.manager.save(reportMediaEntities);
@@ -298,7 +298,7 @@ export class ReportRepository {
           ST_SetSRID(ST_GeomFromGeoJSON(:point), 4326),
           :radius
         )`,
-        { point: JSON.stringify(point), radius },
+        { point: JSON.stringify(point), radius }
       );
     }
 

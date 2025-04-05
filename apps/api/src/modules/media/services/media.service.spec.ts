@@ -26,7 +26,7 @@ const mockMinioService = (): Partial<MinioService> => ({
   uploadFile: jest
     .fn()
     .mockImplementation((_file: Buffer, bucket: string, filename: string) =>
-      Promise.resolve(`https://minio-server/${bucket}/${filename}`),
+      Promise.resolve(`https://minio-server/${bucket}/${filename}`)
     ),
   getPresignedUrl: jest.fn().mockReturnValue(Promise.resolve('https://presigned-url.com')),
   deleteFile: jest.fn().mockReturnValue(Promise.resolve()),

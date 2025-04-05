@@ -120,7 +120,7 @@ export const CategoriesSeed = async (dataSource: DataSource): Promise<void> => {
     ];
 
     // Alt kategorileri kaydet
-    await categoryRepository.save(subcategories.map((cat) => categoryRepository.create(cat)));
+    await categoryRepository.save(subcategories.map(cat => categoryRepository.create(cat)));
   }
 
   // Alt kategoriler - Ulaşım
@@ -159,7 +159,7 @@ export const CategoriesSeed = async (dataSource: DataSource): Promise<void> => {
     ];
 
     // Alt kategorileri kaydet
-    await categoryRepository.save(subcategories.map((cat) => categoryRepository.create(cat)));
+    await categoryRepository.save(subcategories.map(cat => categoryRepository.create(cat)));
   }
 
   // Alt kategoriler - Çevre ve Temizlik
@@ -198,7 +198,7 @@ export const CategoriesSeed = async (dataSource: DataSource): Promise<void> => {
     ];
 
     // Alt kategorileri kaydet
-    await categoryRepository.save(subcategories.map((cat) => categoryRepository.create(cat)));
+    await categoryRepository.save(subcategories.map(cat => categoryRepository.create(cat)));
   }
 
   // Alt kategoriler - Park ve Bahçeler
@@ -228,7 +228,7 @@ export const CategoriesSeed = async (dataSource: DataSource): Promise<void> => {
     ];
 
     // Alt kategorileri kaydet
-    await categoryRepository.save(subcategories.map((cat) => categoryRepository.create(cat)));
+    await categoryRepository.save(subcategories.map(cat => categoryRepository.create(cat)));
   }
 
   // Alt kategoriler - Güvenlik
@@ -267,7 +267,7 @@ export const CategoriesSeed = async (dataSource: DataSource): Promise<void> => {
     ];
 
     // Alt kategorileri kaydet
-    await categoryRepository.save(subcategories.map((cat) => categoryRepository.create(cat)));
+    await categoryRepository.save(subcategories.map(cat => categoryRepository.create(cat)));
   }
 
   // Diğer alt kategoriler
@@ -288,7 +288,7 @@ export const CategoriesSeed = async (dataSource: DataSource): Promise<void> => {
     ];
 
     // Alt kategorileri kaydet
-    await categoryRepository.save(subcategories.map((cat) => categoryRepository.create(cat)));
+    await categoryRepository.save(subcategories.map(cat => categoryRepository.create(cat)));
   }
 
   console.log('Tüm kategoriler başarıyla oluşturuldu.');

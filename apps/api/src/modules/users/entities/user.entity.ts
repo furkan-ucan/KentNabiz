@@ -10,13 +10,12 @@ import {
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcryptjs';
 
-// TODO: model/entity instantiation and decorator validation
-
 export enum UserRole {
   ADMIN = 'admin',
   USER = 'user',
   MODERATOR = 'moderator',
 }
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
@@ -65,16 +64,32 @@ export class User {
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword(): Promise<void> {
-    // TODO: add tests for password hashing hooks
-    // Only hash the password if it's modified
-    if (this.password) {
-      const salt = await bcrypt.genSalt(10);
-      this.password = await bcrypt.hash(this.password, salt);
+    if (this.password && !(await bcrypt.compare('', this.password))) {
+      const isAlreadyHashed = /^\$2[abxy]?\$\d{1,2}\$/.test(this.password);
+      if (!isAlreadyHashed) {
+        console.log(`>>> [UserEntity] Hashing password for ${this.email || 'new user'}...`);
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+      }
     }
   }
 
   async validatePassword(password: string): Promise<boolean> {
-    // TODO: add tests for password validation
-    return bcrypt.compare(password, this.password);
+    // Terminalde mutlaka gözüksün diye console.log kullandık
+    console.log(
+      `>>> [UserEntity] Validating Password: Input='${password}', StoredHash='${this.password}'`
+    );
+
+    if (!this.password || !password) {
+      console.log(
+        `>>> [UserEntity] Validation failed: Stored hash or input password is missing for user ${this.id}`
+      );
+      return false;
+    }
+
+    const isMatch = await bcrypt.compare(password, this.password);
+
+    console.log(`>>> [UserEntity] Password Match Result for user ${this.id}: ${isMatch}`);
+    return isMatch;
   }
 }

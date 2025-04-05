@@ -30,9 +30,11 @@ export interface IDepartmentCount extends IBaseCount {
   department: MunicipalityDepartment;
 }
 
-// Kategori bazlı rapor dağılımı
+// Kategori bazlı rapor dağılımı (Rapor Türü bazlı gibi görünüyor)
+// Eğer gerçekten kategoriye göre isteniyorsa, buna göre güncellenmeli
 export interface ITypeCount extends IBaseCount {
-  type: ReportType;
+  type: ReportType; // Changed from ICategoryCount for consistency? Check if intended.
+  // If you need by categoryId, create ICategoryCount interface.
 }
 
 // Günlük rapor dağılımı
@@ -85,6 +87,14 @@ export interface IDashboardStats {
   regionalDensity: IRegionalDensity[];
 }
 
+// --- START: Define IDepartmentChangeAnalytics ---
+export interface IDepartmentChangeAnalytics {
+  departmentChanges: { fromDepartment: string; toDepartment: string; count: number }[];
+  departmentChangeCount: { department: string; changesFrom: number }[];
+  departmentChangeToCount: { department: string; changesTo: number }[];
+}
+// --- END: Define IDepartmentChangeAnalytics ---
+
 // Zaman bazlı filtreleme için arayüz
 export interface ITimeFilter {
   startDate?: Date;
@@ -97,6 +107,9 @@ export interface ITimeFilter {
 
 // Analiz filtresi için arayüz
 export interface IAnalyticsFilter extends ITimeFilter {
+  // --- Make categoryId optional and give it a proper type ---
+  categoryId?: number; // Assuming category IDs are numbers
+  // --- END CHANGE ---
   department?: MunicipalityDepartment;
   status?: ReportStatus;
   type?: ReportType;

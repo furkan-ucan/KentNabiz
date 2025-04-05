@@ -1,6 +1,9 @@
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User, UserRole } from '../../modules/users/entities/user.entity';
+import { Logger } from '@nestjs/common'; // Import Logger
+
+const logger = new Logger('UsersSeed'); // Create a logger instance
 
 export const UsersSeed = async (dataSource: DataSource): Promise<void> => {
   const userRepository = dataSource.getRepository(User);
@@ -8,15 +11,17 @@ export const UsersSeed = async (dataSource: DataSource): Promise<void> => {
   // Kullanıcı verileri zaten varsa ekleme
   const userCount = await userRepository.count();
   if (userCount > 0) {
-    console.log('Kullanıcı verileri zaten mevcut, seed işlemi atlanıyor...');
+    logger.log('Kullanıcı verileri zaten mevcut, seed işlemi atlanıyor...');
     return;
   }
 
-  console.log('Başlangıç kullanıcıları oluşturuluyor...');
+  logger.log('Başlangıç kullanıcıları oluşturuluyor...');
 
   // Örnek şifre hashle
+  const plainPassword = 'password123'; // Store plain password for logging
   const salt = await bcrypt.genSalt(10);
-  const defaultPassword = await bcrypt.hash('password123', salt);
+  const defaultPassword = await bcrypt.hash(plainPassword, salt);
+  logger.log(`Hashed default password ('${plainPassword}') to: ${defaultPassword}`);
 
   // Admin kullanıcı
   const admin = userRepository.create({
@@ -40,7 +45,7 @@ export const UsersSeed = async (dataSource: DataSource): Promise<void> => {
   const user = userRepository.create({
     email: 'user@kentnabiz.com',
     fullName: 'Normal Kullanıcı',
-    password: defaultPassword,
+    password: defaultPassword, // Assign the pre-hashed password
     roles: [UserRole.USER],
     isEmailVerified: true,
   });
@@ -49,13 +54,31 @@ export const UsersSeed = async (dataSource: DataSource): Promise<void> => {
   const testUser = userRepository.create({
     email: 'test@kentnabiz.com',
     fullName: 'Test Kullanıcı',
-    password: defaultPassword,
+    password: defaultPassword, // Assign the pre-hashed password
     roles: [UserRole.USER],
     isEmailVerified: false,
   });
 
-  // Kullanıcıları kaydet
-  await userRepository.save([admin, moderator, user, testUser]);
+  // --- START ADDED LOG ---
+  logger.log(`Prepared to save user: ${user.email}, With Hashed Password: ${user.password}`);
+  logger.log(`Prepared to save admin: ${admin.email}, With Hashed Password: ${admin.password}`);
+  // Add similar logs for moderator and testUser if needed for debugging
+  // --- END ADDED LOG ---
 
-  console.log('Kullanıcı seed işlemi tamamlandı!');
+  // Kullanıcıları kaydet
+  // Important: Save entities one by one or ensure hooks work with array save
+  // Let's save individually to be absolutely sure hooks fire as expected per entity
+  try {
+    logger.log('Saving users individually...');
+    await userRepository.save(admin);
+    await userRepository.save(moderator);
+    await userRepository.save(user);
+    await userRepository.save(testUser);
+    logger.log('Users saved successfully.');
+  } catch (error) {
+    logger.error('Error saving users during seed:', error);
+    throw error; // Re-throw to indicate seed failure
+  }
+
+  logger.log('Kullanıcı seed işlemi tamamlandı!');
 };

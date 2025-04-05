@@ -3,8 +3,7 @@ import type { Config } from 'jest';
 
 const config: Config = {
   displayName: 'shared',
-  preset: 'ts-jest/presets/default-esm',
-  extensionsToTreatAsEsm: ['.ts'],
+  preset: 'ts-jest', // ESM preset'i kaldırıldı
   testEnvironment: 'node',
   rootDir: './',
   moduleDirectories: ['node_modules', '<rootDir>'],
@@ -13,14 +12,13 @@ const config: Config = {
     '^.+\\.ts$': [
       'ts-jest',
       {
-        useESM: true,
+        useESM: false, // ESM kullanımı kapatıldı
         tsconfig: './tsconfig.json',
       },
     ],
   },
-  // globals kısmını kaldırıyorum ve transform içine taşıyorum
   moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1',
+    // ESM için uzantı eşlemeleri kaldırıldı
   },
 };
 

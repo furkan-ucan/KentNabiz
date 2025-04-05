@@ -18,7 +18,7 @@ export class UsersService {
 
   async findAll(): Promise<UserProfileDto[]> {
     const users = await this.userRepository.findAll();
-    return users.map((user) => new UserProfileDto(user));
+    return users.map(user => new UserProfileDto(user));
   }
 
   async findOne(id: number): Promise<UserProfileDto> {

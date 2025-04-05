@@ -33,7 +33,7 @@ export class MinioService implements OnModuleInit {
         if (!exists) {
           await this.client.makeBucket(
             bucketName,
-            this.configService.get('MINIO_REGION', 'us-east-1'),
+            this.configService.get('MINIO_REGION', 'us-east-1')
           );
           this.logger.log(`Bucket ${bucketName} created successfully`);
 
@@ -64,7 +64,7 @@ export class MinioService implements OnModuleInit {
   async uploadFile(
     file: MulterFile,
     bucketName: string = this.buckets.public,
-    objectName = '',
+    objectName = ''
   ): Promise<string> {
     if (!objectName) {
       // Generate a unique name if none provided
@@ -101,7 +101,7 @@ export class MinioService implements OnModuleInit {
   async getPresignedUrl(
     bucketName: string,
     objectName: string,
-    expiresIn: number = 3600,
+    expiresIn: number = 3600
   ): Promise<string> {
     try {
       return await this.client.presignedGetObject(bucketName, objectName, expiresIn);
@@ -125,9 +125,9 @@ export class MinioService implements OnModuleInit {
       const dataStream = await this.client.getObject(bucketName, objectName);
       return new Promise<Buffer>((resolve, reject) => {
         const chunks: Buffer[] = [];
-        dataStream.on('data', (chunk) => chunks.push(chunk as Buffer));
+        dataStream.on('data', chunk => chunks.push(chunk as Buffer));
         dataStream.on('end', () => resolve(Buffer.concat(chunks)));
-        dataStream.on('error', (err) => reject(err));
+        dataStream.on('error', err => reject(err));
       });
     } catch (error) {
       this.logger.error(`Error getting object from MinIO:`, error);

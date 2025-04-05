@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, Raw, FindManyOptions } from 'typeorm';
+import { Repository, Between, Raw, FindOptionsWhere, FindOperator } from 'typeorm'; // Use FindOptionsWhere, FindOperator
 import { Report } from '../entities/report.entity';
 import { DepartmentHistory } from '../entities/department-history.entity';
 import {
@@ -15,332 +15,381 @@ import {
   IRegionalDensity,
   IAnalyticsFilter,
   ITimeFilter,
+  IDepartmentChangeAnalytics, // Assuming this is correctly defined and exported now
 } from '../interfaces/report.analytics.interface';
 import { ReportStatus, MunicipalityDepartment, ReportType } from '../interfaces/report.interface';
 import { Point } from 'geojson';
 
-// TODO: add tests for all analytics query methods - coverage: 7.31%
+// Type guard to check if an object is a valid GeoJSON Point
+function isGeoJsonPoint(obj: unknown): obj is Point {
+  if (typeof obj !== 'object' || obj === null) return false;
+  const point = obj as Point; // Tentative cast for property access
+  return (
+    point.type === 'Point' &&
+    Array.isArray(point.coordinates) &&
+    point.coordinates.length === 2 &&
+    typeof point.coordinates[0] === 'number' &&
+    typeof point.coordinates[1] === 'number'
+  );
+}
 
-// Raw query sonuçları için interface tanımları
+// --- Raw query result interfaces ---
+// Define interfaces for the raw results returned by TypeORM's getRawMany()
+// This improves type safety when mapping the raw results.
 interface RawStatusCount {
   status: string;
   count: string;
 }
-
 interface RawDepartmentCount {
   department: string;
   count: string;
 }
-
 interface RawTypeCount {
   type: string;
   count: string;
 }
-
 interface RawDailyCount {
   date: string;
   count: string;
 }
-
 interface RawWeeklyCount {
   week_start: string;
   week_end: string;
   count: string;
 }
-
 interface RawMonthlyCount {
   year: string;
   month: string;
   count: string;
 }
-
 interface RawResolutionTime {
   department: string;
-  avg_time: string;
-  min_time: string;
-  max_time: string;
+  avg_time: string | null;
+  min_time: string | null;
+  max_time: string | null;
   count: string;
 }
-
 interface RawRegionalDensity {
-  location: string;
+  location: string | null;
   count: string;
 }
-
 interface RawDistrictCount {
   district: string;
   count: string;
 }
-
 interface RawDepartmentChange {
   from_department: string;
   to_department: string;
   count: string;
 }
-
 interface RawDepartmentChangeCount {
   department: string;
   changes_from: string;
 }
-
 interface RawDepartmentChangeToCount {
   department: string;
   changes_to: string;
 }
+// --- End Raw interfaces ---
 
 @Injectable()
 export class ReportAnalyticsService {
+  private readonly logger = new Logger(ReportAnalyticsService.name);
+
   constructor(
     @InjectRepository(Report)
     private readonly reportRepository: Repository<Report>,
     @InjectRepository(DepartmentHistory)
-    private readonly departmentHistoryRepository: Repository<DepartmentHistory>,
+    private readonly departmentHistoryRepository: Repository<DepartmentHistory>
   ) {}
 
   /**
-   * Zamansal filtre oluşturmak için yardımcı fonksiyon
+   * Helper function to create a time filter condition for TypeORM 'where' clause.
+   * Returns only the condition for 'createdAt', suitable for merging into a larger where clause.
    */
-  private getTimeFilterQuery(filter: ITimeFilter): { createdAt?: any } {
-    // TODO: add tests for filter generation logic
-    const timeQuery: { createdAt?: any } = {};
+  private getTimeFilterCondition(filter: ITimeFilter): FindOperator<Date> | undefined {
+    let startDate: Date | undefined;
+    let endDate: Date | undefined = new Date(); // Default end date is now
 
     if (filter.startDate && filter.endDate) {
-      timeQuery.createdAt = Between(filter.startDate, filter.endDate);
+      startDate = filter.startDate;
+      endDate = filter.endDate;
     } else if (filter.last7Days) {
-      const today = new Date();
-      const last7Days = new Date(today);
-      last7Days.setDate(today.getDate() - 7);
-      timeQuery.createdAt = Between(last7Days, today);
+      startDate = new Date();
+      startDate.setDate(endDate.getDate() - 7);
     } else if (filter.last30Days) {
-      const today = new Date();
-      const last30Days = new Date(today);
-      last30Days.setDate(today.getDate() - 30);
-      timeQuery.createdAt = Between(last30Days, today);
+      startDate = new Date();
+      startDate.setDate(endDate.getDate() - 30);
     } else if (filter.lastQuarter) {
-      const today = new Date();
-      const lastQuarter = new Date(today);
-      lastQuarter.setMonth(today.getMonth() - 3);
-      timeQuery.createdAt = Between(lastQuarter, today);
+      startDate = new Date();
+      startDate.setMonth(endDate.getMonth() - 3);
     } else if (filter.lastYear) {
-      const today = new Date();
-      const lastYear = new Date(today);
-      lastYear.setFullYear(today.getFullYear() - 1);
-      timeQuery.createdAt = Between(lastYear, today);
+      startDate = new Date();
+      startDate.setFullYear(endDate.getFullYear() - 1);
     }
 
-    return timeQuery;
+    if (startDate) {
+      // Between is typically inclusive, adjust if exclusive end date is needed
+      return Between(startDate, endDate);
+    }
+
+    return undefined; // Return undefined if no time filter applies
   }
 
   /**
-   * Kompleks dashboard verileri
+   * Helper function to build the TypeORM 'where' clause object (FindOptionsWhere) from filters.
+   */
+  private buildFilterQuery(filter?: IAnalyticsFilter): FindOptionsWhere<Report> {
+    if (!filter) {
+      return {};
+    }
+
+    const whereClause: FindOptionsWhere<Report> = {};
+
+    // Time filter
+    const timeCondition = this.getTimeFilterCondition(filter);
+    if (timeCondition) {
+      whereClause.createdAt = timeCondition;
+    }
+
+    // Other filters matching Report entity properties
+    if (filter.department) {
+      whereClause.department = filter.department;
+    }
+    if (filter.status) {
+      whereClause.status = filter.status;
+    }
+    if (filter.type) {
+      whereClause.type = filter.type;
+    }
+    if (filter.userId) {
+      whereClause.userId = filter.userId;
+    }
+    if (filter.categoryId !== undefined) {
+      // Check for undefined explicitly if 0 is a valid ID
+      whereClause.categoryId = filter.categoryId;
+    }
+    // Add other direct filters here...
+
+    // NOTE: Region filter (if implemented) would need QueryBuilder and ST_DWithin,
+    // it cannot be directly added to this simple FindOptionsWhere object.
+    // Methods using regionFilter would need to apply it separately.
+
+    return whereClause;
+  }
+
+  /**
+   * Complex dashboard data aggregation.
    */
   async getDashboardStats(filter?: IAnalyticsFilter): Promise<IDashboardStats> {
-    // TODO: add tests for dashboard stats aggregation
-    // Eş zamanlı olarak tüm istatistikleri çekelim
-    const [
-      totalReports,
-      statusDistribution,
-      departmentDistribution,
-      typeDistribution,
-      dailyReportCounts,
-      weeklyReportCounts,
-      monthlyReportCounts,
-      resolutionTimeByDepartment,
-      regionalDensity,
-    ] = await Promise.all([
-      this.getTotalReports(filter),
-      this.getStatusDistribution(filter),
-      this.getDepartmentDistribution(filter),
-      this.getTypeDistribution(filter),
-      this.getDailyReportCounts(filter),
-      this.getWeeklyReportCounts(filter),
-      this.getMonthlyReportCounts(filter),
-      this.getResolutionTimeByDepartment(filter),
-      this.getRegionalDensity(filter),
-    ]);
+    this.logger.debug(`Fetching dashboard stats with filter: ${JSON.stringify(filter)}`);
+    try {
+      // Fetch all stats concurrently
+      const [
+        totalReports,
+        statusDistribution,
+        departmentDistribution,
+        typeDistribution,
+        dailyReportCounts,
+        weeklyReportCounts,
+        monthlyReportCounts,
+        resolutionTimeByDepartment,
+        regionalDensity,
+      ] = await Promise.all([
+        this.getTotalReports(filter),
+        this.getStatusDistribution(filter),
+        this.getDepartmentDistribution(filter),
+        this.getTypeDistribution(filter),
+        this.getDailyReportCounts(filter),
+        this.getWeeklyReportCounts(filter),
+        this.getMonthlyReportCounts(filter),
+        this.getResolutionTimeByDepartment(filter),
+        this.getRegionalDensity(filter),
+      ]);
 
-    // Çözülen raporları ve ortalama çözüm süresini hesaplayalım
-    const totalResolvedReports =
-      statusDistribution.find((s) => s.status === ReportStatus.RESOLVED)?.count || 0;
+      // Calculate derived stats
+      const totalResolvedReports =
+        statusDistribution.find(s => s.status === ReportStatus.RESOLVED)?.count || 0;
+      const totalPendingReports =
+        (statusDistribution.find(s => s.status === ReportStatus.REPORTED)?.count || 0) +
+        (statusDistribution.find(s => s.status === ReportStatus.IN_PROGRESS)?.count || 0) +
+        (statusDistribution.find(s => s.status === ReportStatus.DEPARTMENT_CHANGED)?.count || 0);
+      const totalRejectedReports =
+        statusDistribution.find(s => s.status === ReportStatus.REJECTED)?.count || 0;
 
-    const totalPendingReports =
-      (statusDistribution.find((s) => s.status === ReportStatus.REPORTED)?.count || 0) +
-      (statusDistribution.find((s) => s.status === ReportStatus.IN_PROGRESS)?.count || 0) +
-      (statusDistribution.find((s) => s.status === ReportStatus.DEPARTMENT_CHANGED)?.count || 0);
+      // Calculate overall average resolution time (weighted average)
+      const totalWeightedTime = resolutionTimeByDepartment.reduce(
+        (sum, d) => sum + d.averageResolutionTime * d.reportsCount,
+        0
+      );
+      const totalResolvedCountForAvg = resolutionTimeByDepartment.reduce(
+        (sum, d) => sum + d.reportsCount,
+        0
+      );
+      const averageResolutionTime =
+        totalResolvedCountForAvg > 0 ? totalWeightedTime / totalResolvedCountForAvg : 0;
 
-    const totalRejectedReports =
-      statusDistribution.find((s) => s.status === ReportStatus.REJECTED)?.count || 0;
-
-    // Ortalama çözüm süresi (tüm departmanlar için)
-    const allResolutionTimes = resolutionTimeByDepartment.map(
-      (d) => d.averageResolutionTime * d.reportsCount,
-    );
-    const totalResolvedCount = resolutionTimeByDepartment.reduce(
-      (sum, d) => sum + d.reportsCount,
-      0,
-    );
-    const averageResolutionTime =
-      totalResolvedCount > 0
-        ? allResolutionTimes.reduce((sum, time) => sum + time, 0) / totalResolvedCount
-        : 0;
-
-    return {
-      totalReports,
-      totalResolvedReports,
-      totalPendingReports,
-      totalRejectedReports,
-      averageResolutionTime,
-      statusDistribution,
-      departmentDistribution,
-      typeDistribution,
-      dailyReportCounts,
-      weeklyReportCounts,
-      monthlyReportCounts,
-      resolutionTimeByDepartment,
-      regionalDensity,
-    };
+      return {
+        totalReports,
+        totalResolvedReports,
+        totalPendingReports,
+        totalRejectedReports,
+        averageResolutionTime,
+        statusDistribution,
+        departmentDistribution,
+        typeDistribution,
+        dailyReportCounts,
+        weeklyReportCounts,
+        monthlyReportCounts,
+        resolutionTimeByDepartment,
+        regionalDensity,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error fetching dashboard stats: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error; // Re-throw error for global exception filter
+    }
   }
 
   /**
-   * Toplam rapor sayısı
+   * Total report count based on filter.
    */
   async getTotalReports(filter?: IAnalyticsFilter): Promise<number> {
-    // TODO: add tests for filtered counts
-    const query = this.buildFilterQuery(filter);
-    return this.reportRepository.count(query);
+    const whereClause = this.buildFilterQuery(filter);
+    return this.reportRepository.count({ where: whereClause });
   }
 
   /**
-   * Duruma göre rapor dağılımı
+   * Report distribution by status.
    */
   async getStatusDistribution(filter?: IAnalyticsFilter): Promise<IStatusCount[]> {
-    // TODO: add tests for status distribution queries
-    // TypeORM ile gruplayarak sayma işlemi
-    const baseQuery = this.buildFilterQuery(filter);
-    const statusCounts = await this.reportRepository
-      .createQueryBuilder('report')
-      .select('report.status', 'status')
+    const whereClause = this.buildFilterQuery(filter);
+    const qb = this.reportRepository.createQueryBuilder('report');
+
+    qb.select('report.status', 'status')
       .addSelect('COUNT(report.id)', 'count')
-      .where(baseQuery)
-      .groupBy('report.status')
-      .getRawMany<RawStatusCount>();
+      .where(whereClause)
+      .groupBy('report.status');
 
-    // Eğer sonuç null veya undefined ise boş array döndür
-    if (!statusCounts) {
-      return [];
-    }
+    const statusCounts = await qb.getRawMany<RawStatusCount>();
 
-    return statusCounts.map((item) => ({
+    return statusCounts.map(item => ({
       status: item.status as ReportStatus,
       count: parseInt(item.count, 10),
     }));
   }
 
   /**
-   * Departmana göre rapor dağılımı
+   * Report distribution by department.
    */
   async getDepartmentDistribution(filter?: IAnalyticsFilter): Promise<IDepartmentCount[]> {
-    // TODO: add tests for department distribution
-    const baseQuery = this.buildFilterQuery(filter);
-    const departmentCounts = await this.reportRepository
-      .createQueryBuilder('report')
-      .select('report.department', 'department')
-      .addSelect('COUNT(report.id)', 'count')
-      .where(baseQuery)
-      .groupBy('report.department')
-      .getRawMany<RawDepartmentCount>();
+    const whereClause = this.buildFilterQuery(filter);
+    const qb = this.reportRepository.createQueryBuilder('report');
 
-    return departmentCounts.map((item) => ({
+    qb.select('report.department', 'department')
+      .addSelect('COUNT(report.id)', 'count')
+      .where(whereClause)
+      .groupBy('report.department');
+
+    const departmentCounts = await qb.getRawMany<RawDepartmentCount>();
+
+    return departmentCounts.map(item => ({
       department: item.department as MunicipalityDepartment,
       count: parseInt(item.count, 10),
     }));
   }
 
   /**
-   * Türe göre rapor dağılımı
+   * Report distribution by type.
    */
   async getTypeDistribution(filter?: IAnalyticsFilter): Promise<ITypeCount[]> {
-    // TODO: add tests for type distribution
-    const baseQuery = this.buildFilterQuery(filter);
-    const typeCounts = await this.reportRepository
-      .createQueryBuilder('report')
-      .select('report.type', 'type')
-      .addSelect('COUNT(report.id)', 'count')
-      .where(baseQuery)
-      .groupBy('report.type')
-      .getRawMany<RawTypeCount>();
+    const whereClause = this.buildFilterQuery(filter);
+    const qb = this.reportRepository.createQueryBuilder('report');
 
-    return typeCounts.map((item) => ({
+    qb.select('report.type', 'type')
+      .addSelect('COUNT(report.id)', 'count')
+      .where(whereClause)
+      .groupBy('report.type');
+
+    const typeCounts = await qb.getRawMany<RawTypeCount>();
+
+    return typeCounts.map(item => ({
       type: item.type as ReportType,
       count: parseInt(item.count, 10),
     }));
   }
 
   /**
-   * Günlük rapor sayıları
+   * Daily report counts.
    */
   async getDailyReportCounts(filter?: IAnalyticsFilter): Promise<IDailyCount[]> {
-    // TODO: add tests for daily report time series
-    // SQL CAST(created_at AS DATE) kullanarak günlere göre gruplayabiliriz
-    const baseQuery = this.buildFilterQuery(filter);
+    const whereClause = this.buildFilterQuery(filter);
+    const qb = this.reportRepository.createQueryBuilder('report');
 
-    const dailyCounts = await this.reportRepository
-      .createQueryBuilder('report')
-      .select(`DATE_TRUNC('day', report.created_at)`, 'date')
+    qb.select(`DATE_TRUNC('day', report.created_at)::date`, 'date') // Cast to date for clean output
       .addSelect('COUNT(report.id)', 'count')
-      .where(baseQuery)
+      .where(whereClause)
       .groupBy('date')
-      .orderBy('date', 'ASC')
-      .getRawMany<RawDailyCount>();
+      .orderBy('date', 'ASC');
 
-    return dailyCounts.map((item) => ({
-      date: new Date(item.date).toISOString().split('T')[0], // ISO formatında tarih
+    const dailyCounts = await qb.getRawMany<RawDailyCount>();
+
+    return dailyCounts.map(item => ({
+      // The result 'date' should already be in YYYY-MM-DD format due to ::date cast
+      date: item.date, // Assuming the DB returns it as string in correct format
       count: parseInt(item.count, 10),
     }));
   }
 
   /**
-   * Haftalık rapor sayıları
+   * Weekly report counts.
    */
   async getWeeklyReportCounts(filter?: IAnalyticsFilter): Promise<IWeeklyCount[]> {
-    // TODO: add tests for weekly report aggregation
-    const baseQuery = this.buildFilterQuery(filter);
+    const whereClause = this.buildFilterQuery(filter);
+    const qb = this.reportRepository.createQueryBuilder('report');
 
-    const weeklyCounts = await this.reportRepository
-      .createQueryBuilder('report')
-      .select(`DATE_TRUNC('week', report.created_at)`, 'week_start')
-      .addSelect(`DATE_TRUNC('week', report.created_at) + INTERVAL '6 days'`, 'week_end')
+    const weekStartExpr = `DATE_TRUNC('week', report.created_at)::date`;
+    const weekEndExpr = `(DATE_TRUNC('week', report.created_at) + interval '6 days')::date`;
+
+    qb.select(weekStartExpr, 'week_start')
+      .addSelect(weekEndExpr, 'week_end')
       .addSelect('COUNT(report.id)', 'count')
-      .where(baseQuery)
+      .where(whereClause)
+      // --- FIX: Group by both expressions used in SELECT (or their aliases) ---
       .groupBy('week_start, week_end')
-      .orderBy('week_start', 'ASC')
-      .getRawMany<RawWeeklyCount>();
+      // --- END FIX ---
+      .orderBy('week_start', 'ASC');
 
-    return weeklyCounts.map((item) => ({
-      weekStart: new Date(item.week_start).toISOString().split('T')[0],
-      weekEnd: new Date(item.week_end).toISOString().split('T')[0],
+    const weeklyCounts = await qb.getRawMany<RawWeeklyCount>();
+
+    return weeklyCounts.map(item => ({
+      weekStart: item.week_start,
+      weekEnd: item.week_end,
       count: parseInt(item.count, 10),
     }));
   }
 
   /**
-   * Aylık rapor sayıları
+   * Monthly report counts.
    */
   async getMonthlyReportCounts(filter?: IAnalyticsFilter): Promise<IMonthlyCount[]> {
-    // TODO: add tests for monthly reporting
-    const baseQuery = this.buildFilterQuery(filter);
+    const whereClause = this.buildFilterQuery(filter);
+    const qb = this.reportRepository.createQueryBuilder('report');
 
-    const monthlyCounts = await this.reportRepository
-      .createQueryBuilder('report')
-      .select('EXTRACT(YEAR FROM report.created_at)', 'year')
-      .addSelect('EXTRACT(MONTH FROM report.created_at)', 'month')
+    qb.select('EXTRACT(YEAR FROM report.created_at)::int', 'year') // Cast to integer
+      .addSelect('EXTRACT(MONTH FROM report.created_at)::int', 'month') // Cast to integer
       .addSelect('COUNT(report.id)', 'count')
-      .where(baseQuery)
+      .where(whereClause)
       .groupBy('year, month')
-      .orderBy('year, month')
-      .getRawMany<RawMonthlyCount>();
+      .orderBy('year', 'ASC')
+      .addOrderBy('month', 'ASC');
 
-    return monthlyCounts.map((item) => ({
+    const monthlyCounts = await qb.getRawMany<RawMonthlyCount>();
+
+    return monthlyCounts.map(item => ({
+      // Ensure these are numbers after parseInt
       year: parseInt(item.year, 10),
       month: parseInt(item.month, 10),
       count: parseInt(item.count, 10),
@@ -348,121 +397,174 @@ export class ReportAnalyticsService {
   }
 
   /**
-   * Departmana göre çözülme süreleri
+   * Resolution time metrics by department.
    */
   async getResolutionTimeByDepartment(filter?: IAnalyticsFilter): Promise<IResolutionTime[]> {
-    // TODO: add tests for resolution time metrics
-    // Sadece çözülmüş raporları filtreleyerek işlem yapacağız
-    const baseQuery = this.buildFilterQuery({
+    // Apply base filters, ensure status is RESOLVED
+    const whereClause = this.buildFilterQuery({
       ...filter,
       status: ReportStatus.RESOLVED,
     });
+    // Ensure only reports where resolution happened AFTER creation are considered
+    whereClause.updatedAt = Raw(alias => `${alias} > report.created_at`);
 
-    // Çözülme anına kadar geçen süreyi hesaplıyoruz
-    const resolutionTimes = await this.reportRepository
-      .createQueryBuilder('report')
-      .select('report.department', 'department')
-      .addSelect(
-        'AVG(EXTRACT(EPOCH FROM (report.updated_at - report.created_at)) * 1000)',
-        'avg_time',
-      )
-      .addSelect(
-        'MIN(EXTRACT(EPOCH FROM (report.updated_at - report.created_at)) * 1000)',
-        'min_time',
-      )
-      .addSelect(
-        'MAX(EXTRACT(EPOCH FROM (report.updated_at - report.created_at)) * 1000)',
-        'max_time',
-      )
+    const qb = this.reportRepository.createQueryBuilder('report');
+
+    const timeDiffExpr = `EXTRACT(EPOCH FROM (report.updated_at - report.created_at)) * 1000`; // Milliseconds
+
+    qb.select('report.department', 'department')
+      .addSelect(`AVG(${timeDiffExpr})`, 'avg_time')
+      .addSelect(`MIN(${timeDiffExpr})`, 'min_time')
+      .addSelect(`MAX(${timeDiffExpr})`, 'max_time')
       .addSelect('COUNT(report.id)', 'count')
-      .where(baseQuery)
-      .groupBy('report.department')
-      .getRawMany<RawResolutionTime>();
+      .where(whereClause)
+      .groupBy('report.department');
 
-    return resolutionTimes.map((item) => ({
+    const resolutionTimes = await qb.getRawMany<RawResolutionTime>();
+
+    return resolutionTimes.map(item => ({
       department: item.department as MunicipalityDepartment,
-      averageResolutionTime: parseFloat(item.avg_time) || 0,
-      minResolutionTime: parseFloat(item.min_time) || 0,
-      maxResolutionTime: parseFloat(item.max_time) || 0,
+      averageResolutionTime: item.avg_time !== null ? parseFloat(item.avg_time) : 0,
+      minResolutionTime: item.min_time !== null ? parseFloat(item.min_time) : 0,
+      maxResolutionTime: item.max_time !== null ? parseFloat(item.max_time) : 0,
       reportsCount: parseInt(item.count, 10),
     }));
   }
 
   /**
-   * Bölgesel rapor yoğunluğu
+   * Regional report density using PostGIS clustering.
    */
   async getRegionalDensity(filter?: IAnalyticsFilter): Promise<IRegionalDensity[]> {
-    // TODO: add tests for spatial clustering
-    const baseQuery = this.buildFilterQuery(filter);
+    const whereClause = this.buildFilterQuery(filter);
+    // Main QueryBuilder instance
+    const qb = this.reportRepository.createQueryBuilder('report');
 
-    // Geolokasyon kümelerini elde etmek için ST_ClusterDBSCAN kullanabiliriz
-    // Bu PostgreSQL ile PostGIS eklentisi gerektirir
-    const regionalDensity = await this.reportRepository
-      .createQueryBuilder('report')
-      .select(`ST_AsGeoJSON(ST_Centroid(ST_Collect(report.location)))`, 'location')
-      .addSelect('COUNT(report.id)', 'count')
-      .where(baseQuery)
-      .addGroupBy('ST_ClusterDBSCAN(report.location, 500, 3) OVER ()') // 500m ve min. 3 nokta
-      .getRawMany<RawRegionalDensity>();
+    // --- FIX: Subquery needs to output original geometry/geography ---
+    const subQuery = qb
+      .clone() // Clone for subquery
+      .select('report.id', 'report_id')
+      // Select the ORIGINAL location column (geography/geometry)
+      .addSelect('report.location', 'original_location')
+      // Calculate cluster ID
+      .addSelect('ST_ClusterDBSCAN(report.location::geometry, 500, 3) OVER ()', 'cluster_id')
+      .where(whereClause); // Apply filters
 
-    return regionalDensity.map((item) => ({
-      location: JSON.parse(item.location) as Point, // GeoJSON Point tipine açıkça dönüştürme
-      reportsCount: parseInt(item.count, 10),
-    }));
+    // Main query groups by cluster_id and uses original_location
+    const mainQb = this.reportRepository.manager
+      .createQueryBuilder() // Use manager to query from subquery result
+      .select('sub.cluster_id', 'cluster_id')
+      // Collect the ORIGINAL geometry/geography, cast to geometry if needed by ST_Collect/ST_Centroid
+      .addSelect(
+        `ST_AsGeoJSON(ST_Centroid(ST_Collect(sub.original_location::geometry)))`,
+        'location'
+      )
+      .addSelect('COUNT(sub.report_id)', 'count')
+      .from(`(${subQuery.getQuery()})`, 'sub') // FROM the subquery result
+      .setParameters(subQuery.getParameters())
+      .where('sub.cluster_id IS NOT NULL')
+      .groupBy('sub.cluster_id');
+    // --- END FIX ---
+
+    try {
+      const regionalDensity = await mainQb.getRawMany<
+        RawRegionalDensity & { cluster_id: number }
+      >();
+
+      return regionalDensity
+        .map(item => {
+          let parsedJson: unknown;
+          try {
+            if (!item.location) {
+              this.logger.warn('Null location string received from DB in getRegionalDensity');
+              return null;
+            }
+            parsedJson = JSON.parse(item.location);
+
+            if (isGeoJsonPoint(parsedJson)) {
+              return {
+                location: parsedJson,
+                reportsCount: parseInt(item.count, 10),
+              };
+            } else {
+              this.logger.warn(
+                'Invalid GeoJSON Point structure received in getRegionalDensity:',
+                JSON.stringify(parsedJson)
+              );
+              return null;
+            }
+          } catch (e) {
+            this.logger.error(
+              'Error parsing GeoJSON string in getRegionalDensity:',
+              e,
+              'Raw string:',
+              item.location
+            );
+            return null;
+          }
+        })
+        .filter((item): item is IRegionalDensity => item !== null);
+    } catch (error) {
+      this.logger.error(
+        `PostGIS query failed in getRegionalDensity: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      this.logger.debug(`Failed SQL (Regional Density): ${mainQb.getSql()}`); // Log the SQL
+      this.logger.debug(`Parameters: ${JSON.stringify(mainQb.getParameters())}`); // Log parameters
+      return [];
+    }
   }
 
   /**
-   * En çok rapor edilen bölgeler - semtlere/mahallelere göre
+   * Most reported districts based on address parsing.
    */
   async getMostReportedDistricts(
     filter?: IAnalyticsFilter,
-    limit = 10,
+    limit = 10
   ): Promise<{ district: string; count: number }[]> {
-    // TODO: add tests for district aggregation
-    const baseQuery = this.buildFilterQuery(filter);
+    const whereClause = this.buildFilterQuery(filter);
+    const qb = this.reportRepository.createQueryBuilder('report');
 
-    // Adres alanını kullanarak bölge bazlı gruplama yapıyoruz
-    // Adres formatı "mahalle, ilçe, il" şeklinde olduğunu varsayıyoruz
-    const districtCounts = await this.reportRepository
-      .createQueryBuilder('report')
-      .select("SPLIT_PART(report.address, ',', 1)", 'district')
+    // Assuming address format "District, City..."
+    qb.select("TRIM(SPLIT_PART(report.address, ',', 1))", 'district')
       .addSelect('COUNT(report.id)', 'count')
-      .where(baseQuery)
-      .andWhere('report.address IS NOT NULL')
+      .where(whereClause)
+      .andWhere("report.address IS NOT NULL AND report.address != ''")
       .groupBy('district')
       .orderBy('count', 'DESC')
-      .limit(limit)
-      .getRawMany<RawDistrictCount>();
+      .limit(limit);
 
-    return districtCounts.map((item) => ({
-      district: item.district,
-      count: parseInt(item.count, 10),
-    }));
+    const districtCounts = await qb.getRawMany<RawDistrictCount>();
+
+    return districtCounts
+      .map(item => ({
+        district: item.district, // Already trimmed by query
+        count: parseInt(item.count, 10),
+      }))
+      .filter(item => item.district && item.district.length > 0); // Filter empty/null districts
   }
 
   /**
-   * 30 günden fazla çözülmemiş raporlar
+   * Reports pending for more than a specified number of days (default 30).
    */
-  async getLongPendingReports(filter?: IAnalyticsFilter): Promise<Report[]> {
-    // TODO: add tests for long pending report filters
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now);
-    thirtyDaysAgo.setDate(now.getDate() - 30);
+  async getLongPendingReports(filter?: IAnalyticsFilter, daysPending = 30): Promise<Report[]> {
+    const thresholdDate = new Date();
+    thresholdDate.setDate(thresholdDate.getDate() - daysPending);
 
-    const baseQuery = this.buildFilterQuery({
+    // Build query excluding resolved/rejected and older than threshold
+    const whereClause = this.buildFilterQuery({
       ...filter,
-      startDate: undefined,
-      endDate: thirtyDaysAgo,
+      endDate: thresholdDate, // Only reports created before this date
+      status: undefined, // Explicitly remove status from base filter
+      // Keep other filters like department, type, userId, categoryId if provided
     });
 
-    // Çözülmeyen raporları bulalım
+    // Apply the NOT IN status condition using Raw
+    whereClause.status = Raw(alias => `${alias} NOT IN (:...statuses)`, {
+      statuses: [ReportStatus.RESOLVED, ReportStatus.REJECTED],
+    });
+
     return this.reportRepository.find({
-      where: {
-        ...baseQuery,
-        status: Raw(
-          (status) => `${status} NOT IN ('${ReportStatus.RESOLVED}', '${ReportStatus.REJECTED}')`,
-        ),
-      },
+      where: whereClause,
       order: {
         createdAt: 'ASC',
       },
@@ -470,105 +572,59 @@ export class ReportAnalyticsService {
   }
 
   /**
-   * Departman değişim analizleri
+   * Department change analytics.
    */
-  async getDepartmentChangeAnalytics(filter?: IAnalyticsFilter): Promise<{
-    departmentChanges: { fromDepartment: string; toDepartment: string; count: number }[];
-    departmentChangeCount: { department: string; changesFrom: number }[];
-    departmentChangeToCount: { department: string; changesTo: number }[];
-  }> {
-    // TODO: add tests for department change analytics
-    const timeQuery = this.getTimeFilterQuery(filter || {});
+  async getDepartmentChangeAnalytics(filter?: ITimeFilter): Promise<IDepartmentChangeAnalytics> {
+    // Only use time filter for history table queries
+    const timeWhereClause = this.getTimeFilterCondition(filter || {}); // Get only the time condition
+    const baseQb = this.departmentHistoryRepository.createQueryBuilder('history');
+    // Apply time filter if it exists
+    if (timeWhereClause) {
+      baseQb.where({ createdAt: timeWhereClause });
+    }
 
-    // Departman değişim kayıtlarını analiz edelim
-    const departmentChanges = await this.departmentHistoryRepository
-      .createQueryBuilder('history')
+    // --- Get From/To counts ---
+    const departmentChangesQuery = baseQb
+      .clone() // Clone base query builder
       .select('history.old_department', 'from_department')
       .addSelect('history.new_department', 'to_department')
       .addSelect('COUNT(*)', 'count')
-      .where(timeQuery)
-      .groupBy('history.old_department, history.new_department')
-      .getRawMany<RawDepartmentChange>();
+      // where condition already applied from baseQb if time filter exists
+      .groupBy('history.old_department, history.new_department');
+    const departmentChanges = await departmentChangesQuery.getRawMany<RawDepartmentChange>();
 
-    // Departman bazlı toplam değişim sayıları
-    const departmentChangeCount = await this.departmentHistoryRepository
-      .createQueryBuilder('history')
+    // --- Get total changes FROM each department ---
+    const changesFromQuery = baseQb
+      .clone()
       .select('history.old_department', 'department')
       .addSelect('COUNT(*)', 'changes_from')
-      .where(timeQuery)
-      .groupBy('history.old_department')
-      .getRawMany<RawDepartmentChangeCount>();
+      // where condition applied from baseQb
+      .groupBy('history.old_department');
+    const departmentChangeCount = await changesFromQuery.getRawMany<RawDepartmentChangeCount>();
 
-    // Departmana gelme sayıları
-    const departmentChangeToCount = await this.departmentHistoryRepository
-      .createQueryBuilder('history')
+    // --- Get total changes TO each department ---
+    const changesToQuery = baseQb
+      .clone()
       .select('history.new_department', 'department')
       .addSelect('COUNT(*)', 'changes_to')
-      .where(timeQuery)
-      .groupBy('history.new_department')
-      .getRawMany<RawDepartmentChangeToCount>();
+      // where condition applied from baseQb
+      .groupBy('history.new_department');
+    const departmentChangeToCount = await changesToQuery.getRawMany<RawDepartmentChangeToCount>();
 
     return {
-      departmentChanges: departmentChanges.map((item) => ({
+      departmentChanges: departmentChanges.map(item => ({
         fromDepartment: item.from_department,
         toDepartment: item.to_department,
         count: parseInt(item.count, 10),
       })),
-      departmentChangeCount: departmentChangeCount.map((item) => ({
+      departmentChangeCount: departmentChangeCount.map(item => ({
         department: item.department,
         changesFrom: parseInt(item.changes_from, 10),
       })),
-      departmentChangeToCount: departmentChangeToCount.map((item) => ({
+      departmentChangeToCount: departmentChangeToCount.map(item => ({
         department: item.department,
         changesTo: parseInt(item.changes_to, 10),
       })),
     };
-  }
-
-  /**
-   * Filtre koşullarından sorgu nesnesi oluştur
-   */
-  private buildFilterQuery(filter?: IAnalyticsFilter): FindManyOptions<Report> {
-    // TODO: add tests for query builder logic
-    if (!filter) {
-      return {};
-    }
-
-    const query: FindManyOptions<Report> = {};
-    const whereClause: Record<string, unknown> = {}; // any yerine unknown kullanıyoruz
-
-    // Zaman filtresi
-    const timeQuery = this.getTimeFilterQuery(filter);
-    if (timeQuery.createdAt) {
-      whereClause.createdAt = timeQuery.createdAt;
-    }
-
-    // Diğer filtreler
-    if (filter.department) {
-      whereClause.department = filter.department;
-    }
-
-    if (filter.status) {
-      whereClause.status = filter.status;
-    }
-
-    if (filter.type) {
-      whereClause.type = filter.type;
-    }
-
-    if (filter.userId) {
-      whereClause.userId = filter.userId;
-    }
-
-    // Bölge filtresi ayrıca işlenmeli, raw query gerektirebilir
-    // if (filter.regionFilter) {
-    //   // ST_DWithin gibi bir PostGIS fonksiyonu kullanılabilir
-    // }
-
-    if (Object.keys(whereClause).length > 0) {
-      query.where = whereClause as FindManyOptions<Report>['where']; // Daha spesifik ve güvenli tip dönüşümü
-    }
-
-    return query;
   }
 }

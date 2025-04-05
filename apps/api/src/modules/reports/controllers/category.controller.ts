@@ -101,7 +101,7 @@ export class CategoryController {
     type: [CategoryResponseDto],
   })
   async findByParentId(
-    @Param('parentId', ParseIntPipe) parentId: number,
+    @Param('parentId', ParseIntPipe) parentId: number
   ): Promise<CategoryResponseDto[]> {
     return this.categoryService.findByParentId(parentId === 0 ? null : parentId);
   }
@@ -136,7 +136,7 @@ export class CategoryController {
   @ApiResponse({ status: 400, description: 'Geçersiz veri' })
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateDto: UpdateCategoryDto,
+    @Body() updateDto: UpdateCategoryDto
   ): Promise<CategoryResponseDto> {
     return this.categoryService.update(id, updateDto);
   }

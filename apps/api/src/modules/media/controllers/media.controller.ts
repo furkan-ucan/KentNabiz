@@ -52,11 +52,11 @@ export class MediaController {
     new FileUploadInterceptor({
       maxSize: 10 * 1024 * 1024, // 10MB
       allowedTypes: /(jpg|jpeg|png|gif|webp|pdf|doc|docx|xls|xlsx|txt)$/,
-    }),
+    })
   )
   async uploadFile(
     @UploadedFile() file: MulterFile,
-    @Query('isPublic') isPublic: boolean = true,
+    @Query('isPublic') isPublic: boolean = true
   ): Promise<Media> {
     if (!file) {
       throw new BadRequestException('No file uploaded');
@@ -82,11 +82,11 @@ export class MediaController {
       maxCount: 10,
       maxSize: 10 * 1024 * 1024,
       allowedTypes: /(jpg|jpeg|png|gif|webp|pdf|doc|docx|xls|xlsx|txt)$/,
-    }),
+    })
   )
   async uploadMultipleFiles(
     @UploadedFiles() files: MulterFile[],
-    @Query('isPublic') isPublic: boolean = true,
+    @Query('isPublic') isPublic: boolean = true
   ): Promise<Media[]> {
     if (!files || files.length === 0) {
       throw new BadRequestException('No files uploaded');
@@ -129,7 +129,7 @@ export class MediaController {
   })
   async getPresignedUrl(
     @Param('id', ParseIntPipe) id: number,
-    @Query('expiresIn') expiresIn: number = 3600,
+    @Query('expiresIn') expiresIn: number = 3600
   ): Promise<{ url: string }> {
     const url = await this.mediaService.getPresignedUrl(id, expiresIn);
     return { url };

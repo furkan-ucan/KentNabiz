@@ -39,7 +39,7 @@ export class ReportCategory {
   @JoinColumn({ name: 'parent_id' })
   parent!: ReportCategory;
 
-  @OneToMany(() => ReportCategory, (category) => category.parent)
+  @OneToMany(() => ReportCategory, category => category.parent)
   children!: ReportCategory[];
 
   @Column({ name: 'is_active', type: 'boolean', default: true })

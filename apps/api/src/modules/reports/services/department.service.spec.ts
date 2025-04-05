@@ -158,14 +158,14 @@ describe('DepartmentService', () => {
       const result = await service.findByCode(MunicipalityDepartment.ROADS);
       expect(result).toEqual(mockDepartment);
       expect(mockDepartmentRepository.findByCode).toHaveBeenCalledWith(
-        MunicipalityDepartment.ROADS,
+        MunicipalityDepartment.ROADS
       );
     });
 
     it('should throw NotFoundException if department not found by code', async () => {
       mockDepartmentRepository.findByCode.mockResolvedValue(null);
       await expect(service.findByCode(MunicipalityDepartment.WATER)).rejects.toThrow(
-        NotFoundException,
+        NotFoundException
       );
     });
   });
@@ -185,7 +185,7 @@ describe('DepartmentService', () => {
       const result = await service.findDepartmentForReportType(ReportType.OTHER);
 
       expect(mockDepartmentRepository.findByCode).toHaveBeenCalledWith(
-        MunicipalityDepartment.GENERAL,
+        MunicipalityDepartment.GENERAL
       );
       expect(result).toEqual(mockDepartment);
     });

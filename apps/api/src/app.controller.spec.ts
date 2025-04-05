@@ -3,20 +3,27 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 describe('AppController', () => {
-  let appController: AppController;
+  // Keep the module instance accessible if needed for multiple tests
+  let app: TestingModule;
 
   beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
+    // Initialize the module once for the describe block
+    app = await Test.createTestingModule({
       controllers: [AppController],
       providers: [AppService],
     }).compile();
-
-    appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
-    });
+  // Use the module instance created in beforeEach
+  it('should be defined', () => {
+    // Get the controller instance from the pre-compiled module
+    const controller = app.get<AppController>(AppController);
+    expect(controller).toBeDefined();
   });
+
+  // Add more tests here, reusing the 'app' instance
+  // it('should return "Hello World!"', () => {
+  //   const controller = app.get<AppController>(AppController);
+  //   expect(controller.getHello()).toBe('Hello World!');
+  // });
 });

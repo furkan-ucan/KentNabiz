@@ -1,35 +1,26 @@
-import { DataSource } from 'typeorm';
+// apps/api/src/database/seeds/index.ts
+import 'reflect-metadata';
+import type { DataSource } from 'typeorm';
+
 import { UsersSeed } from './users.seed';
 import { DepartmentsSeed } from './departments.seed';
 import { CategoriesSeed } from './categories.seed';
 import { ReportsSeed } from './reports.seed';
-import { ensurePostgisExtensions } from '../ormconfig';
-import { fileURLToPath } from 'url';
 
-/**
- * Tüm database seed işlemlerini sıralı olarak gerçekleştiren ana fonksiyon
- * @param dataSource Aktif veri kaynağı
- */
-export async function runSeeds(dataSource: DataSource): Promise<void> {
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+import AppDataSource = require('../../config/data-source');
+
+async function runSeeds(dataSource: DataSource): Promise<void> {
+  if (!dataSource || !dataSource.isInitialized) {
+    throw new Error('DataSource must be initialized before running seeds.');
+  }
   console.log('🌱 Veritabanı seed işlemi başlatılıyor...');
-
   try {
-    // PostGIS uzantılarının yüklü olduğundan emin ol
-    await ensurePostgisExtensions();
-    console.log('✅ PostGIS eklentileri kontrol edildi');
-
-    // Kullanıcıları ekle (diğer seed işlemlerinin bağımlılığı)
+    console.log('✅ PostGIS varsayılan olarak etkinleştirildi veya kontrol edildi.');
     await UsersSeed(dataSource);
-
-    // Departmanları ekle
     await DepartmentsSeed(dataSource);
-
-    // Kategorileri ekle
     await CategoriesSeed(dataSource);
-
-    // Örnek raporları ve medyaları ekle (son olarak, bağımlılıklar nedeniyle)
     await ReportsSeed(dataSource);
-
     console.log('✅ Tüm seed işlemleri başarıyla tamamlandı!');
   } catch (error) {
     console.error('❌ Seed işlemi sırasında hata oluştu:', error);
@@ -37,28 +28,50 @@ export async function runSeeds(dataSource: DataSource): Promise<void> {
   }
 }
 
-/**
- * Bu modül doğrudan CLI'dan çalıştırıldığında seed işlemini başlatır.
- * ESM ortamında ana modül kontrolü için fileURLToPath(import.meta.url) kullanılır.
- */
-if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  import('../ormconfig')
-    .then(async ({ AppDataSource }) => {
-      // Veritabanı bağlantısını başlat
-      if (!AppDataSource.isInitialized) {
-        await AppDataSource.initialize();
-      }
+// --- Add void operator here ---
+void (async () => {
+  // --- END CHANGE ---
+  if (require.main !== module) {
+    return;
+  }
 
-      try {
-        await runSeeds(AppDataSource);
-        process.exit(0);
-      } catch (error) {
-        console.error('Seed işlemi başarısız oldu:', error);
-        process.exit(1);
+  console.log('Seeder script running directly (CommonJS check)...');
+
+  if (!AppDataSource || typeof AppDataSource.initialize !== 'function') {
+    console.error('❌ Failed to load AppDataSource correctly from config/data-source.');
+    process.exit(1);
+  }
+
+  let exitCode = 0;
+  const initPromise = AppDataSource.isInitialized
+    ? Promise.resolve(AppDataSource)
+    : AppDataSource.initialize();
+
+  try {
+    const initializedDataSource = await initPromise;
+    console.log('Seeder: Data Source initialized successfully.');
+    try {
+      await runSeeds(initializedDataSource);
+      console.log('Seeder: runSeeds completed.');
+    } catch (seedError) {
+      console.error('❌ Seed işlemi başarısız oldu:', seedError);
+      exitCode = 1;
+    } finally {
+      if (initializedDataSource?.isInitialized) {
+        await initializedDataSource.destroy();
+        console.log(`Seeder: Data Source destroyed.`);
       }
-    })
-    .catch((error) => {
-      console.error('OrmConfig yüklenirken hata oluştu:', error);
-      process.exit(1);
-    });
-}
+    }
+  } catch (initError: unknown) {
+    console.error('❌ DataSource başlatılırken hata oluştu:', initError);
+    exitCode = 1;
+    if (AppDataSource?.isInitialized) {
+      await AppDataSource.destroy().catch(destroyError => {
+        console.error('Error destroying DataSource after init failure:', destroyError);
+      });
+    }
+  } finally {
+    console.log(`Seeder exiting with code: ${exitCode}`);
+    process.exit(exitCode);
+  }
+})();

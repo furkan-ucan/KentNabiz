@@ -106,7 +106,7 @@ export class AuthController {
   async logout(@Req() req: RequestWithUser): Promise<{ success: boolean }> {
     const success = await this.authService.logout(
       req.user.sub,
-      req.headers.authorization?.split(' ')[1] || '',
+      req.headers.authorization?.split(' ')[1] || ''
     );
     return { success };
   }

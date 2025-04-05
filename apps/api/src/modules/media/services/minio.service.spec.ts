@@ -5,8 +5,7 @@ import * as Minio from 'minio';
 import { MulterFile } from '../interfaces/multer-file.interface';
 
 // Jest tiplemeleri için tanım
-type JestMockCalls = Array<any[]>;
-
+type JestMockCalls = Array<unknown[]>; // Change any[] to unknown[]
 // Minio istemcisi için arayüz tanımı, mock metotlarının özellikleriyle birlikte
 interface MockMinioClient {
   bucketExists: jest.Mock & { mock: { calls: JestMockCalls } };
@@ -37,7 +36,7 @@ jest.mock('minio', () => {
 
 // Stream için arayüz tanımı
 interface MockDataStream {
-  on: jest.Mock<MockDataStream, [string, (arg?: any) => void]>;
+  on: jest.Mock<MockDataStream, [string, (arg?: unknown) => void]>;
 }
 
 describe('MinioService', () => {
@@ -45,8 +44,8 @@ describe('MinioService', () => {
   let minioClient: MockMinioClient;
 
   const mockConfigService = {
-    get: jest.fn((key: string, defaultValue: any): any => {
-      const config: Record<string, any> = {
+    get: jest.fn((key: string, defaultValue: unknown): unknown => {
+      const config: Record<string, unknown> = {
         MINIO_ENDPOINT: 'localhost',
         MINIO_PORT: 9000,
         MINIO_USE_SSL: false,
@@ -143,7 +142,7 @@ describe('MinioService', () => {
         '1234567890-123456789.jpg',
         mockFile.buffer,
         mockFile.size,
-        { 'Content-Type': mockFile.mimetype },
+        { 'Content-Type': mockFile.mimetype }
       );
 
       expect(result).toBe('http://localhost:9000/public/1234567890-123456789.jpg');
@@ -170,7 +169,7 @@ describe('MinioService', () => {
         'custom-name.pdf',
         mockFile.buffer,
         mockFile.size,
-        { 'Content-Type': mockFile.mimetype },
+        { 'Content-Type': mockFile.mimetype }
       );
       expect(minioClient.presignedGetObject).toHaveBeenCalled();
     });
@@ -205,7 +204,7 @@ describe('MinioService', () => {
       expect(minioClient.presignedGetObject).toHaveBeenCalledWith(
         'private',
         'test-document.pdf',
-        3600,
+        3600
       );
       expect(result).toBe('https://presigned-url.example.com');
     });
@@ -220,7 +219,7 @@ describe('MinioService', () => {
       expect(minioClient.presignedGetObject).toHaveBeenCalledWith(
         'private',
         'test-document.pdf',
-        3600,
+        3600
       );
       expect(result).toBe('https://presigned-url.example.com');
     });
@@ -233,7 +232,7 @@ describe('MinioService', () => {
       expect(minioClient.presignedGetObject).toHaveBeenCalledWith(
         'private',
         'test-document.pdf',
-        1800,
+        1800
       );
       expect(result).toBe('https://presigned-url.example.com');
     });
@@ -242,7 +241,7 @@ describe('MinioService', () => {
       minioClient.presignedGetObject.mockRejectedValue(new Error('Presign failed'));
 
       await expect(service.getPresignedUrl('private', 'test-document.pdf')).rejects.toThrow(
-        'Presign failed',
+        'Presign failed'
       );
     });
   });
@@ -266,7 +265,7 @@ describe('MinioService', () => {
   describe('getObject', () => {
     it('should retrieve a file as buffer', async () => {
       const mockDataStream: MockDataStream = {
-        on: jest.fn((event: string, callback: (arg?: any) => void): MockDataStream => {
+        on: jest.fn((event: string, callback: (arg?: unknown) => void): MockDataStream => {
           if (event === 'data') {
             callback(Buffer.from('test data 1'));
             callback(Buffer.from('test data 2'));
@@ -288,7 +287,7 @@ describe('MinioService', () => {
 
     it('should throw an error if stream emits error', async () => {
       const mockDataStream: MockDataStream = {
-        on: jest.fn((event: string, callback: (arg?: any) => void): MockDataStream => {
+        on: jest.fn((event: string, callback: (arg?: unknown) => void): MockDataStream => {
           if (event === 'error') {
             callback(new Error('Stream error'));
           }

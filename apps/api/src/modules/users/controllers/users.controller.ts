@@ -61,7 +61,7 @@ export class UsersController {
   @ApiResponse({ status: 409, description: 'Email already in use' })
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateUserDto: UpdateUserDto,
+    @Body() updateUserDto: UpdateUserDto
   ): Promise<UserProfileDto> {
     return this.usersService.update(id, updateUserDto);
   }
@@ -85,7 +85,7 @@ export class UsersController {
   changePassword(
     @Param('id', ParseIntPipe) id: number,
     @Body('oldPassword') oldPassword: string,
-    @Body('newPassword') newPassword: string,
+    @Body('newPassword') newPassword: string
   ): Promise<void> {
     return this.usersService.changePassword(id, oldPassword, newPassword);
   }

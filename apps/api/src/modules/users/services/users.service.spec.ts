@@ -95,7 +95,7 @@ describe('UsersService', () => {
       mockUserRepository.findByEmail.mockResolvedValue(null);
 
       await expect(service.findByEmail('nonexistent@example.com')).rejects.toThrow(
-        NotFoundException,
+        NotFoundException
       );
     });
   });
