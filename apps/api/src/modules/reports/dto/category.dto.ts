@@ -14,7 +14,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
-import { MunicipalityDepartment } from '../interfaces/report.interface';
+import { MunicipalityDepartment } from '@KentNabiz/shared';
 
 export class CategoryDto {
   @ApiProperty({ description: 'Kategori adı', example: 'Ulaşım İhbar' })

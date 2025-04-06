@@ -1,9 +1,6 @@
 import { DataSource } from 'typeorm';
 import { Department } from '../../modules/reports/entities/department.entity';
-import {
-  MunicipalityDepartment,
-  ReportType,
-} from '../../modules/reports/interfaces/report.interface';
+import { MunicipalityDepartment, ReportType } from '@KentNabiz/shared';
 
 export const DepartmentsSeed = async (dataSource: DataSource): Promise<void> => {
   const departmentRepository = dataSource.getRepository(Department);

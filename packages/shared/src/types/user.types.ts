@@ -8,7 +8,7 @@ export enum UserRole {
 }
 
 export interface UserProfile {
-  id: number; // string → number
+  id: number; // Updated from string to number; ensure database and logic are updated
   email: string;
   fullName: string; // name → fullName
   roles: UserRole[]; // role → roles

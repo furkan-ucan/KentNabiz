@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, MaxLength, IsEnum, ValidateNested, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
-import { MunicipalityDepartment, ReportType, ReportStatus } from '../interfaces/report.interface';
+import { MunicipalityDepartment, ReportType, ReportStatus } from '@KentNabiz/shared';
 import { LocationDto } from './location.dto';
 import { CreateReportMediaDto } from './create-report.dto';
 

@@ -1,11 +1,7 @@
 import { DataSource } from 'typeorm';
 import { Report } from '../../modules/reports/entities/report.entity';
 import { ReportMedia } from '../../modules/reports/entities/report-media.entity';
-import {
-  ReportType,
-  ReportStatus,
-  MunicipalityDepartment,
-} from '../../modules/reports/interfaces/report.interface';
+import { ReportType, ReportStatus, MunicipalityDepartment } from '@KentNabiz/shared'; // Adjust import path if necessary
 import { faker } from '@faker-js/faker/locale/tr';
 import { Point } from 'geojson';
 

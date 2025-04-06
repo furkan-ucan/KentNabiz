@@ -9,7 +9,7 @@
  */
 
 import { Point } from 'geojson';
-import { ReportStatus, ReportType, MunicipalityDepartment } from './report.interface';
+import { ReportStatus, ReportType, MunicipalityDepartment } from '@KentNabiz/shared'; // Adjust import path if necessary
 
 /**
  * Rapor analiz verilerini temsil eden arayüzler

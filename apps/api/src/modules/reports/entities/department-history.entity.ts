@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 // Keep import for type hints
 import { Report } from './report.entity';
-import { MunicipalityDepartment } from '../interfaces/report.interface';
+import { MunicipalityDepartment } from '@KentNabiz/shared';
 
 @Entity('department_history')
 export class DepartmentHistory {

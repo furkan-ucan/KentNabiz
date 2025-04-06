@@ -17,7 +17,7 @@ import {
   ITimeFilter,
   IDepartmentChangeAnalytics, // Assuming this is correctly defined and exported now
 } from '../interfaces/report.analytics.interface';
-import { ReportStatus, MunicipalityDepartment, ReportType } from '../interfaces/report.interface';
+import { ReportStatus, MunicipalityDepartment, ReportType } from '@KentNabiz/shared';
 import { Point } from 'geojson';
 
 // Type guard to check if an object is a valid GeoJSON Point

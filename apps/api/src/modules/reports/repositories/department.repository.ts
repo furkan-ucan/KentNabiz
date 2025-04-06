@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Department } from '../entities/department.entity';
-import { MunicipalityDepartment, ReportType } from '../interfaces/report.interface';
+import { MunicipalityDepartment, ReportType } from '@KentNabiz/shared';
 
 // TODO: add unit tests for department repository methods - coverage: 27.77%
 

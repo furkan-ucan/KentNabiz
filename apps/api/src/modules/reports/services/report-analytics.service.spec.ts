@@ -3,7 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { ReportAnalyticsService } from './report-analytics.service';
 import { Report } from '../entities/report.entity';
 import { DepartmentHistory } from '../entities/department-history.entity';
-import { ReportStatus, ReportType, MunicipalityDepartment } from '../interfaces/report.interface';
+import { ReportStatus, ReportType, MunicipalityDepartment } from '@KentNabiz/shared';
 import { Point } from 'geojson';
 import {
   IStatusCount,

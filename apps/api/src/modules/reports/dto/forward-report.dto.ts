@@ -1,6 +1,6 @@
 import { IsEnum, IsString, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { MunicipalityDepartment } from '../interfaces/report.interface';
+import { MunicipalityDepartment } from '@KentNabiz/shared';
 
 export class ForwardReportDto {
   @ApiProperty({

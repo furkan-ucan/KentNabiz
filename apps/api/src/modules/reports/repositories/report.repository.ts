@@ -7,11 +7,9 @@ import { ReportMedia } from '../entities/report-media.entity';
 import {
   IReportFindOptions,
   ISpatialQueryResult,
-  ReportStatus,
-  ReportType,
   UpdateReportData,
 } from '../interfaces/report.interface';
-
+import { ReportStatus, ReportType } from '@KentNabiz/shared';
 // TODO: add unit tests for custom repository methods - coverage: 9.67%
 
 // Type-safe interfaces for report data operations

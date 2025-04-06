@@ -25,7 +25,7 @@ import { ReportsService } from '../services/reports.service';
 import { CreateReportDto } from '../dto/create-report.dto';
 import { UpdateReportDto } from '../dto/update-report.dto';
 import { RadiusSearchDto } from '../dto/location.dto';
-import { ReportStatus, ReportType, MunicipalityDepartment } from '../interfaces/report.interface';
+import { ReportStatus, ReportType, MunicipalityDepartment } from '@KentNabiz/shared';
 import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { RolesGuard } from '../../auth/guards/roles.guard';

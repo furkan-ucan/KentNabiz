@@ -3,72 +3,21 @@
  * @author [Your Name]
  * @date [Date]
  * @license [Your License]
- * @version 1.0
- * @description Bu dosya, raporlar için gerekli olan arayüzleri içerir.
- * @module report.interface
+ * @version 1.1
+ * @description Bu dosya, API rapor modülü için GEREKLİ OLAN DAHİLİ arayüzleri içerir.
+ *              Paylaşılan enumlar @kentnabiz/shared paketinden import edilir.
+ * @module report.interface (API Dahili)
  */
 
 import { Point } from 'geojson';
+// --- Import Enums from Shared Package ---
+import { ReportStatus, ReportType, MunicipalityDepartment } from '@KentNabiz/shared'; // Adjust import path if necessary
+// --- End Import ---
 
-export enum ReportStatus {
-  REPORTED = 'REPORTED', // Bildirildi
-  IN_PROGRESS = 'IN_PROGRESS', // İşlemde
-  DEPARTMENT_CHANGED = 'DEPARTMENT_CHANGED', // Birim Değiştirildi
-  RESOLVED = 'RESOLVED', // Çözüldü
-  REJECTED = 'REJECTED', // Reddedildi
-}
+// --- REMOVED Enum Definitions ---
 
-export enum ReportType {
-  POTHOLE = 'POTHOLE',
-  POTHOLE_REPAIR = 'POTHOLE_REPAIR', // Çukur Onarım
-  POTHOLE_RECONSTRUCTION = 'POTHOLE_RECONSTRUCTION', // Çukur Yenileme
-  POTHOLE_REHABILITATION = 'POTHOLE_REHABILITATION', // Çukur Rehabilitasyon
-  POTHOLE_DAMAGE = 'POTHOLE_DAMAGE', // Çukur Hasar
-  ROAD_DAMAGE = 'ROAD_DAMAGE',
-  ROAD_SIGN = 'ROAD_SIGN', // Yol Tabelası
-  ROAD_MARKING = 'ROAD_MARKING', // Yol Çizgisi
-  ROAD_CONSTRUCTION = 'ROAD_CONSTRUCTION', // Yol İnşaatı
-  ROAD_MAINTENANCE = 'ROAD_MAINTENANCE', // Yol Bakım
-  ROAD_CLEANING = 'ROAD_CLEANING', // Yol Temizlik
-  ROAD_REPAIR = 'ROAD_REPAIR', // Yol Onarım
-  ROAD_RECONSTRUCTION = 'ROAD_RECONSTRUCTION', // Yol Yenileme
-  ROAD_REHABILITATION = 'ROAD_REHABILITATION', // Yol Rehabilitasyon
-  ROAD_BLOCK = 'ROAD_BLOCK', // Yol Engeli
-  TRAFFIC_LIGHT = 'TRAFFIC_LIGHT', // Trafik Lambası
-  STREET_LIGHT = 'STREET_LIGHT', // Sokak Lambası
-  ELECTRICITY_OUTAGE = 'ELECTRICITY_OUTAGE', // Elektrik Kesintisi
-  WATER_LEAKAGE = 'WATER_LEAKAGE', // Su Sızıntısı
-  LITTER = 'LITTER', // Çöp
-  GRAFFITI = 'GRAFFITI', // Grafiti
-  PARK_DAMAGE = 'PARK_DAMAGE', // Park Hasar
-  TREE_ISSUE = 'TREE_ISSUE', // Ağaç Sorunu
-  PARKING_VIOLATION = 'PARKING_VIOLATION', // Park Yeri İhlali
-  PUBLIC_TRANSPORT = 'PUBLIC_TRANSPORT', // Toplu Taşıma
-  PUBLIC_TRANSPORT_VIOLATION = 'PUBLIC_TRANSPORT_VIOLATION', // Toplu Taşıma İhlali
-  PUBLIC_TRANSPORT_STOP = 'PUBLIC_TRANSPORT_STOP', // Toplu Taşıma Durağı
-  PUBLIC_TRANSPORT_VEHICLE = 'PUBLIC_TRANSPORT_VEHICLE', // Toplu Taşıma Araçları
-  GARBAGE_COLLECTION = 'GARBAGE_COLLECTION', // Çöp Toplama
-  OTHER = 'OTHER',
-}
+// --- KEEP API-INTERNAL INTERFACES ---
 
-export enum MunicipalityDepartment {
-  ROADS = 'ROADS', // Yollar ve Altyapı
-  INFRASTRUCTURE = 'INFRASTRUCTURE', // Altyapı Hizmetleri
-  ENVIRONMENTAL = 'ENVIRONMENTAL', // Çevre Temizlik
-  PARKS = 'PARKS', // Park ve Bahçeler
-  TRANSPORTATION = 'TRANSPORTATION', // Toplu Taşıma
-  WATER = 'WATER', // Su İşleri,
-  ELECTRICITY = 'ELECTRICITY', // Elektrik İşleri
-  TRAFFIC = 'TRAFFIC', // Trafik
-  BUILDING = 'BUILDING', // Yapı Kontrol
-  MUNICIPALITY = 'MUNICIPALITY', // İdari İşler
-  HEALTH = 'HEALTH', // Sağlık
-  FIRE = 'FIRE', // İtfaiye
-  OTHER = 'OTHER', // Diğer
-  GENERAL = 'GENERAL', // Genel (Belirsiz/Varsayılan)
-}
-
-// Kategori yapısı için arayüzler
 export interface IReportCategory {
   id: number;
   name: string;
@@ -79,59 +28,63 @@ export interface IReportCategory {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-  children?: IReportCategory[]; // Alt kategoriler için
+  children?: IReportCategory[];
 }
 
-// Hiyerarşik kategori yapısı - API cevaplarında kullanılacak ağaç yapısı
 export interface ICategoryTree extends IReportCategory {
   children: ICategoryTree[];
 }
 
+// Interface representing the full internal structure, closer to the DB Entity
 export interface IReport {
   id: number;
   title: string;
   description: string;
   location: Point;
   address: string;
-  status: ReportStatus;
-  type: ReportType; // Geriye uyumluluk için tutuldu
-  categoryId: number; // Yeni kategori yaklaşımı
-  department: MunicipalityDepartment;
+  status: ReportStatus; // Use imported enum
+  type: ReportType; // Use imported enum
+  categoryId: number;
+  department: MunicipalityDepartment; // Use imported enum
   userId: number;
   adminId?: number;
   departmentChangeReason?: string;
-  previousDepartment?: string;
+  previousDepartment?: string; // Consider using MunicipalityDepartment type here too if applicable
   createdAt: Date;
   updatedAt: Date;
-  reportMedias?: IReportMedia[];
-  departmentHistory?: IDepartmentChange[];
+  reportMedias?: IReportMedia[]; // Use API-internal media interface
+  departmentHistory?: IDepartmentChange[]; // Use API-internal history interface
 }
 
+// API-Internal Media Interface
 export interface IReportMedia {
   id: number;
   reportId: number;
   url: string;
-  type: string;
+  type: string; // Or use a MediaType enum if defined
   createdAt: Date;
   updatedAt: Date;
 }
 
+// API-Internal Department Change Interface
 export interface IDepartmentChange {
   id: number;
   reportId: number;
-  oldDepartment: MunicipalityDepartment;
-  newDepartment: MunicipalityDepartment;
-  reason: string;
-  changedByDepartment: MunicipalityDepartment;
+  oldDepartment: MunicipalityDepartment; // Use imported enum
+  newDepartment: MunicipalityDepartment; // Use imported enum
+  reason?: string; // Made optional
+  changedByDepartment?: MunicipalityDepartment; // Use imported enum
   createdAt: Date;
 }
 
+// API-Internal Find Options
 export interface IReportFindOptions {
   id?: number;
   userId?: number;
-  status?: ReportStatus;
-  type?: ReportType;
-  department?: MunicipalityDepartment;
+  status?: ReportStatus; // Use imported enum
+  type?: ReportType; // Use imported enum
+  department?: MunicipalityDepartment; // Use imported enum
+  categoryId?: number; // Added categoryId
   limit?: number;
   offset?: number;
   withinRadius?: {
@@ -141,32 +94,34 @@ export interface IReportFindOptions {
   };
 }
 
+// API-Internal Spatial Query Result
 export interface ISpatialQueryResult {
-  data: IReport[];
+  data: IReport[]; // Uses the API-Internal IReport
   total: number;
   page: number;
   limit: number;
 }
 
-// TODO: Bu interface, UpdateReportDto olarak class yapısında tanımlanmalı.
-// Böylece class-validator ile doğrulama ve Swagger dokümantasyonu sağlanabilir.
+// API-Internal Update Data Structure
+// TODO: Convert to a DTO class
 export interface UpdateReportData {
   title?: string;
   description?: string;
-  type?: ReportType;
-  status?: ReportStatus;
+  type?: ReportType; // Use imported enum
+  status?: ReportStatus; // Use imported enum
   location?: Point;
   address?: string;
-  department?: MunicipalityDepartment;
+  department?: MunicipalityDepartment; // Use imported enum
   departmentChangeReason?: string;
   departmentChangedBy?: number;
   departmentChangedAt?: Date;
-  resolvedAt?: Date; // Çözüm tarihi eklendi
+  resolvedAt?: Date;
   reportMedias?: Array<{
+    // Keep simple structure or use Partial<IReportMedia>?
     url: string;
     type: string;
   }>;
+  categoryId?: number;
 }
 
-// TODO: response veri modeli ayrı bir DTO class yapısına dönüştürülebilir (Swagger & versionlama için).
-// Örneğin: ReportResponseDto, DepartmentHistoryResponseDto gibi class yapıları tanımlanabilir.
+// --- END KEEP API-INTERNAL INTERFACES ---

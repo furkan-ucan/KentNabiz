@@ -1,6 +1,6 @@
 import { IsEnum, IsString, IsBoolean, IsOptional, IsArray } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { MunicipalityDepartment, ReportType } from '../interfaces/report.interface';
+import { MunicipalityDepartment, ReportType } from '@KentNabiz/shared';
 
 export class DepartmentDto {
   @ApiProperty({

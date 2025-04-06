@@ -12,13 +12,8 @@ import { UpdateReportDto } from '../dto/update-report.dto';
 import { RadiusSearchDto } from '../dto/location.dto';
 import { Report } from '../entities/report.entity';
 import { DepartmentHistory } from '../entities/department-history.entity';
-import {
-  ISpatialQueryResult,
-  ReportStatus,
-  ReportType,
-  MunicipalityDepartment,
-} from '../interfaces/report.interface';
-
+import { ISpatialQueryResult } from '../interfaces/report.interface';
+import { ReportType, ReportStatus, MunicipalityDepartment } from '@KentNabiz/shared';
 @Injectable()
 export class ReportsService {
   constructor(

@@ -6,7 +6,7 @@ import { DataSource } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Report } from '../entities/report.entity';
 import { DepartmentHistory } from '../entities/department-history.entity';
-import { MunicipalityDepartment, ReportStatus, ReportType } from '../interfaces/report.interface';
+import { MunicipalityDepartment, ReportStatus, ReportType } from '@KentNabiz/shared';
 import { DepartmentDto } from '../dto/department.dto';
 import { ForwardReportDto } from '../dto/forward-report.dto';
 

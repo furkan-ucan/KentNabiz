@@ -5,7 +5,7 @@ import { DepartmentService } from './department.service';
 import { ReportRepository } from '../repositories/report.repository';
 import { DataSource } from 'typeorm';
 import { NotFoundException, UnauthorizedException, BadRequestException } from '@nestjs/common';
-import { ReportStatus, ReportType, MunicipalityDepartment } from '../interfaces/report.interface';
+import { ReportStatus, ReportType, MunicipalityDepartment } from '@KentNabiz/shared';
 import { CreateReportDto } from '../dto/create-report.dto';
 import { UpdateReportDto } from '../dto/update-report.dto';
 import { LocationDto } from '../dto/location.dto';

@@ -4,7 +4,7 @@ import { ReportAnalyticsService } from '../services/report-analytics.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
-import { ReportStatus, ReportType, MunicipalityDepartment } from '../interfaces/report.interface';
+import { ReportStatus, ReportType, MunicipalityDepartment } from '@KentNabiz/shared';
 import {
   IAnalyticsFilter,
   IDashboardStats,

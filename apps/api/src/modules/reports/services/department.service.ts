@@ -7,7 +7,7 @@ import { DepartmentDto } from '../dto/department.dto';
 import { Report } from '../entities/report.entity';
 import { DepartmentHistory } from '../entities/department-history.entity';
 import { ForwardReportDto } from '../dto/forward-report.dto';
-import { MunicipalityDepartment, ReportType } from '../interfaces/report.interface';
+import { MunicipalityDepartment, ReportType } from '@KentNabiz/shared';
 
 @Injectable()
 export class DepartmentService {

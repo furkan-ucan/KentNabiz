@@ -17,7 +17,7 @@ import { DepartmentHistory } from './department-history.entity';
 import { Department } from './department.entity';
 import { ReportCategory } from './report-category.entity'; // Keep for type hints
 // Other necessary imports
-import { MunicipalityDepartment, ReportStatus, ReportType } from '../interfaces/report.interface';
+import { MunicipalityDepartment, ReportStatus, ReportType } from '@KentNabiz/shared';
 
 @Entity('reports')
 export class Report {

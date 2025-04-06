@@ -245,17 +245,6 @@
 │ │ │ ├── index.ts
 │ │ │ └── validation.ts
 │ │ └── tsconfig.json
-│ ├── test-lib
-│ │ ├── .turbo
-│ │ ├── coverage
-│ │ ├── jest.config.ts
-│ │ ├── node_modules
-│ │ ├── package.json
-│ │ ├── src
-│ │ │ ├── import-test.ts
-│ │ │ ├── index.test.ts
-│ │ │ └── index.ts
-│ │ └── tsconfig.json
 │ └── ui
 │ ├── .turbo
 │ ├── jest.config.ts

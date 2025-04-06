@@ -10,7 +10,7 @@ import {
   IsNumber,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { MunicipalityDepartment, ReportType } from '../interfaces/report.interface';
+import { MunicipalityDepartment, ReportType } from '@KentNabiz/shared';
 import { LocationDto } from './location.dto';
 
 export class CreateReportMediaDto {
