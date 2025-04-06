@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { User, UserRole } from '../entities/user.entity';
+import { User } from '../entities/user.entity';
+import { UserRole } from '@KentNabiz/shared';
 
 export class UserProfileDto {
   @ApiProperty({ example: 1, description: 'User ID' })

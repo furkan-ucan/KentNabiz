@@ -19,7 +19,7 @@ import { UserProfileDto } from '../dto/user-profile.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { RolesGuard } from '../../auth/guards/roles.guard';
-import { UserRole } from '../entities/user.entity';
+import { UserRole } from '@KentNabiz/shared';
 
 @ApiTags('users')
 @Controller('users')

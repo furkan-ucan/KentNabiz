@@ -8,7 +8,7 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserRole } from '../entities/user.entity';
+import { UserRole } from '@KentNabiz/shared';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'john.doe@example.com', description: 'Email address' })

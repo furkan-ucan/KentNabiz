@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { UserRepository } from '../repositories/user.repository';
 import { NotFoundException } from '@nestjs/common';
-import { UserRole } from '../entities/user.entity';
+import { UserRole } from '@KentNabiz/shared';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UserProfileDto } from '../dto/user-profile.dto';

@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { User, UserRole } from '../../modules/users/entities/user.entity';
+import { User } from '../../modules/users/entities/user.entity';
+import { UserRole } from '@KentNabiz/shared';
 import { Logger } from '@nestjs/common'; // Import Logger
 
 const logger = new Logger('UsersSeed'); // Create a logger instance

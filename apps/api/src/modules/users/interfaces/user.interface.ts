@@ -1,4 +1,4 @@
-import { UserRole } from '../entities/user.entity';
+import { UserRole } from '@KentNabiz/shared';
 
 export interface IUser {
   id: number;

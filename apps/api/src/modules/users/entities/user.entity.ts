@@ -9,12 +9,7 @@ import {
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcryptjs';
-
-export enum UserRole {
-  ADMIN = 'admin',
-  USER = 'user',
-  MODERATOR = 'moderator',
-}
+import { UserRole } from '@KentNabiz/shared'; // TS yoluna göre düzenle
 
 @Entity('users')
 export class User {

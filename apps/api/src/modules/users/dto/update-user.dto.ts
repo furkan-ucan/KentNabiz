@@ -9,7 +9,7 @@ import {
   IsDate,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { UserRole } from '../entities/user.entity';
+import { UserRole } from '@KentNabiz/shared';
 import { Type } from 'class-transformer';
 
 export class UpdateUserDto {

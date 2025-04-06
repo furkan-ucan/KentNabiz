@@ -3,12 +3,9 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
     "noEmit": false,
-    "composite": true
+    "lib": ["ES2020"]
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["**/*.test.ts", "node_modules", "dist"]
+  "exclude": ["**/*.test.ts", "node_modules", "dist", "**/__tests__/**"]
 }

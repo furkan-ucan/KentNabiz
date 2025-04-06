@@ -6,15 +6,13 @@
     "target": "ES2020", // Or suitable target
     "outDir": "./dist", // CORRECT
     "rootDir": "./src", // CORRECT
-    "baseUrl": ".", // Often needed
     "emitDecoratorMetadata": true, // REQUIRED
     "experimentalDecorators": true, // REQUIRED
     "esModuleInterop": true, // Recommended
-    "sourceMap": true, // Recommended
-    "declaration": true, // Optional: good practice
-    "strict": true, // Recommended
-    "noEmit": false // REQUIRED: Must generate output
-    // ... other options like lib, typeRoots, paths if needed ...
+    "noEmit": false, // REQUIRED: Must generate output
+    "disableSourceOfProjectReferenceRedirect": true, // REQUIRED: To avoid issues with project references
+
+    "types": ["node", "jest", "@types/express", "@types/multer"] // Include node types for Jest
   },
   "include": ["src/**/*"],
   "exclude": [
@@ -23,6 +21,9 @@
     "**/*.spec.ts",
     "**/*.test.ts",
     "**/*.js" // Exclude JS from TS compilation pass
+  ],
+  "references": [
+    { "path": "../../packages/shared" } // Reference to shared package
   ]
   // Remove any "ts-node": { "esm": true } block
 }

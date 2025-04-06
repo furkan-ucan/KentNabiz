@@ -81,12 +81,11 @@ KentNabız, şehirde meydana gelen çeşitli altyapı sorunlarını (örneğin; 
 ### Adım Adım Kurulum
 
 1. **Repoyu Klonlayın:**
+
    ```bash
    git clone https://github.com/username/kentnabiz.git
    cd kentnabiz
    ```
-
-````
 
 2. **Bağımlılıkları Yükleyin:**
 
@@ -254,4 +253,7 @@ Bu proje MIT lisansı altında lisanslanmıştır. Daha fazla bilgi için `LICEN
 ```
 
 ```
-````
+
+```
+
+```
