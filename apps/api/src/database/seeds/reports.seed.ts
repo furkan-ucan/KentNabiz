@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
 import { Report } from '../../modules/reports/entities/report.entity';
 import { ReportMedia } from '../../modules/reports/entities/report-media.entity';
-import { ReportType, ReportStatus, MunicipalityDepartment } from '@KentNabiz/shared'; // Adjust import path if necessary
+import { ReportType, ReportStatus } from '@KentNabiz/shared'; // Adjust import path if necessary
 import { faker } from '@faker-js/faker/locale/tr';
 import { Point } from 'geojson';
 
@@ -82,19 +82,6 @@ export const ReportsSeed = async (dataSource: DataSource): Promise<void> => {
     ReportType.PUBLIC_TRANSPORT_STOP,
   ];
 
-  const departments = [
-    MunicipalityDepartment.ROADS,
-    MunicipalityDepartment.ELECTRICITY,
-    MunicipalityDepartment.ENVIRONMENTAL,
-    MunicipalityDepartment.WATER,
-    MunicipalityDepartment.ROADS,
-    MunicipalityDepartment.PARKS,
-    MunicipalityDepartment.TRAFFIC,
-    MunicipalityDepartment.PARKS,
-    MunicipalityDepartment.WATER,
-    MunicipalityDepartment.TRANSPORTATION,
-  ];
-
   const reports: Report[] = [];
 
   for (let i = 0; i < 50; i++) {
@@ -117,10 +104,9 @@ export const ReportsSeed = async (dataSource: DataSource): Promise<void> => {
       description: `${reportDescriptions[randIndex]} ${fakeParagraph}`,
       location,
       address: `${coord.address}, ${fakeAddress}`,
-      type: reportTypes[randIndex],
-      categoryId: Math.floor(Math.random() * 15) + 1,
+      reportType: reportTypes[randIndex],
       status: randomStatus,
-      department: departments[randIndex],
+      currentDepartmentId: (randIndex % 3) + 1,
       userId: Math.floor(Math.random() * 4) + 1,
       createdAt: randomDate,
       updatedAt: randomDate,
