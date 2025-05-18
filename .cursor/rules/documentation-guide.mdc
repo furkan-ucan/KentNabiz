@@ -1,0 +1,39 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Documentation Guide (`docs/`)
+
+This guide provides an overview of the documentation structure within the `[docs/](mdc:docs)` directory and the purpose of its key files and subdirectories.
+
+## General Documentation Files
+
+*   `[README.md](mdc:README.md)` (Root): The main entry point to the project, providing a high-level overview, setup instructions, and links to other important resources.
+*   `[docs/architecture.md](mdc:docs/architecture.md)`: Details the overall system architecture, components, and their interactions.
+*   `[docs/technical-docs.md](mdc:docs/technical-docs.md)`: Contains general technical documentation, which might include coding standards, environment setup, or other technical guides not specific to a single component.
+*   `[docs/api-docs.md](mdc:docs/api-docs.md)`: Documents the project's APIs, including endpoints, request/response formats, and authentication mechanisms.
+*   `[docs/requirements.md](mdc:docs/requirements.md)`: Outlines the functional and non-functional requirements of the project.
+*   `[docs/tree.md](mdc:docs/tree.md)`: Likely provides a file or directory tree structure of the project for quick navigation or understanding of the layout.
+*   `[docs/rfc-docs.md](mdc:docs/rfc-docs.md)`: Central location or index for Request for Comments (RFC) documents.
+*   `[docs/project-planning.md](mdc:docs/project-planning.md)`: General project planning documents, timelines, or roadmaps.
+*   `[docs/@progress.md](mdc:docs/@progress.md)` and `[docs/@project-status.md](mdc:docs/@project-status.md)`: These files likely track the ongoing progress and overall status of the project or specific parts of it.
+
+## Sprint Planning Documents
+
+Files named `sprint-X-plan.md` (e.g., `[docs/sprint-1-plan.md](mdc:docs/sprint-1-plan.md)`, `[docs/sprint-2-plan.md](mdc:docs/sprint-2-plan.md)`) detail the scope, goals, and tasks for each specific sprint.
+
+## Implementation Phase Documents
+
+Files named `impl-fazX.md` (e.g., `[docs/impl-faz1.md](mdc:docs/impl-faz1.md)`, `[docs/impl-faz2.md](mdc:docs/impl-faz2.md)`, `[docs/impl-faz11.md](mdc:docs/impl-faz11.md)`) document the implementation details of different phases or significant features of the project. These are crucial for understanding the design choices and development process for specific parts of the system.
+
+## Test Documentation
+
+*   `[docs/test-docs.md](mdc:docs/test-docs.md)`: Contains information regarding testing strategies, test plans, or specific test case documentation.
+
+## RFC Directory
+
+*   `[docs/rfc/](mdc:docs/rfc)`: This directory is dedicated to storing Request for Comments (RFC) documents, which are formal proposals or discussions about specific features, designs, or changes to the project.
+
+By maintaining these detailed documents, the project ensures clarity in its development process, architecture, and goals.
+

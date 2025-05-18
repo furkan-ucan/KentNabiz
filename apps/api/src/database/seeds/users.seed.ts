@@ -29,16 +29,16 @@ export const UsersSeed = async (dataSource: DataSource): Promise<void> => {
     email: 'admin@kentnabiz.com',
     fullName: 'Admin Kullanıcı',
     password: defaultPassword,
-    roles: [UserRole.ADMIN],
+    roles: [UserRole.SYSTEM_ADMIN],
     isEmailVerified: true,
   });
 
-  // Moderatör kullanıcı
+  // Moderatör kullanıcı (Geçici olarak SYSTEM_ADMIN, idealde DEPARTMENT_HEAD ve departmentId atanmalı)
   const moderator = userRepository.create({
     email: 'moderator@kentnabiz.com',
     fullName: 'Moderatör Kullanıcı',
     password: defaultPassword,
-    roles: [UserRole.MODERATOR],
+    roles: [UserRole.SYSTEM_ADMIN],
     isEmailVerified: true,
   });
 
@@ -47,7 +47,7 @@ export const UsersSeed = async (dataSource: DataSource): Promise<void> => {
     email: 'user@kentnabiz.com',
     fullName: 'Normal Kullanıcı',
     password: defaultPassword, // Assign the pre-hashed password
-    roles: [UserRole.USER],
+    roles: [UserRole.CITIZEN],
     isEmailVerified: true,
   });
 
@@ -56,7 +56,7 @@ export const UsersSeed = async (dataSource: DataSource): Promise<void> => {
     email: 'test@kentnabiz.com',
     fullName: 'Test Kullanıcı',
     password: defaultPassword, // Assign the pre-hashed password
-    roles: [UserRole.USER],
+    roles: [UserRole.CITIZEN],
     isEmailVerified: false,
   });
 

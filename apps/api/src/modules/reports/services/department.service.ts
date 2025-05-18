@@ -74,53 +74,63 @@ export class DepartmentService {
     await this.departmentRepository.delete(id);
   }
 
-  async forwardReport(reportId: number, forwardDto: ForwardReportDto): Promise<Report> {
+  async forwardReport(
+    reportId: number,
+    forwardDto: ForwardReportDto,
+    changedByUserId: number
+  ): Promise<Report> {
     const report = await this.reportRepository.findOne({
       where: { id: reportId },
-      relations: ['departmentHistory'],
+      relations: ['departmentHistory', 'currentDepartment'],
     });
 
     if (!report) {
       throw new NotFoundException(`Rapor ID ${reportId} bulunamadı`);
     }
 
-    // Eğer rapor zaten hedef birimde ise işlem yapma
-    if (report.department === forwardDto.newDepartment) {
-      throw new BadRequestException(`Rapor zaten ${forwardDto.newDepartment} biriminde`);
+    const newDepartmentEntity = await this.findByCode(forwardDto.newDepartment);
+    if (!newDepartmentEntity) {
+      throw new NotFoundException(`Hedef birim kodu ${forwardDto.newDepartment} bulunamadı`);
     }
 
-    // Hedef birim var mı kontrol et
-    await this.findByCode(forwardDto.newDepartment);
+    if (report.currentDepartmentId === newDepartmentEntity.id) {
+      throw new BadRequestException(`Rapor zaten ${newDepartmentEntity.name} biriminde`);
+    }
 
     const queryRunner = this.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      // Departman geçmiş kaydı oluştur
+      const oldDepartmentId = report.currentDepartmentId;
+
       const departmentHistory = new DepartmentHistory();
       departmentHistory.reportId = report.id;
-      departmentHistory.oldDepartment = report.department;
-      departmentHistory.newDepartment = forwardDto.newDepartment;
+      if (oldDepartmentId) {
+        departmentHistory.previousDepartmentId = oldDepartmentId;
+      }
+      departmentHistory.newDepartmentId = newDepartmentEntity.id;
       departmentHistory.reason = forwardDto.reason;
-      departmentHistory.changedByDepartment = forwardDto.changedByDepartment || report.department;
+      departmentHistory.changedByUserId = changedByUserId;
 
-      // Raporu güncelle
-      report.previousDepartment = report.department;
-      report.department = forwardDto.newDepartment;
-      report.departmentChangeReason = forwardDto.reason;
-      // TypeScript'in beklediği number tipini karşılamak için 0 değerini atıyoruz
-      // Gelecekte bu alanın tipini değiştirmek veya veritabanında nullable yapmak daha iyi olabilir
-      report.departmentChangedBy = 0;
-      report.departmentChangedAt = new Date();
+      report.currentDepartmentId = newDepartmentEntity.id;
+      report.currentDepartment = newDepartmentEntity;
 
-      // Kaydet
       await queryRunner.manager.save(departmentHistory);
       await queryRunner.manager.save(report);
 
       await queryRunner.commitTransaction();
 
-      return report;
+      return this.reportRepository.findOneOrFail({
+        where: { id: reportId },
+        relations: [
+          'currentDepartment',
+          'user',
+          'reportMedias',
+          'assignedEmployee',
+          'departmentHistory',
+        ],
+      });
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -130,15 +140,15 @@ export class DepartmentService {
   }
 
   async getReportDepartmentHistory(reportId: number): Promise<DepartmentHistory[]> {
-    const report = await this.reportRepository.findOne({ where: { id: reportId } });
-
-    if (!report) {
+    const reportExists = await this.reportRepository.exists({ where: { id: reportId } });
+    if (!reportExists) {
       throw new NotFoundException(`Rapor ID ${reportId} bulunamadı`);
     }
 
     return this.departmentHistoryRepository.find({
       where: { reportId },
-      order: { createdAt: 'DESC' },
+      order: { changedAt: 'DESC' },
+      relations: ['previousDepartment', 'newDepartment', 'changedByUser'],
     });
   }
 

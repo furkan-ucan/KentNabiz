@@ -315,7 +315,7 @@ export class ReportsController {
     });
   }
 
-  @Post(':id/forward')
+  @Patch(':id/forward')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('staff', 'admin')
   @ApiBearerAuth()
@@ -333,12 +333,14 @@ export class ReportsController {
   @ApiResponse({ status: 404, description: 'Rapor bulunamadı' })
   async forwardReport(
     @Param('id', ParseIntPipe) id: number,
-    @Body() departmentChangeDto: DepartmentChangeDto
+    @Body() departmentChangeDto: DepartmentChangeDto,
+    @Req() req: RequestWithUser
   ) {
     return this.reportsService.changeDepartment(
       id,
       departmentChangeDto.newDepartment,
-      departmentChangeDto.reason
+      departmentChangeDto.reason,
+      req.user.sub
     );
   }
 

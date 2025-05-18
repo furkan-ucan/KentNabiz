@@ -7,6 +7,8 @@ import {
   IsEnum,
   IsBoolean,
   IsDate,
+  IsInt,
+  Min,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@KentNabiz/shared';
@@ -60,4 +62,15 @@ export class UpdateUserDto {
   @IsDate()
   @Type(() => Date)
   lastLoginAt?: Date;
+
+  @ApiPropertyOptional({
+    description:
+      'ID of the department to assign the user to. Set to null to remove from department.',
+    example: 1,
+    nullable: true,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  departmentId?: number | null;
 }

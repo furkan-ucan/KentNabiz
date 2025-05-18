@@ -34,9 +34,8 @@ export class Department {
   @Column({ name: 'responsible_report_types', type: 'jsonb', nullable: true })
   responsibleReportTypes!: ReportType[]; // Assuming ReportType is correctly defined elsewhere
 
-  // --- FIX: Use string name for Report relationship ---
-  @OneToMany('Report', (report: Report) => report.departmentEntity) // Use string "Report" and type hint
-  reports!: Report[]; // Type hint still uses imported class
+  @OneToMany(() => Report, (report: Report) => report.currentDepartment)
+  reports!: Report[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

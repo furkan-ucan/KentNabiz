@@ -166,17 +166,44 @@ export class ReportsService {
   }
 
   private validateStatusTransition(currentStatus: ReportStatus, newStatus: ReportStatus): void {
-    // İzin verilen durum geçişleri
     const allowedTransitions: Record<ReportStatus, ReportStatus[]> = {
-      [ReportStatus.REPORTED]: [ReportStatus.IN_PROGRESS, ReportStatus.REJECTED],
-      [ReportStatus.IN_PROGRESS]: [
+      [ReportStatus.SUBMITTED]: [
+        ReportStatus.UNDER_REVIEW,
+        ReportStatus.REJECTED,
+        ReportStatus.AWAITING_INFORMATION,
+      ],
+      [ReportStatus.UNDER_REVIEW]: [
+        ReportStatus.FORWARDED,
+        ReportStatus.ASSIGNED_TO_EMPLOYEE,
+        ReportStatus.PENDING_APPROVAL,
+        ReportStatus.REJECTED,
+        ReportStatus.AWAITING_INFORMATION,
+      ],
+      [ReportStatus.FORWARDED]: [
+        ReportStatus.ASSIGNED_TO_EMPLOYEE,
+        ReportStatus.UNDER_REVIEW,
+        ReportStatus.REJECTED,
+      ],
+      [ReportStatus.ASSIGNED_TO_EMPLOYEE]: [
+        ReportStatus.FIELD_WORK_IN_PROGRESS,
+        ReportStatus.PENDING_APPROVAL,
+        ReportStatus.AWAITING_INFORMATION,
+        ReportStatus.UNDER_REVIEW,
+      ],
+      [ReportStatus.FIELD_WORK_IN_PROGRESS]: [
+        ReportStatus.PENDING_APPROVAL,
+        ReportStatus.RESOLVED,
+        ReportStatus.AWAITING_INFORMATION,
+      ],
+      [ReportStatus.PENDING_APPROVAL]: [
         ReportStatus.RESOLVED,
         ReportStatus.REJECTED,
-        ReportStatus.REPORTED,
+        ReportStatus.FIELD_WORK_IN_PROGRESS,
+        ReportStatus.UNDER_REVIEW,
       ],
-      [ReportStatus.REJECTED]: [ReportStatus.REPORTED],
-      [ReportStatus.RESOLVED]: [], // Çözülmüş raporların durumu değiştirilemez
-      [ReportStatus.DEPARTMENT_CHANGED]: [ReportStatus.IN_PROGRESS, ReportStatus.REPORTED], // Departman değiştiğinde geçerli durumlar
+      [ReportStatus.AWAITING_INFORMATION]: [ReportStatus.SUBMITTED, ReportStatus.UNDER_REVIEW],
+      [ReportStatus.REJECTED]: [],
+      [ReportStatus.RESOLVED]: [],
     };
 
     if (!allowedTransitions[currentStatus]?.includes(newStatus)) {
@@ -205,45 +232,32 @@ export class ReportsService {
   async changeDepartment(
     id: number,
     department: MunicipalityDepartment,
-    reason: string
+    reason: string,
+    userId: number
   ): Promise<Report> {
     const report = await this.findOne(id);
 
     // Prevent changing to the same department
-    if (report.department === department) {
+    if (report.currentDepartment?.code === department) {
       throw new BadRequestException(`Rapor zaten ${department} biriminde`);
     }
 
-    // Çözülen raporların birimi değiştirilemez
-    if (report.status === ReportStatus.RESOLVED) {
-      throw new BadRequestException('Çözülmüş raporların birimi değiştirilemez');
+    // const currentDepartmentEnum = report.currentDepartment?.code; // This variable was unused
+
+    const updatedReport = await this.departmentService.forwardReport(
+      id,
+      { newDepartment: department, reason: reason },
+      userId
+    );
+
+    if (
+      updatedReport.status === ReportStatus.SUBMITTED ||
+      updatedReport.status === ReportStatus.UNDER_REVIEW
+    ) {
+      await this.reportRepository.updateStatus(id, ReportStatus.FORWARDED);
     }
 
-    try {
-      // Raporu yönlendiren departmanı bulalım (kullanıcı ID'si yerine şu andaki departmanı kullanıyoruz)
-      const currentDepartment = report.department;
-
-      const updatedReport = await this.departmentService.forwardReport(id, {
-        newDepartment: department,
-        reason: reason,
-        changedByDepartment: currentDepartment,
-      });
-
-      // Otomatik olarak raporu işleme alınıyor olarak işaretle
-      if (updatedReport.status === ReportStatus.REPORTED) {
-        await this.reportRepository.updateStatus(id, ReportStatus.IN_PROGRESS);
-
-        // Son durumu alarak döndür
-        return this.findOne(id);
-      }
-
-      return updatedReport;
-    } catch (error) {
-      // Bu hatayı güncelleme talebini reddederek değil, bir istisna atarak yönetiyoruz
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Birim değişikliği sırasında bir hata oluştu'
-      );
-    }
+    return this.findOne(id);
   }
 
   async getDepartmentHistory(reportId: number): Promise<DepartmentHistory[]> {

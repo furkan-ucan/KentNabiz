@@ -1,3 +1,4 @@
+// apps/api/src/modules/users/repositories/user.repository.ts
 /**
  * @file user.repository.ts
  * @module users
@@ -8,11 +9,13 @@
  * @license MIT
  */
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common'; // NotFoundException eklendi (update metodu için)
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
-import { UserRole } from '@KentNabiz/shared'; // Adjust the import path as necessary
+// Doğru import yolu (önceki adımlarda konuştuğumuz gibi workspace path'leri yerine göreceli yol daha güvenli olabilir)
+// Örnek: import { UserRole } from '../../../../../packages/shared/src/types/user.types';
+import { UserRole } from '@KentNabiz/shared'; // Bu yolun çalıştığından emin olun, aksi takdirde göreceli yola geçin.
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { IUserFindOptions } from '../interfaces/user.interface';
@@ -30,6 +33,10 @@ export class UserRepository {
     return this.usersRepository.find();
   }
 
+  async findAllWithRelations(relations: string[] = []): Promise<User[]> {
+    return this.usersRepository.find({ relations });
+  }
+
   async findOne(options: IUserFindOptions): Promise<User | null> {
     return this.usersRepository.findOne({ where: options });
   }
@@ -38,15 +45,34 @@ export class UserRepository {
     return this.usersRepository.findOneBy({ id });
   }
 
+  async findByIdWithRelations(id: number, relations: string[] = []): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { id }, relations });
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOneBy({ email });
   }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
+    // User entity'sindeki default: [UserRole.CITIZEN] ayarı zaten bu işi yapmalı.
+    // Eğer createUserDto.roles gelmiyorsa, entity'nin default'u devreye girer.
+    // Bu satır, DTO'dan gelen rolleri önceliklendirir, gelmezse CITIZEN atar.
+    // Ancak DTO'da `roles` alanı opsiyonel ve default değeri varsa, bu satır gereksiz olabilir.
+    // Şimdilik, DTO'dan gelen rolleri kullanıp, gelmezse CITIZEN atayan mantığı koruyalım ama UserRole.USER'ı düzeltelim.
     const user = this.usersRepository.create({
       ...createUserDto,
-      roles: createUserDto.roles || [UserRole.USER],
+      // Eğer CreateUserDto.roles opsiyonel ise ve User entity'sinde default rol varsa, bu satıra gerek olmayabilir.
+      // Veya DTO'da default olarak [UserRole.CITIZEN] belirtilebilir.
+      // Şimdilik mantığı koruyarak UserRole.USER -> UserRole.CITIZEN yapıyoruz.
+      roles:
+        createUserDto.roles && createUserDto.roles.length > 0
+          ? createUserDto.roles
+          : [UserRole.CITIZEN],
     });
+    return this.usersRepository.save(user);
+  }
+
+  async save(user: User): Promise<User> {
     return this.usersRepository.save(user);
   }
 
@@ -55,15 +81,28 @@ export class UserRepository {
     const user = await this.findById(id);
 
     if (!user) {
-      throw new Error('User not found');
+      // Repository katmanında hata fırlatmak yerine null dönmek ve serviste hatayı yönetmek
+      // daha yaygın bir pratiktir. Ancak burada hata fırlatılmış.
+      // Servis katmanında zaten NotFoundException fırlatıldığı için bu satır kalabilir
+      // veya daha genel bir Error fırlatılıp serviste spesifik NestJS exception'ına dönüştürülebilir.
+      throw new NotFoundException(`User with ID ${id} not found for update.`); // Daha spesifik bir hata
     }
 
+    // Object.assign, updateUserDto'daki undefined olmayan tüm property'leri user'a kopyalar.
+    // Şifre gibi hassas alanların bu şekilde güncellenmemesi için DTO'da kontrol olmalı
+    // veya burada özel bir mantıkla ele alınmalı (örneğin, şifre sadece changePassword ile değişmeli).
+    // Mevcut User entity'sinde hashPassword @BeforeUpdate ile çalışıyor, bu iyi.
     Object.assign(user, updateUserDto);
     return this.usersRepository.save(user);
   }
 
   async remove(id: number): Promise<void> {
-    await this.usersRepository.delete(id);
+    // delete metodu, var olmayan bir ID için hata fırlatmaz, etkilenen satır sayısını döner.
+    // Servis katmanında zaten varlık kontrolü yapıldığı için bu yeterli.
+    const result = await this.usersRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`User with ID ${id} not found for deletion.`);
+    }
   }
 
   async isEmailTaken(email: string, excludeUserId?: number): Promise<boolean> {

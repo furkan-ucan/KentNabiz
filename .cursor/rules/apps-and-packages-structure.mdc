@@ -1,0 +1,38 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Applications and Packages Structure Guide
+
+This guide outlines the typical structure and conventions for directories within `apps/` and `packages/`.
+
+## `apps/` Directory Structure
+
+The `[apps/](mdc:apps)` directory contains the main, deployable applications of the KentNabiz project.
+
+*   **General Expectation:** Each subdirectory within `apps/` represents a distinct application (e.g., `apps/web-app`, `apps/api-service`).
+*   **Common Structure (per app):** While specific structures may vary, look for common patterns like:
+    *   `src/`: Containing the source code.
+    *   `package.json`: App-specific dependencies and scripts.
+    *   `tsconfig.json`: App-specific TypeScript configuration, potentially extending the root `[tsconfig.json](mdc:tsconfig.json)`.
+    *   Configuration files (e.g., `.env`, `config/`).
+
+## `packages/` Directory Structure
+
+The `[packages/](mdc:packages)` directory holds shared libraries, UI components, utilities, or other modules used by one or more applications in the `apps/` directory. This promotes code reuse and modularity.
+
+*   **General Expectation:** Each subdirectory within `packages/` is a separate, publishable (internally or externally) package.
+*   **Common Structure (per package):**
+    *   `src/`: Source code of the package.
+    *   `package.json`: Defines the package's name, version, dependencies, entry points (main, module, types), and scripts.
+    *   `tsconfig.json`: Package-specific TypeScript configuration.
+    *   `README.md`: Documentation for the package.
+*   **Inter-package Dependencies:** Packages here can depend on other packages within this directory. These relationships are managed by pnpm workspaces, defined in `[pnpm-workspace.yaml](mdc:pnpm-workspace.yaml)`.
+
+## Key Files for Understanding Relationships
+
+*   `[pnpm-workspace.yaml](mdc:pnpm-workspace.yaml)`: Defines which directories are part of the pnpm workspace (likely `apps/*` and `packages/*`).
+*   `[turbo.json](mdc:turbo.json)`: Defines build, test, and lint pipelines across all applications and packages.
+*   Individual `package.json` files within each app and package will list their specific dependencies.
+

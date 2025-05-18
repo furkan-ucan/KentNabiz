@@ -1,3 +1,4 @@
+// apps/api/src/modules/reports/entities/report.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -10,14 +11,13 @@ import {
   Index,
 } from 'typeorm';
 import { Point } from 'geojson';
-// Keep imports for type hints
 import { User } from '../../users/entities/user.entity';
 import { ReportMedia } from './report-media.entity';
 import { DepartmentHistory } from './department-history.entity';
 import { Department } from './department.entity';
-import { ReportCategory } from './report-category.entity'; // Keep for type hints
-// Other necessary imports
-import { MunicipalityDepartment, ReportStatus, ReportType } from '@KentNabiz/shared';
+import { ReportCategory } from './report-category.entity';
+// CORRECTED IMPORT PATH: Ensure this path is valid for your monorepo setup.
+import { ReportStatus, ReportType } from '@KentNabiz/shared'; // Adjust path if necessary
 
 @Entity('reports')
 export class Report {
@@ -43,84 +43,70 @@ export class Report {
 
   @Column({
     type: 'enum',
-    enum: ReportType,
-    default: ReportType.OTHER,
+    enum: ReportType, // ReportType enum from packages/shared
+    nullable: true,
   })
-  type!: ReportType;
+  reportType?: ReportType; // Changed 'type' to 'reportType' to avoid conflict with 'type' keyword
 
-  @Column({ name: 'category_id', nullable: true })
-  categoryId!: number;
+  @Column({ name: 'category_id', type: 'int', nullable: true })
+  categoryId?: number;
 
-  // --- FIX: Use string name for ReportCategory relationship ---
-  @ManyToOne('ReportCategory', (category: ReportCategory) => category.reports, {
-    // <-- Use string name. Added example inverse side function. Adjust if needed.
-    nullable: true, // Assuming category can be optional based on categoryId being nullable
-    onDelete: 'SET NULL', // Example: Set FK to NULL if category is deleted
-  })
+  @ManyToOne(() => ReportCategory, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'category_id' })
-  category!: ReportCategory; // Type hint still uses imported class
+  category?: ReportCategory;
 
   @Column({
     type: 'enum',
-    enum: ReportStatus,
-    default: ReportStatus.REPORTED,
+    enum: ReportStatus, // Updated ReportStatus enum from packages/shared
+    default: ReportStatus.SUBMITTED,
   })
   status!: ReportStatus;
 
-  @Column({
-    type: 'enum',
-    enum: MunicipalityDepartment,
-    default: MunicipalityDepartment.GENERAL,
-  })
-  department!: MunicipalityDepartment; // Enum representing current department code
+  @Column({ name: 'current_department_id', type: 'int' })
+  currentDepartmentId!: number;
 
-  @Column({ name: 'department_id', nullable: true })
-  departmentId!: number; // Foreign key column
+  @ManyToOne(() => Department, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'current_department_id' })
+  currentDepartment!: Department;
 
-  // String names applied in previous fix
-  @ManyToOne('Department', (department: Department) => department.reports)
-  @JoinColumn({ name: 'department_id' })
-  departmentEntity!: Department;
+  @Column({ name: 'assigned_employee_id', type: 'int', nullable: true })
+  assignedEmployeeId?: number;
 
-  @Column({ name: 'department_change_reason', nullable: true })
-  departmentChangeReason!: string;
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'assigned_employee_id' })
+  assignedEmployee?: User; // This User should have DEPARTMENT_EMPLOYEE role
 
-  @Column({ name: 'department_changed_by', nullable: true })
-  departmentChangedBy!: number; // Should this relate to User?
+  @Column({ name: 'resolution_notes', type: 'text', nullable: true })
+  resolutionNotes?: string;
 
-  @Column({ name: 'department_changed_at', type: 'timestamp', nullable: true })
-  departmentChangedAt!: Date;
+  @Column({ name: 'rejection_reason', type: 'text', nullable: true })
+  rejectionReason?: string; // If status is REJECTED
 
-  @Column({ name: 'user_id' })
+  // User who submitted the report (CITIZEN)
+  @Column({ name: 'user_id', type: 'int' })
   userId!: number;
 
-  // Keep arrow function unless User creates a circular dependency
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, user => user.createdReports, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user!: User;
 
-  @Column({ name: 'admin_id', nullable: true })
-  adminId!: number;
+  // User who closed/resolved the report (DEPARTMENT_SUPERVISOR or SYSTEM_ADMIN)
+  @Column({ name: 'closed_by_user_id', type: 'int', nullable: true })
+  closedByUserId?: number;
 
-  // Keep arrow function unless User creates a circular dependency
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'admin_id' })
-  admin!: User;
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'closed_by_user_id' })
+  closedByUser?: User;
 
-  // String names applied in previous fix
-  @OneToMany('ReportMedia', (media: ReportMedia) => media.report, {
-    cascade: true,
-  })
+  @OneToMany(() => ReportMedia, media => media.report, { cascade: true })
   reportMedias!: ReportMedia[];
 
-  // String names applied in previous fix
-  @OneToMany('DepartmentHistory', (history: DepartmentHistory) => history.report, {
-    cascade: true,
-  })
+  @OneToMany(() => DepartmentHistory, history => history.report, { cascade: true })
   departmentHistory!: DepartmentHistory[];
 
-  @Column({ name: 'previous_department', nullable: true })
-  previousDepartment!: string;
+  // Fields like departmentChangeReason, departmentChangedBy, etc.,
+  // should ideally be part of the DepartmentHistory entity.
+  // Keeping Report entity cleaner.
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

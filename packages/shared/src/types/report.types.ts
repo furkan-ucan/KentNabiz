@@ -1,19 +1,21 @@
 // packages/shared/src/types/report.types.ts
-import { Point } from 'geojson'; // Dependency: pnpm add -D -F @kentnabiz/shared @types/geojson
+import { Point } from 'geojson';
 
-// --- Enums defined here as the Single Source of Truth ---
-
-/** Defines the possible statuses of a report, based on API usage. */
+// UPDATED Report Statuses (in English)
 export enum ReportStatus {
-  REPORTED = 'REPORTED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  DEPARTMENT_CHANGED = 'DEPARTMENT_CHANGED',
-  RESOLVED = 'RESOLVED',
-  REJECTED = 'REJECTED',
+  SUBMITTED = 'SUBMITTED', // Citizen created, assigned to initial department
+  UNDER_REVIEW = 'UNDER_REVIEW', // Department Supervisor or Employee is reviewing
+  FORWARDED = 'FORWARDED', // Forwarded from one department to another (was DEPARTMENT_CHANGED)
+  ASSIGNED_TO_EMPLOYEE = 'ASSIGNED_TO_EMPLOYEE', // Assigned to an employee by Department Supervisor
+  FIELD_WORK_IN_PROGRESS = 'FIELD_WORK_IN_PROGRESS', // Employee or Supervisor started fieldwork (a form of old IN_PROGRESS)
+  PENDING_APPROVAL = 'PENDING_APPROVAL', // Employee completed, awaiting Supervisor's approval
+  RESOLVED = 'RESOLVED', // Department Supervisor approved (was RESOLVED)
+  REJECTED = 'REJECTED', // Department Supervisor/Admin rejected (was REJECTED)
+  AWAITING_INFORMATION = 'AWAITING_INFORMATION', // Awaiting additional info from citizen or other unit
 }
 
 /** Defines the possible types/categories of a report, based on API usage. */
-export enum ReportType {
+export enum ReportType { // This can remain the same for now, update if needed
   POTHOLE = 'POTHOLE',
   ROAD_DAMAGE = 'ROAD_DAMAGE',
   ROAD_SIGN = 'ROAD_SIGN',
@@ -43,7 +45,10 @@ export enum ReportType {
 }
 
 /** Defines the possible municipal departments handling reports, based on API usage. */
-export enum MunicipalityDepartment {
+// NOTE: Keeping this enum in sync with the `Department` entity on the API side is important.
+// Perhaps the department entity's `code` or `name` field could be used directly instead of this enum.
+// Leaving as is for now.
+export enum MunicipalityDepartment { // This can remain the same for now
   ROADS = 'ROADS',
   INFRASTRUCTURE = 'INFRASTRUCTURE',
   ENVIRONMENTAL = 'ENVIRONMENTAL',
@@ -60,32 +65,43 @@ export enum MunicipalityDepartment {
   GENERAL = 'GENERAL',
 }
 
-// --- Shared Report Interface ---
-// Represents the common data structure for a report expected by clients (Web/Mobile)
-// based on what the API typically exposes (e.g., via DTOs).
 export interface SharedReport {
-  id: number; // Changed to number
+  id: number;
   title: string;
   description: string;
-  status: ReportStatus; // Use shared enum
-  type: ReportType; // Use shared enum
-  location: Point; // Use standard GeoJSON Point
-  address: string; // Added separate address field
-  userId: number; // Changed from submittedBy (use number)
-  adminId?: number; // Added optional adminId
-  categoryId?: number; // Added optional categoryId
-  department?: MunicipalityDepartment; // Added optional department (use shared enum)
-  // Example for simplified media info - adjust if API DTO returns different structure
+  status: ReportStatus; // Will use the updated enum
+  type: ReportType;
+  location: Point;
+  address: string;
+  userId: number;
+  userFullName?: string; // Added for convenience
+  categoryId?: number;
+  categoryName?: string; // Added for convenience
+  currentDepartmentId: number;
+  currentDepartmentName: string;
+  assignedToEmployeeId?: number;
+  assignedToEmployeeFullName?: string;
   reportMedias?: {
     id: number;
     url: string;
     thumbnailUrl?: string;
-    type: string; // Or a shared MediaType enum if one exists
+    type: string;
   }[];
   createdAt: Date;
   updatedAt: Date;
-  // Consider adding categoryName or departmentName if the API usually includes
-  // these resolved names in responses and clients need them directly.
+  statusHistory?: {
+    status: ReportStatus;
+    changedAt: Date;
+    changedByUserId?: number;
+    notes?: string;
+  }[];
+  departmentHistory?: {
+    departmentId: number;
+    departmentName: string;
+    changedAt: Date;
+    changedByUserId?: number;
+    reason?: string;
+  }[];
 }
 
 // Removed API DTO Helper Types (CreateReportDto, UpdateReportDto) and ReportAnalytics

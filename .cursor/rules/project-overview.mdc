@@ -1,0 +1,63 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Project Overview and Key Files
+
+This document provides an overview of the KentNabiz project structure and highlights key files and directories.
+
+## Core Configuration & Package Management
+
+*   **Package Management (pnpm):**
+    *   `[pnpm-lock.yaml](mdc:pnpm-lock.yaml)`: Defines the exact versions of dependencies.
+    *   `[pnpm-workspace.yaml](mdc:pnpm-workspace.yaml)`: Configures the pnpm workspace, likely linking packages within the `packages/` directory.
+    *   `[package.json](mdc:package.json)`: The main project manifest, containing scripts, dependencies, and project metadata.
+*   **TypeScript Configuration:**
+    *   `[tsconfig.json](mdc:tsconfig.json)`: The root TypeScript configuration for the project.
+*   **Monorepo Management (Turborepo):**
+    *   `[turbo.json](mdc:turbo.json)`: Configures Turborepo, defining pipelines and task dependencies for building, testing, and linting across the monorepo.
+
+## Application & Package Structure
+
+*   **Applications (`apps/`):** This directory likely contains the main runnable applications of the project. ([apps/](mdc:apps))
+*   **Shared Packages (`packages/`):** This directory likely holds reusable packages, libraries, or modules shared across different applications within the monorepo. ([packages/](mdc:packages))
+
+## Documentation
+
+*   **Main Documentation Folder (`docs/`):** Contains all project-related documentation. ([docs/](mdc:docs))
+    *   `[README.md](mdc:README.md)`: The primary entry point for understanding the project.
+    *   `[docs/architecture.md](mdc:docs/architecture.md)`: Describes the system architecture.
+    *   `[docs/technical-docs.md](mdc:docs/technical-docs.md)`: General technical documentation.
+    *   `[docs/api-docs.md](mdc:docs/api-docs.md)`: Documentation for the project's APIs.
+    *   `[docs/requirements.md](mdc:docs/requirements.md)`: Project requirements.
+    *   Sprint plans (e.g., `[docs/sprint-6-plan.md](mdc:docs/sprint-6-plan.md)`) and implementation phase documents (e.g., `[docs/impl-faz1.md](mdc:docs/impl-faz1.md)`) are also located here.
+
+## Testing
+
+*   **Jest Configuration:** `[jest.config.ts](mdc:jest.config.ts)` is the configuration file for the Jest testing framework.
+
+## Linting and Formatting
+
+*   **ESLint Configuration:** `[eslint.config.js](mdc:eslint.config.js)` defines the linting rules for the project using ESLint.
+*   **Prettier Configuration:** `[.prettierrc](mdc:.prettierrc)` configures the Prettier code formatter to ensure consistent code style.
+*   **Commit Lint Configuration:** `[commitlint.config.js](mdc:commitlint.config.js)` enforces conventional commit messages.
+
+## Build, CI/CD & Deployment
+
+*   **Docker:** `[docker-compose.yml](mdc:docker-compose.yml)` is used for defining and running multi-container Docker applications.
+*   **GitHub Actions & Workflows (`.github/`):** This directory likely contains GitHub Actions workflows for CI/CD, automated testing, and other development automation. ([.github/](mdc:.github))
+*   **Scripts (`scripts/`):** Contains utility scripts for the project. ([scripts/](mdc:scripts))
+
+## Git Configuration
+
+*   `[.gitignore](mdc:.gitignore)`: Specifies intentionally untracked files that Git should ignore.
+*   `[.gitattributes](mdc:.gitattributes)`: Defines attributes per path.
+
+## Editor & IDE Integration
+
+*   **Husky (`.husky/`):** Manages Git hooks to automate tasks like linting and testing before commits or pushes. ([.husky/](mdc:.husky))
+*   **Cursor specific files (`.cursor/`):** Likely contains configuration or metadata for the Cursor IDE/editor. ([.cursor/](mdc:.cursor))
+
+This set of rules should provide a good starting point for the AI to understand your project.
+

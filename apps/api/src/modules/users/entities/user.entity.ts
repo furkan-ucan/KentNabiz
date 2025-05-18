@@ -1,3 +1,4 @@
+// apps/api/src/modules/users/entities/user.entity.ts
 import {
   Entity,
   Column,
@@ -6,10 +7,17 @@ import {
   UpdateDateColumn,
   BeforeInsert,
   BeforeUpdate,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcryptjs';
-import { UserRole } from '@KentNabiz/shared'; // TS yoluna göre düzenle
+// CORRECTED IMPORT PATH: Ensure this path is valid for your monorepo setup.
+// Using a direct relative path or a configured path alias is safer for TypeORM entities.
+import { UserRole } from '@KentNabiz/shared'; // Adjust path if necessary
+import { Department } from '../../reports/entities/department.entity';
+import { Report } from '../../reports/entities/report.entity';
 
 @Entity('users')
 export class User {
@@ -28,15 +36,21 @@ export class User {
   @Column({ nullable: true })
   avatar?: string;
 
-  @Column({ type: 'enum', enum: UserRole, default: UserRole.USER, array: true })
+  // Kept as array based on your existing structure
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    array: true, // Existing: User can have multiple roles
+    default: [UserRole.CITIZEN], // Default to CITIZEN
+  })
   roles!: UserRole[];
+
+  @Column({ name: 'is_email_verified', default: false })
+  isEmailVerified!: boolean;
 
   @Column()
   @Exclude()
   password!: string;
-
-  @Column({ name: 'is_email_verified', default: false })
-  isEmailVerified!: boolean;
 
   @Column({ name: 'email_verification_token', nullable: true })
   emailVerificationToken?: string;
@@ -50,6 +64,22 @@ export class User {
   @Column({ name: 'last_login_at', nullable: true, type: 'timestamp' })
   lastLoginAt?: Date;
 
+  // Link to department for DEPARTMENT_EMPLOYEE and DEPARTMENT_SUPERVISOR roles
+  @Column({ name: 'department_id', type: 'int', nullable: true })
+  departmentId?: number | null;
+
+  @ManyToOne(() => Department, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'department_id' })
+  department?: Department;
+
+  // Reports assigned to this user (if they are a DEPARTMENT_EMPLOYEE)
+  @OneToMany(() => Report, report => report.assignedEmployee)
+  assignedReports?: Report[];
+
+  // Reports created by this user (if they are a CITIZEN)
+  @OneToMany(() => Report, report => report.user)
+  createdReports?: Report[];
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
@@ -62,7 +92,6 @@ export class User {
     if (this.password && !(await bcrypt.compare('', this.password))) {
       const isAlreadyHashed = /^\$2[abxy]?\$\d{1,2}\$/.test(this.password);
       if (!isAlreadyHashed) {
-        console.log(`>>> [UserEntity] Hashing password for ${this.email || 'new user'}...`);
         const salt = await bcrypt.genSalt(10);
         this.password = await bcrypt.hash(this.password, salt);
       }
@@ -70,21 +99,9 @@ export class User {
   }
 
   async validatePassword(password: string): Promise<boolean> {
-    // Terminalde mutlaka gözüksün diye console.log kullandık
-    console.log(
-      `>>> [UserEntity] Validating Password: Input='${password}', StoredHash='${this.password}'`
-    );
-
     if (!this.password || !password) {
-      console.log(
-        `>>> [UserEntity] Validation failed: Stored hash or input password is missing for user ${this.id}`
-      );
       return false;
     }
-
-    const isMatch = await bcrypt.compare(password, this.password);
-
-    console.log(`>>> [UserEntity] Password Match Result for user ${this.id}: ${isMatch}`);
-    return isMatch;
+    return bcrypt.compare(password, this.password);
   }
 }

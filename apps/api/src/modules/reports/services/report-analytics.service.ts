@@ -154,13 +154,19 @@ export class ReportAnalyticsService {
 
     // Other filters matching Report entity properties
     if (filter.department) {
-      whereClause.department = filter.department;
+      if (typeof filter.department === 'number') {
+        (whereClause as any).currentDepartmentId = filter.department;
+      } else {
+        this.logger.warn(
+          'Department filter provided as enum, needs mapping to ID for Report entity'
+        );
+      }
     }
     if (filter.status) {
       whereClause.status = filter.status;
     }
     if (filter.type) {
-      whereClause.type = filter.type;
+      (whereClause as any).reportType = filter.type;
     }
     if (filter.userId) {
       whereClause.userId = filter.userId;
@@ -211,9 +217,9 @@ export class ReportAnalyticsService {
       const totalResolvedReports =
         statusDistribution.find(s => s.status === ReportStatus.RESOLVED)?.count || 0;
       const totalPendingReports =
-        (statusDistribution.find(s => s.status === ReportStatus.REPORTED)?.count || 0) +
-        (statusDistribution.find(s => s.status === ReportStatus.IN_PROGRESS)?.count || 0) +
-        (statusDistribution.find(s => s.status === ReportStatus.DEPARTMENT_CHANGED)?.count || 0);
+        (statusDistribution.find(s => s.status === ReportStatus.SUBMITTED)?.count || 0) +
+        (statusDistribution.find(s => s.status === ReportStatus.UNDER_REVIEW)?.count || 0) +
+        (statusDistribution.find(s => s.status === ReportStatus.FORWARDED)?.count || 0);
       const totalRejectedReports =
         statusDistribution.find(s => s.status === ReportStatus.REJECTED)?.count || 0;
 

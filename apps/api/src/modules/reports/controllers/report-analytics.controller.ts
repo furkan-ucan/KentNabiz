@@ -200,7 +200,7 @@ export class ReportAnalyticsController {
     // Departman bazlı uzun süre bekleyen raporları sayalım
     const pendingByDepartment = longPendingReports.reduce(
       (acc, report) => {
-        const dept = report.department;
+        const dept = report.currentDepartment?.code || 'N/A';
         acc[dept] = (acc[dept] || 0) + 1;
         return acc;
       },
@@ -239,43 +239,6 @@ export class ReportAnalyticsController {
         performanceScore,
       };
     });
-  }
-
-  @Get('category-distribution')
-  @ApiOperation({
-    summary: 'Kategori bazlı rapor dağılımını getir',
-    description: 'Rapor kategorilerine göre hiyerarşik olarak rapor sayılarını getirir',
-  })
-  @ApiResponse({ status: 200, description: 'Kategori dağılımı başarıyla getirildi' })
-  async getCategoryDistribution(@Query() filter?: IAnalyticsFilter) {
-    // Önce tüm raporları çekelim
-    const reports = await this.reportAnalyticsService.getLongPendingReports({
-      ...filter,
-      // Tüm raporları almak için özel bir endDate belirleyelim
-      endDate: undefined,
-      startDate: undefined,
-      last7Days: undefined,
-      last30Days: undefined,
-      lastQuarter: undefined,
-      lastYear: undefined,
-    });
-
-    // Kategoriye göre grupla
-    const countByCategory: Record<number, number> = {};
-    reports.forEach(report => {
-      const categoryId = report.categoryId;
-      countByCategory[categoryId] = (countByCategory[categoryId] || 0) + 1;
-    });
-
-    // Veri dönüşümü varsayımsal olarak tanımlanmıştır
-
-    return {
-      categoryCounts: Object.entries(countByCategory).map(([categoryId, count]) => ({
-        categoryId: parseInt(categoryId),
-        count,
-      })),
-      // Gerçek implementasyonda, kategori ağacı burada döndürülecektir
-    };
   }
 
   @Get('time-to-resolution')

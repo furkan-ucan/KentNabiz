@@ -1,21 +1,24 @@
 // packages/shared/src/types/user.types.ts
 
-// Enum burada tanımlı kalmalı – merkezi referans noktası
+// UPDATED Role Definitions (in English)
 export enum UserRole {
-  ADMIN = 'admin',
-  USER = 'user',
-  MODERATOR = 'moderator',
+  CITIZEN = 'CITIZEN', // VATANDAS
+  DEPARTMENT_EMPLOYEE = 'DEPARTMENT_EMPLOYEE', // DEPARTMAN_CALISANI
+  DEPARTMENT_SUPERVISOR = 'DEPARTMENT_SUPERVISOR', // DEPARTMAN_SORUMLUSU
+  SYSTEM_ADMIN = 'SYSTEM_ADMIN', // SISTEM_YONETICISI (replaces old 'ADMIN')
 }
 
 export interface UserProfile {
-  id: number; // Updated from string to number; ensure database and logic are updated
+  id: number;
   email: string;
-  fullName: string; // name → fullName
-  roles: UserRole[]; // role → roles
-  isEmailVerified: boolean; // eklendi
-  phoneNumber?: string; // eklendi
-  avatar?: string; // eklendi
-  lastLoginAt?: Date; // eklendi
+  fullName: string;
+  roles: UserRole[]; // Will use the new UserRole enum
+  departmentId?: number; // For DEPARTMENT_EMPLOYEE and DEPARTMENT_SUPERVISOR
+  departmentName?: string; // For convenience
+  isEmailVerified: boolean;
+  phoneNumber?: string;
+  avatar?: string;
+  lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

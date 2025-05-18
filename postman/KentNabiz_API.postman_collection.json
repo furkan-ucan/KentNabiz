@@ -312,7 +312,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["report-analytics", "dashboard"]
             },
-            "description": "Gets dashboard analytics. Likely requires Admin/Moderator role."
+            "description": "Gets dashboard analytics. Likely requires ADMIN or DEPARTMENT_HEAD role."
           },
           "response": []
         }

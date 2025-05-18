@@ -42,18 +42,17 @@ export interface IReport {
   description: string;
   location: Point;
   address: string;
-  status: ReportStatus; // Use imported enum
-  type: ReportType; // Use imported enum
-  categoryId: number;
-  department: MunicipalityDepartment; // Use imported enum
+  status: ReportStatus;
+  reportType?: ReportType;
+  currentDepartmentId: number;
+  currentDepartment?: { id: number; code: MunicipalityDepartment; name: string };
   userId: number;
-  adminId?: number;
-  departmentChangeReason?: string;
-  previousDepartment?: string; // Consider using MunicipalityDepartment type here too if applicable
+  assignedEmployeeId?: number;
+  resolvedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
-  reportMedias?: IReportMedia[]; // Use API-internal media interface
-  departmentHistory?: IDepartmentChange[]; // Use API-internal history interface
+  reportMedias?: IReportMedia[];
+  departmentHistory?: IDepartmentChange[];
 }
 
 // API-Internal Media Interface
@@ -70,11 +69,14 @@ export interface IReportMedia {
 export interface IDepartmentChange {
   id: number;
   reportId: number;
-  oldDepartment: MunicipalityDepartment; // Use imported enum
-  newDepartment: MunicipalityDepartment; // Use imported enum
-  reason?: string; // Made optional
-  changedByDepartment?: MunicipalityDepartment; // Use imported enum
-  createdAt: Date;
+  previousDepartmentId?: number;
+  previousDepartment?: { id: number; code: MunicipalityDepartment; name: string };
+  newDepartmentId: number;
+  newDepartment?: { id: number; code: MunicipalityDepartment; name: string };
+  reason?: string;
+  changedByUserId?: number;
+  changedByUser?: { id: number; fullName: string };
+  changedAt: Date;
 }
 
 // API-Internal Find Options

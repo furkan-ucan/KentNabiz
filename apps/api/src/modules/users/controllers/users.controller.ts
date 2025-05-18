@@ -29,17 +29,17 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.SYSTEM_ADMIN)
   @ApiOperation({ summary: 'Create a new user' })
   @ApiResponse({ status: 201, description: 'User successfully created', type: UserProfileDto })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 409, description: 'Email already in use' })
-  create(@Body() createUserDto: CreateUserDto): Promise<UserProfileDto> {
-    return this.usersService.create(createUserDto);
+  async create(@Body() createUserDto: CreateUserDto): Promise<UserProfileDto> {
+    return this.usersService.createProfile(createUserDto);
   }
 
   @Get()
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.SYSTEM_ADMIN)
   @ApiOperation({ summary: 'Find all users' })
   @ApiResponse({ status: 200, description: 'Return all users', type: [UserProfileDto] })
   findAll(): Promise<UserProfileDto[]> {
@@ -51,7 +51,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Return the found user', type: UserProfileDto })
   @ApiResponse({ status: 404, description: 'User not found' })
   findOne(@Param('id', ParseIntPipe) id: number): Promise<UserProfileDto> {
-    return this.usersService.findOne(id);
+    return this.usersService.findOneProfile(id);
   }
 
   @Patch(':id')
@@ -67,7 +67,7 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.SYSTEM_ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete user by ID' })
   @ApiResponse({ status: 204, description: 'User successfully deleted' })
