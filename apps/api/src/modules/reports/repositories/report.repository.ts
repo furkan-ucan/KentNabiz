@@ -4,11 +4,7 @@ import { Repository, DataSource, DeleteResult } from 'typeorm';
 import { Point } from 'geojson';
 import { Report } from '../entities/report.entity';
 import { ReportMedia } from '../entities/report-media.entity';
-import {
-  IReportFindOptions,
-  ISpatialQueryResult,
-  UpdateReportData,
-} from '../interfaces/report.interface';
+import { IReportFindOptions, ISpatialQueryResult } from '../interfaces/report.interface';
 import { ReportStatus, ReportType } from '@KentNabiz/shared';
 // TODO: add unit tests for custom repository methods - coverage: 9.67%
 
@@ -205,7 +201,7 @@ export class ReportRepository {
   /**
    * Updates a report with transactions for media handling
    */
-  async update(id: number, updateData: UpdateReportData): Promise<Report | null> {
+  async update(id: number, updateData: Partial<Report>): Promise<Report | null> {
     // TODO: add tests for update with media handling
     // Start a transaction
     const queryRunner = this.dataSource.createQueryRunner();
@@ -256,9 +252,8 @@ export class ReportRepository {
     }
   }
 
-  async remove(id: number): Promise<boolean> {
-    const result: DeleteResult = await this.reportRepository.delete(id);
-    return !!result.affected && result.affected > 0;
+  async remove(id: number): Promise<DeleteResult> {
+    return this.reportRepository.delete(id);
   }
 
   async findByOptions(options: IReportFindOptions): Promise<Report[]> {
@@ -301,14 +296,5 @@ export class ReportRepository {
     }
 
     return queryBuilder.getMany();
-  }
-
-  async updateStatus(id: number, status: ReportStatus): Promise<Report> {
-    await this.reportRepository.update(id, { status });
-    const report = await this.findById(id);
-    if (!report) {
-      throw new Error(`Report with ID ${id} not found after status update`);
-    }
-    return report;
   }
 }

@@ -176,4 +176,13 @@ export class UsersService {
     }
     return updatedUserWithRelations;
   }
+
+  async findEmployeeInDepartment(employeeId: number, departmentId: number): Promise<User | null> {
+    const user = await this.userRepository.findByIdWithRelations(employeeId, ['department']);
+    if (!user) return null;
+    if (user.departmentId === departmentId && user.roles.includes(UserRole.DEPARTMENT_EMPLOYEE)) {
+      return user;
+    }
+    return null;
+  }
 }

@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsNotEmpty,
@@ -74,7 +74,8 @@ export class CreateReportDto {
     example: ReportType.POTHOLE,
   })
   @IsEnum(ReportType)
-  type!: ReportType;
+  @IsNotEmpty()
+  reportType!: ReportType;
 
   @ApiProperty({
     description: 'Kategori ID (yeni kategori sistemi)',
@@ -85,15 +86,10 @@ export class CreateReportDto {
   @IsNumber()
   categoryId?: number;
 
-  @ApiProperty({
-    description: 'Municipal department responsible for the issue',
-    enum: MunicipalityDepartment,
-    example: MunicipalityDepartment.ROADS,
-    required: false,
-  })
-  @IsEnum(MunicipalityDepartment)
+  @ApiPropertyOptional({ enum: MunicipalityDepartment, example: MunicipalityDepartment.ROADS })
   @IsOptional()
-  department?: MunicipalityDepartment;
+  @IsEnum(MunicipalityDepartment)
+  departmentCode?: MunicipalityDepartment;
 
   @ApiProperty({
     description: 'Media files related to the report',

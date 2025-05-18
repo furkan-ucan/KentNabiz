@@ -10,26 +10,19 @@ import { RegisterDto } from '../dto/register.dto';
 import { TokenService } from './token.service';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { Token } from '../interfaces/token.interface';
-import { UsersService as OriginalUsersService } from '../../users/services/users.service'; // Aliased import
+import { UsersService } from '../../users/services/users.service'; // Renamed from OriginalUsersService for clarity, or keep alias if preferred
 // UserRepository is no longer used
 import { User } from '../../users/entities/user.entity';
 import { CreateUserDto } from '../../users/dto/create-user.dto';
 // UserRole import removed as per instruction, assuming entity default handles it or it's not explicitly set here.
 
-// Define an interface that extends the original UsersService type
-// to include methods that are expected but might be missing from the base type definition.
-interface UsersServiceWithExpectedMethods extends OriginalUsersService {
-  createUser(dto: CreateUserDto): Promise<User>;
-  findById(id: number): Promise<User | null>;
-  // Methods like findByEmail and updateLastLogin are assumed to be part of OriginalUsersService
-  // and are inherited here.
-}
+// The UsersServiceWithExpectedMethods interface is removed as UsersService now has the correct signatures.
 
 @Injectable()
 export class AuthService {
   constructor(
     private tokenService: TokenService,
-    private usersService: OriginalUsersService // Use the aliased original type for injection
+    private usersService: UsersService // Use the imported UsersService directly
     // private userRepository: UserRepository // Removed as it's no longer used
   ) {}
 
@@ -106,12 +99,11 @@ export class AuthService {
       password: registerDto.password,
       fullName: registerDto.fullName || `User-${Date.now()}`, // Ensure fullName is a string, provide default
       // roles: [UserRole.CITIZEN], // This was commented out, UserRole import removed.
+      // This is handled by UsersService.createUser or User entity default
     };
 
-    // Cast usersService to the extended interface to access createUser
-    const newUser: User = await (this.usersService as UsersServiceWithExpectedMethods).createUser(
-      createUserDto
-    );
+    // DÜZELTİLMİŞ ÇAĞRI: UsersService'teki yeni/güncellenmiş createUser metodunu kullan
+    const newUser: User = await this.usersService.createUser(createUserDto);
 
     const payload: JwtPayload = {
       sub: newUser.id,
@@ -127,10 +119,8 @@ export class AuthService {
     const verifiedOldPayload = await this.tokenService.verifyRefreshToken(refreshToken);
 
     // Find user to confirm they still exist and have proper roles, departmentId
-    // Cast usersService to the extended interface to access findById
-    const user: User | null = await (this.usersService as UsersServiceWithExpectedMethods).findById(
-      verifiedOldPayload.sub
-    );
+    // DÜZELTİLMİŞ ÇAĞRI: UsersService'teki yeni/güncellenmiş findById metodunu kullan
+    const user: User | null = await this.usersService.findById(verifiedOldPayload.sub);
 
     if (!user) {
       throw new UnauthorizedException('User no longer exists');

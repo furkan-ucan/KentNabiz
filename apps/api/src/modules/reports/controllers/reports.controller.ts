@@ -24,65 +24,45 @@ import {
 import { ReportsService } from '../services/reports.service';
 import { CreateReportDto } from '../dto/create-report.dto';
 import { UpdateReportDto } from '../dto/update-report.dto';
+import { UpdateReportStatusDto } from '../dto/update-report-status.dto';
+import { ForwardReportDto } from '../dto/forward-report.dto';
 import { RadiusSearchDto } from '../dto/location.dto';
-import { ReportStatus, ReportType, MunicipalityDepartment } from '@KentNabiz/shared';
+import { ReportStatus, ReportType, MunicipalityDepartment, UserRole } from '@KentNabiz/shared';
 import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { RequestWithUser } from '../../auth/interfaces/jwt-payload.interface';
-import { DepartmentChangeDto, DepartmentHistoryResponseDto } from '../dto/category.dto';
 import { Report } from '../entities/report.entity';
+import { DepartmentHistoryResponseDto } from '../dto/department-history.response.dto';
 
 @ApiTags('reports')
 @Controller('reports')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@ApiBearerAuth()
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
-  // TODO: Response tipi interface yerine DTO kullanılarak Swagger çıktısı daha zengin hale getirilebilir.
   @Get()
   @ApiOperation({
-    summary: 'Get all reports',
-    description: 'Returns paginated list of all reports',
+    summary: 'Get all reports (role-based)',
+    description: 'Returns paginated list of reports based on user role and filters.',
   })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number, defaults to 1',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page, defaults to 10',
-  })
-  @ApiQuery({
-    name: 'type',
-    required: false,
-    enum: ReportType,
-    description: 'Filter by report type',
-  })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: ReportStatus,
-    description: 'Filter by report status',
-  })
-  @ApiQuery({
-    name: 'department',
-    required: false,
-    enum: MunicipalityDepartment,
-    description: 'Filter by department',
-  })
-  @ApiResponse({ status: 200, description: 'Returns a paginated list of reports' })
+  @Roles(UserRole.SYSTEM_ADMIN, UserRole.DEPARTMENT_SUPERVISOR, UserRole.DEPARTMENT_EMPLOYEE)
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiResponse({ status: 200, description: 'Paginated list of reports' })
   async findAll(
+    @Req() req: RequestWithUser,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('type') type?: ReportType,
     @Query('status') status?: ReportStatus,
     @Query('department') department?: MunicipalityDepartment
   ) {
-    return this.reportsService.findAll({
+    return this.reportsService.findAll(req.user, {
       page: page ? +page : 1,
       limit: limit ? +limit : 10,
       type,
@@ -93,44 +73,22 @@ export class ReportsController {
 
   @Get('nearby')
   @ApiOperation({
-    summary: 'Find reports near a location',
-    description: 'Returns reports within the specified radius from a point',
+    summary: 'Find reports near a location (role-based)',
   })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number, defaults to 1',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page, defaults to 10',
-  })
-  @ApiQuery({
-    name: 'type',
-    required: false,
-    enum: ReportType,
-    description: 'Filter by report type',
-  })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: ReportStatus,
-    description: 'Filter by report status',
-  })
-  @ApiQuery({
-    name: 'department',
-    required: false,
-    enum: MunicipalityDepartment,
-    description: 'Filter by department',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Returns a paginated list of reports near the specified location',
-  })
-  async findNearby(
+  @Roles(
+    UserRole.SYSTEM_ADMIN,
+    UserRole.DEPARTMENT_SUPERVISOR,
+    UserRole.DEPARTMENT_EMPLOYEE,
+    UserRole.CITIZEN
+  )
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiResponse({ status: 200, description: 'Paginated list of nearby reports' })
+  findNearby(
+    @Req() req: RequestWithUser,
     @Query() searchDto: RadiusSearchDto,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -148,262 +106,160 @@ export class ReportsController {
   }
 
   @Get('my-reports')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: "Get current user's reports",
-    description: 'Returns reports created by the authenticated user',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number, defaults to 1',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page, defaults to 10',
-  })
-  @ApiQuery({
-    name: 'type',
-    required: false,
-    enum: ReportType,
-    description: 'Filter by report type',
-  })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: ReportStatus,
-    description: 'Filter by report status',
-  })
-  @ApiQuery({
-    name: 'department',
-    required: false,
-    enum: MunicipalityDepartment,
-    description: 'Filter by department',
-  })
-  @ApiResponse({ status: 200, description: "Returns a paginated list of user's reports" })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiOperation({ summary: "Get current user's reports" })
+  @Roles(
+    UserRole.CITIZEN,
+    UserRole.DEPARTMENT_EMPLOYEE,
+    UserRole.DEPARTMENT_SUPERVISOR,
+    UserRole.SYSTEM_ADMIN
+  )
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiResponse({ status: 200, description: "Paginated list of user's reports" })
   async getMyReports(
     @Req() req: RequestWithUser,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('type') type?: ReportType,
-    @Query('status') status?: ReportStatus,
-    @Query('department') department?: MunicipalityDepartment
+    @Query('status') status?: ReportStatus
   ) {
-    return this.reportsService.getReportsByUser(req.user.sub, {
+    return this.reportsService.getReportsByUser(req.user, {
       page: page ? +page : 1,
       limit: limit ? +limit : 10,
       type,
       status,
-      department,
     });
   }
 
   @Get(':id')
-  @ApiOperation({
-    summary: 'Get a report by ID',
-    description: 'Returns a specific report by its ID',
-  })
+  @ApiOperation({ summary: 'Get a report by ID (role-based)' })
+  @Roles(
+    UserRole.SYSTEM_ADMIN,
+    UserRole.DEPARTMENT_SUPERVISOR,
+    UserRole.DEPARTMENT_EMPLOYEE,
+    UserRole.CITIZEN
+  )
   @ApiParam({ name: 'id', description: 'Report ID', type: Number })
   @ApiResponse({ status: 200, description: 'Returns the report' })
   @ApiResponse({ status: 404, description: 'Report not found' })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.reportsService.findOne(id);
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: RequestWithUser
+  ): Promise<Report> {
+    return this.reportsService.findOne(id, req.user);
   }
 
-  // TODO: Response tipi interface yerine DTO kullanılarak Swagger çıktısı daha zengin hale getirilebilir.
   @Post()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Create a new report',
-    description: 'Creates a new report in the system',
-  })
-  @ApiResponse({ status: 201, description: 'Report created successfully' })
+  @ApiOperation({ summary: 'Create a new report' })
+  @Roles(UserRole.CITIZEN, UserRole.SYSTEM_ADMIN)
+  @ApiResponse({ status: 201, description: 'Report created successfully', type: Report })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async create(@Body() createReportDto: CreateReportDto, @Req() req: RequestWithUser) {
-    return this.reportsService.create(createReportDto, req.user.sub);
+  async create(
+    @Body() createReportDto: CreateReportDto,
+    @Req() req: RequestWithUser
+  ): Promise<Report> {
+    return this.reportsService.create(createReportDto, req.user);
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update a report', description: 'Updates an existing report' })
+  @ApiOperation({ summary: 'Update a report (basic info, role-based)' })
+  @Roles(UserRole.CITIZEN, UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
   @ApiParam({ name: 'id', description: 'Report ID', type: Number })
-  @ApiResponse({ status: 200, description: 'Report updated successfully' })
+  @ApiResponse({ status: 200, description: 'Report updated successfully', type: Report })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - not owner of the report' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Report not found' })
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateReportDto: UpdateReportDto,
     @Req() req: RequestWithUser
-  ) {
-    return this.reportsService.update(id, updateReportDto, req.user.sub);
+  ): Promise<Report> {
+    return this.reportsService.update(id, updateReportDto, req.user);
   }
 
   @Patch(':id/status')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Update report status',
-    description: 'Updates the status of an existing report',
-  })
+  @ApiOperation({ summary: 'Update report status (role-based)' })
+  @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.DEPARTMENT_EMPLOYEE, UserRole.SYSTEM_ADMIN)
   @ApiParam({ name: 'id', description: 'Report ID', type: Number })
-  @ApiResponse({ status: 200, description: 'Report status updated successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid status transition' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 404, description: 'Report not found' })
+  @ApiResponse({ status: 200, description: 'Report status updated successfully', type: Report })
   async updateStatus(
     @Param('id', ParseIntPipe) id: number,
-    @Body('status') status: ReportStatus,
+    @Body() updateStatusDto: UpdateReportStatusDto,
     @Req() req: RequestWithUser
-  ) {
-    return this.reportsService.updateStatus(id, status, req.user.sub);
+  ): Promise<Report> {
+    return this.reportsService.updateStatus(id, updateStatusDto.newStatus, req.user, {
+      rejectionReason: updateStatusDto.rejectionReason,
+      resolutionNotes: updateStatusDto.resolutionNotes,
+    });
+  }
+
+  @Patch(':id/assign/:employeeId')
+  @ApiOperation({ summary: 'Assign a report to an employee (role-based)' })
+  @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
+  @ApiParam({ name: 'id', description: 'Report ID', type: Number })
+  @ApiParam({ name: 'employeeId', description: 'Employee User ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Report assigned successfully', type: Report })
+  async assignReportToEmployee(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('employeeId', ParseIntPipe) employeeId: number,
+    @Req() req: RequestWithUser
+  ): Promise<Report> {
+    return this.reportsService.assignReportToEmployee(id, employeeId, req.user);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete a report', description: 'Deletes an existing report' })
+  @ApiOperation({ summary: 'Delete a report (role-based)' })
+  @Roles(UserRole.CITIZEN, UserRole.SYSTEM_ADMIN)
   @ApiParam({ name: 'id', description: 'Report ID', type: Number })
   @ApiResponse({ status: 204, description: 'Report deleted successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - not owner of the report' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Report not found' })
-  async remove(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
-    await this.reportsService.remove(id, req.user.sub);
-  }
-
-  @Get('department/:department')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('staff', 'admin')
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Get reports by department',
-    description: 'Returns reports for the specified department',
-  })
-  @ApiParam({ name: 'department', enum: MunicipalityDepartment, description: 'Department name' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'type', required: false, enum: ReportType })
-  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
-  @ApiResponse({
-    status: 200,
-    description: 'Returns a list of reports for the specified department',
-  })
-  async getReportsByDepartment(
-    @Param('department') department: MunicipalityDepartment,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('type') type?: ReportType,
-    @Query('status') status?: ReportStatus
-  ) {
-    return this.reportsService.findAll({
-      page: page ? +page : 1,
-      limit: limit ? +limit : 10,
-      type,
-      status,
-      department,
-    });
+  async remove(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser): Promise<void> {
+    await this.reportsService.remove(id, req.user);
   }
 
   @Patch(':id/forward')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('staff', 'admin')
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Raporu başka bir birime yönlendir',
-    description: 'Raporu belirtilen birime yönlendirir',
-  })
-  @ApiParam({ name: 'id', description: 'Rapor ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Rapor başarıyla yönlendirildi',
-    type: Report,
-  })
-  @ApiResponse({ status: 400, description: 'Geçersiz birim ya da rapor zaten hedef birimde' })
-  @ApiResponse({ status: 404, description: 'Rapor bulunamadı' })
+  @ApiOperation({ summary: 'Forward a report to another department (role-based)' })
+  @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
+  @ApiParam({ name: 'id', description: 'Report ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Report forwarded successfully', type: Report })
   async forwardReport(
     @Param('id', ParseIntPipe) id: number,
-    @Body() departmentChangeDto: DepartmentChangeDto,
+    @Body() forwardReportDto: ForwardReportDto,
     @Req() req: RequestWithUser
-  ) {
+  ): Promise<Report> {
     return this.reportsService.changeDepartment(
       id,
-      departmentChangeDto.newDepartment,
-      departmentChangeDto.reason,
-      req.user.sub
+      forwardReportDto.newDepartment,
+      forwardReportDto.reason,
+      req.user
     );
   }
 
-  @Get(':id/department-history')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('staff', 'admin')
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Raporun birim değişiklik geçmişini görüntüle',
-    description: 'Raporun birim değişiklik geçmişini döndürür',
-  })
-  @ApiParam({ name: 'id', description: 'Rapor ID' })
+  @Get(':id/history')
+  @ApiOperation({ summary: 'Get department change history for a report (role-based)' })
+  @Roles(UserRole.SYSTEM_ADMIN, UserRole.DEPARTMENT_SUPERVISOR, UserRole.DEPARTMENT_EMPLOYEE)
+  @ApiParam({ name: 'id', description: 'Report ID', type: Number })
   @ApiResponse({
     status: 200,
-    description: 'Birim geçmişi başarıyla getirildi',
+    description: 'Department history',
     type: [DepartmentHistoryResponseDto],
   })
-  @ApiResponse({ status: 404, description: 'Rapor bulunamadı' })
-  async getDepartmentHistory(@Param('id', ParseIntPipe) id: number) {
-    return this.reportsService.getDepartmentHistory(id);
+  getDepartmentHistory(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: RequestWithUser
+  ): Promise<DepartmentHistoryResponseDto[]> {
+    return this.reportsService.getDepartmentHistory(id, req.user);
   }
 
   @Get('suggest-department/:type')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Rapor türü için önerilen birimi getir',
-    description: 'Belirtilen rapor türü için önerilen birimi döndürür',
-  })
-  @ApiParam({ name: 'type', enum: ReportType, description: 'Rapor türü' })
-  @ApiResponse({ status: 200, description: 'Önerilen birim bilgisi döndürüldü' })
-  async suggestDepartment(@Param('type') type: ReportType) {
-    const department = await this.reportsService.suggestDepartmentForReportType(type);
-    return { department };
-  }
-
-  @Get('admin/all-reports')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Admin: Get all reports',
-    description: 'Admin kullanıcıları için tüm raporları getirir',
-  })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'type', required: false, enum: ReportType })
-  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
-  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
-  @ApiResponse({ status: 200, description: 'Returns a list of all reports (admin only)' })
-  async adminGetAllReports(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('type') type?: ReportType,
-    @Query('status') status?: ReportStatus,
-    @Query('department') department?: MunicipalityDepartment
-  ) {
-    return this.reportsService.findAll({
-      page: page ? +page : 1,
-      limit: limit ? +limit : 10,
-      type,
-      status,
-      department,
-    });
+  @ApiOperation({ summary: 'Suggest a department for a report type' })
+  @ApiParam({ name: 'type', description: 'Report Type', enum: ReportType })
+  @ApiResponse({ status: 200, description: 'Suggested department code' })
+  suggestDepartment(@Param('type') type: ReportType): Promise<MunicipalityDepartment> {
+    return this.reportsService.suggestDepartmentForReportType(type);
   }
 }

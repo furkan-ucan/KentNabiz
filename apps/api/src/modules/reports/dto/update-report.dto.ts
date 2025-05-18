@@ -8,40 +8,42 @@ import {
   ValidateNested,
   IsArray,
   IsInt, // departmentId için eklenebilir
-  Min, // departmentId için eklenebilir
+  // Min, // Removed unused import
 } from 'class-validator';
 import { Type } from 'class-transformer';
 // Doğru import yolu
-import { ReportType, ReportStatus } from '@KentNabiz/shared';
+import { ReportType } from '@KentNabiz/shared';
 import { LocationDto } from './location.dto';
 import { CreateReportMediaDto } from './create-report.dto'; // Bu DTO'nun da var olduğundan emin olun
+// import { PointDto } from './point.dto'; // Removed unused import
 
 export class UpdateReportDto {
-  @ApiPropertyOptional({
-    description: 'Title of the report',
-    example: 'Updated: Broken sidewalk on Main Street',
-  })
-  @IsString()
+  @ApiPropertyOptional({ description: 'New title for the report' })
   @IsOptional()
+  @IsString()
   @MaxLength(100)
   title?: string;
 
-  @ApiPropertyOptional({
-    description: 'Detailed description of the issue',
-    example: 'Updated description with more details.',
-  })
-  @IsString()
+  @ApiPropertyOptional({ description: 'New description for the report' })
   @IsOptional()
+  @IsString()
   description?: string;
 
-  @ApiPropertyOptional({
-    description: 'Location of the issue',
-    type: LocationDto, // LocationDto'nun doğru tanımlandığından emin olun
-  })
+  @ApiPropertyOptional({ description: 'New location for the report' })
   @IsOptional()
   @ValidateNested()
   @Type(() => LocationDto)
   location?: LocationDto;
+
+  @ApiPropertyOptional({ enum: ReportType, description: 'New type of the report' })
+  @IsOptional()
+  @IsEnum(ReportType)
+  reportType?: ReportType;
+
+  @ApiPropertyOptional({ description: 'New category ID for the report' })
+  @IsOptional()
+  @IsInt()
+  categoryId?: number;
 
   @ApiPropertyOptional({
     description: 'Street address or description of the location',
@@ -51,48 +53,6 @@ export class UpdateReportDto {
   @IsOptional()
   @MaxLength(255)
   address?: string;
-
-  @ApiPropertyOptional({
-    description: 'Type of the report',
-    enum: ReportType,
-    example: ReportType.POTHOLE, // Bu enum değeri @KentNabiz/shared'deki ile aynı olmalı
-  })
-  @IsEnum(ReportType)
-  @IsOptional()
-  reportType?: ReportType; // 'type' -> 'reportType' olarak değiştirmek iyi bir pratik olabilir (keyword çakışması için)
-
-  @ApiPropertyOptional({
-    description: 'Status of the report',
-    enum: ReportStatus,
-    example: ReportStatus.UNDER_REVIEW, // ReportStatus.IN_PROGRESS -> ReportStatus.UNDER_REVIEW (veya uygun yeni bir durum)
-  })
-  @IsEnum(ReportStatus)
-  @IsOptional()
-  status?: ReportStatus;
-
-  // Rapor güncellenirken departman da değiştirilebilmeli.
-  // Bu 'department' alanı yerine 'currentDepartmentId' kullanmak daha tutarlı olur (Report entity'si gibi).
-  @ApiPropertyOptional({
-    description: 'ID of the municipality department responsible for the issue',
-    example: 1, // Örneğin Roads departmanının ID'si
-  })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  currentDepartmentId?: number; // 'department' enum'u yerine ID
-
-  // Bu alan DepartmentHistory'ye taşındığı için DTO'dan çıkarılabilir.
-  // Departman değişikliği ayrı bir endpoint/servis metodu ile yönetilebilir.
-  /*
-  @ApiPropertyOptional({
-    description: 'Reason for changing the department (if applicable)',
-    example: 'This is a water supply issue, not a road maintenance problem',
-  })
-  @IsString()
-  @IsOptional()
-  @MaxLength(255)
-  departmentChangeReason?: string;
-  */
 
   // reportMedias alanı CreateReportDto'da da var, update sırasında nasıl ele alınacak?
   // Mevcut medyaları silip yenilerini eklemek mi, yoksa sadece yeni medya eklemek mi?
