@@ -43,9 +43,25 @@ export class AddPostGISAndDepartments1680268900000 implements MigrationInterface
     await queryRunner.query(`
       CREATE INDEX "IDX_departments_active" ON "departments" ("is_active")
     `);
+
+    // users tablosuna department_id için foreign key ekle
+    await queryRunner.query(`
+      ALTER TABLE "public"."users"
+      ADD CONSTRAINT "FK_users_department"
+      FOREIGN KEY ("department_id")
+      REFERENCES "public"."departments"("id")
+      ON DELETE SET NULL
+      ON UPDATE NO ACTION
+    `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    // users tablosundan department_id foreign key'ini kaldır
+    await queryRunner.query(`
+      ALTER TABLE "public"."users"
+      DROP CONSTRAINT IF EXISTS "FK_users_department"
+    `);
+
     await queryRunner.query(`DROP INDEX "IDX_departments_active"`);
     await queryRunner.query(`DROP INDEX "IDX_departments_code"`);
     await queryRunner.query(`DROP TABLE "departments"`);

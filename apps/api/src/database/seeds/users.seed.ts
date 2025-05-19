@@ -38,8 +38,9 @@ export const UsersSeed = async (dataSource: DataSource): Promise<void> => {
     email: 'moderator@kentnabiz.com',
     fullName: 'Moderatör Kullanıcı',
     password: defaultPassword,
-    roles: [UserRole.SYSTEM_ADMIN],
+    roles: [UserRole.DEPARTMENT_SUPERVISOR],
     isEmailVerified: true,
+    departmentId: 1,
   });
 
   // Normal kullanıcı

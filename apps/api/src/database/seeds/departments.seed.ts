@@ -17,6 +17,7 @@ export const DepartmentsSeed = async (dataSource: DataSource): Promise<void> => 
   // Örnek birimler
   const departments = [
     {
+      id: 1,
       code: MunicipalityDepartment.GENERAL,
       name: 'Genel Birim',
       description: 'Sınıflandırılmamış şikayetlerin ilk yönlendirildiği birim',
@@ -24,6 +25,7 @@ export const DepartmentsSeed = async (dataSource: DataSource): Promise<void> => 
       responsibleReportTypes: [ReportType.OTHER],
     },
     {
+      id: 2,
       code: MunicipalityDepartment.ROADS,
       name: 'Yollar ve Altyapı Müdürlüğü',
       description: 'Yollar ve altyapı ile ilgili sorunların çözüm birimi',
@@ -36,6 +38,7 @@ export const DepartmentsSeed = async (dataSource: DataSource): Promise<void> => 
       ],
     },
     {
+      id: 3,
       code: MunicipalityDepartment.WATER,
       name: 'Su ve Kanalizasyon Müdürlüğü',
       description: 'Su, kanalizasyon ve su baskını ile ilgili sorunlar',
@@ -43,6 +46,7 @@ export const DepartmentsSeed = async (dataSource: DataSource): Promise<void> => 
       responsibleReportTypes: [ReportType.WATER_LEAKAGE],
     },
     {
+      id: 4,
       code: MunicipalityDepartment.ELECTRICITY,
       name: 'Elektrik İşleri Müdürlüğü',
       description: 'Elektrik ve aydınlatma sorunları',
@@ -50,6 +54,7 @@ export const DepartmentsSeed = async (dataSource: DataSource): Promise<void> => 
       responsibleReportTypes: [ReportType.ELECTRICITY_OUTAGE, ReportType.STREET_LIGHT],
     },
     {
+      id: 5,
       code: MunicipalityDepartment.PARKS,
       name: 'Park ve Bahçeler Müdürlüğü',
       description: 'Parklar, yeşil alanlar ve ağaçlar ile ilgili sorunlar',
@@ -57,6 +62,7 @@ export const DepartmentsSeed = async (dataSource: DataSource): Promise<void> => 
       responsibleReportTypes: [ReportType.TREE_ISSUE, ReportType.PARK_DAMAGE],
     },
     {
+      id: 6,
       code: MunicipalityDepartment.ENVIRONMENTAL,
       name: 'Çevre Koruma ve Temizlik Müdürlüğü',
       description: 'Çevre temizliği ve atık yönetimi sorunları',
@@ -68,6 +74,7 @@ export const DepartmentsSeed = async (dataSource: DataSource): Promise<void> => 
       ],
     },
     {
+      id: 7,
       code: MunicipalityDepartment.INFRASTRUCTURE,
       name: 'Altyapı Müdürlüğü',
       description: 'Genel altyapı sorunları',
@@ -75,6 +82,7 @@ export const DepartmentsSeed = async (dataSource: DataSource): Promise<void> => 
       responsibleReportTypes: [],
     },
     {
+      id: 8,
       code: MunicipalityDepartment.TRANSPORTATION,
       name: 'Ulaşım Hizmetleri Müdürlüğü',
       description: 'Toplu taşıma ve ulaşım sorunları',
@@ -88,6 +96,7 @@ export const DepartmentsSeed = async (dataSource: DataSource): Promise<void> => 
       ],
     },
     {
+      id: 9,
       code: MunicipalityDepartment.OTHER,
       name: 'Diğer Birimler',
       description: 'Tanımlanmamış diğer birimler',

@@ -15,9 +15,14 @@ if (typeof __dirname === 'undefined') {
   process.exit(1);
 }
 
+// Determine if running under ts-node (development) or compiled JS (production)
+const isTsNode =
+  process.argv.some(arg => arg.includes('ts-node')) || process.env.TS_NODE_DEV !== undefined;
+const extension = isTsNode ? '.ts' : '.js';
+
 // Paths to COMPILED .js files relative to dist/config/
-const entitiesPath = path.join(__dirname, '..', 'modules', '**', '*.entity.js');
-const migrationsPath = path.join(__dirname, '..', 'database', 'migrations', '*.js');
+const entitiesPath = path.join(__dirname, '..', 'modules', '**', `*.entity${extension}`);
+const migrationsPath = path.join(__dirname, '..', 'database', 'migrations', `*${extension}`);
 
 // Define options with TypeORM type
 const dataSourceOptions: DataSourceOptions = {

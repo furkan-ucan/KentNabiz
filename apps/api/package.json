@@ -25,7 +25,8 @@
     "schema:drop": "pnpm typeorm:api schema:drop",
     "migration:generate": "pnpm typeorm:api migration:generate src/database/migrations/YourMigrationName",
     "seed:direct": "node dist/database/seeds/index.js",
-    "db:reset": "pnpm build && pnpm schema:drop && pnpm migration:run && pnpm seed:direct"
+    "db:reset": "pnpm build && pnpm schema:drop && pnpm migration:run && pnpm seed:direct",
+    "listEmittedFiles": "npx tsc -p apps/api/tsconfig.build.json --listEmittedFiles"
   },
   "dependencies": {
     "@nestjs-modules/ioredis": "^2.0.2",

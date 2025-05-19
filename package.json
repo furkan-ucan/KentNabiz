@@ -20,7 +20,7 @@
     "migration:show": "pnpm typeorm:api migration:show",
     "schema:drop": "pnpm typeorm:api schema:drop",
     "migration:generate": "pnpm typeorm:api migration:generate apps/api/src/database/migrations/YourMigrationName",
-    "seed:direct": "node apps/api/dist/database/seeds/index.js",
+    "seed:direct": "ts-node --project apps/api/tsconfig.json -r tsconfig-paths/register apps/api/src/database/seeds/index.ts",
     "db:reset": "pnpm build:api && pnpm schema:drop && pnpm migration:run && pnpm seed:direct"
   },
   "devDependencies": {

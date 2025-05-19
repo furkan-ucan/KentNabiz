@@ -17,9 +17,9 @@ async function runSeeds(dataSource: DataSource): Promise<void> {
   console.log('🌱 Veritabanı seed işlemi başlatılıyor...');
   try {
     console.log('✅ PostGIS varsayılan olarak etkinleştirildi veya kontrol edildi.');
-    await UsersSeed(dataSource);
     await DepartmentsSeed(dataSource);
     await CategoriesSeed(dataSource);
+    await UsersSeed(dataSource);
     await ReportsSeed(dataSource);
     console.log('✅ Tüm seed işlemleri başarıyla tamamlandı!');
   } catch (error) {

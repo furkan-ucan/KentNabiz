@@ -45,6 +45,7 @@ export class Report {
     type: 'enum',
     enum: ReportType, // ReportType enum from packages/shared
     nullable: true,
+    name: 'report_type',
   })
   reportType?: ReportType; // Changed 'type' to 'reportType' to avoid conflict with 'type' keyword
 
