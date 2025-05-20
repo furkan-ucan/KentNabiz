@@ -7,11 +7,10 @@ import {
   IsArray,
   IsEnum,
   IsBoolean,
-  // ArrayNotEmpty, // Eğer rollerin boş bir array olmaması gerekiyorsa eklenebilir
-  // IsIn, // Eğer rolleri daha sıkı kontrol etmek isterseniz
+  IsInt,
+  Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-// Doğru import yolu. Eğer @KentNabiz/shared çalışıyorsa bu kalabilir.
 import { UserRole } from '@KentNabiz/shared';
 
 export class CreateUserDto {
@@ -31,29 +30,22 @@ export class CreateUserDto {
 
   @ApiPropertyOptional({ example: '+905551234567', description: 'Phone number of the user' })
   @IsOptional()
-  @IsString() // Burada daha spesifik bir telefon numarası validasyonu da eklenebilir (örn: IsPhoneNumber)
+  @IsString()
   phoneNumber?: string;
 
   @ApiPropertyOptional({ description: 'URL of the user avatar image' })
   @IsOptional()
-  @IsString() // Belki IsUrl() validasyonu daha uygun olabilir
+  @IsString()
   avatar?: string;
 
   @ApiPropertyOptional({
-    description: "User's roles. If not provided, defaults to CITIZEN.",
+    description: "User's roles. If not provided, defaults to CITIZEN by entity.",
     enum: UserRole,
     isArray: true,
-    // DTO seviyesinde default değer belirtmek yerine, bu mantığı
-    // genellikle servis veya repository katmanında (veya entity default'u ile) halletmek daha yaygındır.
-    // Eğer burada default kalacaksa, yeni enum değerini kullanmalı:
-    default: [UserRole.CITIZEN], // UserRole.USER -> UserRole.CITIZEN olarak güncellendi
   })
   @IsOptional()
   @IsArray({ message: 'Roles must be an array.' })
-  // IsEnum her bir array elemanının UserRole enum değerlerinden biri olduğunu doğrular.
   @IsEnum(UserRole, { each: true, message: 'Each role must be a valid UserRole enum value.' })
-  // Eğer rollerin boş olmaması gerekiyorsa:
-  // @ArrayNotEmpty({ message: 'Roles array cannot be empty if provided.' })
   roles?: UserRole[];
 
   @ApiPropertyOptional({
@@ -64,14 +56,15 @@ export class CreateUserDto {
   @IsBoolean()
   isEmailVerified?: boolean;
 
-  // Yeni rollerimizle (DEPARTMAN_CALISANI, DEPARTMAN_SORUMLUSU) bir kullanıcı oluşturulurken
-  // departmentId'nin de DTO'da olması gerekebilir.
-  // Bu, özellikle SYSTEM_ADMIN tarafından bu rollerde kullanıcı oluşturuluyorsa önemlidir.
-  // Şimdilik eklemiyorum, çünkü bu DTO genel kullanıcı kaydı (vatandaş) için de kullanılabilir.
-  // İhtiyaç halinde eklenebilir:
-  // @ApiPropertyOptional({ example: 1, description: 'Department ID if user is a department employee or supervisor' })
-  // @IsOptional()
-  // @IsInt()
-  // @Min(1)
-  // departmentId?: number;
+  @ApiPropertyOptional({
+    example: 1,
+    description:
+      'Department ID if user is a department employee or supervisor. Required if role is one of these.',
+    type: Number,
+    nullable: true,
+  })
+  @IsOptional()
+  @IsInt({ message: 'Department ID must be an integer.' })
+  @Min(1, { message: 'Department ID must be a positive integer.' })
+  departmentId?: number | null;
 }

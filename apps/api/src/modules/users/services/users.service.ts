@@ -56,12 +56,26 @@ export class UsersService {
   // AuthService User bekliyor, bu ise UserProfileDto dönüyor.
   // AuthService'in beklentisine göre User döndürecek bir createUser metodu daha iyi olur.
   async createUser(createUserDto: CreateUserDto): Promise<User> {
-    // create -> createUser, dönüş tipi User
     const existingUserByEmail = await this.userRepository.findByEmail(createUserDto.email);
     if (existingUserByEmail) {
       throw new ConflictException('Email is already in use');
     }
-    // UserRepository.create zaten User döndürüyor.
+
+    // Eğer rol DEPARTMENT_EMPLOYEE veya DEPARTMENT_SUPERVISOR ise
+    // ve departmentId gönderilmemişse, burada bir BadRequestException fırlatılabilir.
+    if (
+      (createUserDto.roles?.includes(UserRole.DEPARTMENT_EMPLOYEE) ||
+        createUserDto.roles?.includes(UserRole.DEPARTMENT_SUPERVISOR)) &&
+      (createUserDto.departmentId === undefined || createUserDto.departmentId === null)
+    ) {
+      throw new BadRequestException(
+        'Department ID is required for DEPARTMENT_EMPLOYEE or DEPARTMENT_SUPERVISOR roles.'
+      );
+    }
+    // İsteğe bağlı: departmentId gönderilmişse, bu ID'ye sahip bir departmanın var olup olmadığını kontrol et.
+    // Bu kontrol DepartmentService veya benzeri bir servis üzerinden yapılabilir.
+    // Örnek: if (createUserDto.departmentId) { await this.departmentService.findOne(createUserDto.departmentId); }
+
     return this.userRepository.create(createUserDto);
   }
 
