@@ -5,21 +5,20 @@ import { Point } from 'geojson';
 import { Report } from '../entities/report.entity';
 import { ReportMedia } from '../entities/report-media.entity';
 import { IReportFindOptions, ISpatialQueryResult } from '../interfaces/report.interface';
-import { ReportStatus, ReportType } from '@KentNabiz/shared';
+import { ReportStatus, ReportType, MunicipalityDepartment } from '@KentNabiz/shared';
 // TODO: add unit tests for custom repository methods - coverage: 9.67%
 
 // Type-safe interfaces for report data operations
-interface CreateReportData {
+export interface CreateReportData {
   title: string;
   description: string;
   location: Point;
   address: string;
-  type: ReportType;
+  reportType: ReportType;
   status?: ReportStatus;
-  reportMedias?: Array<{
-    url: string;
-    type: string;
-  }>;
+  categoryId?: number;
+  currentDepartmentId: number;
+  reportMedias?: Array<{ url: string; type: string }>;
 }
 
 @Injectable()
@@ -34,10 +33,10 @@ export class ReportRepository {
     limit?: number;
     page?: number;
     userId?: number;
-    type?: ReportType;
+    reportType?: ReportType; // type -> reportType olarak güncellendi
     status?: ReportStatus;
+    departmentCode?: MunicipalityDepartment; // department -> departmentCode olarak güncellendi (enum kodu)
   }): Promise<ISpatialQueryResult> {
-    // TODO: add tests for pagination and filtering logic
     const limit = options?.limit || 10;
     const page = options?.page || 1;
     const skip = (page - 1) * limit;
@@ -45,6 +44,10 @@ export class ReportRepository {
     const queryBuilder = this.reportRepository
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.reportMedias', 'media')
+      .leftJoinAndSelect('report.currentDepartment', 'departmentEntity') // Departman bilgisini join et
+      .leftJoinAndSelect('report.user', 'userEntity') // Kullanıcı bilgisini join et
+      .leftJoinAndSelect('report.assignedEmployee', 'assignedEmployeeEntity') // Atanan çalışanı join et
+      .leftJoinAndSelect('report.category', 'categoryEntity') // Kategoriyi join et
       .skip(skip)
       .take(limit)
       .orderBy('report.createdAt', 'DESC');
@@ -53,12 +56,23 @@ export class ReportRepository {
       queryBuilder.andWhere('report.userId = :userId', { userId: options.userId });
     }
 
-    if (options?.type) {
-      queryBuilder.andWhere('report.type = :type', { type: options.type });
+    if (options?.reportType) {
+      // type -> reportType
+      // Entity'deki property adı 'reportType', veritabanı sütunu 'report_type'
+      queryBuilder.andWhere('report.reportType = :reportType', { reportType: options.reportType });
     }
 
     if (options?.status) {
       queryBuilder.andWhere('report.status = :status', { status: options.status });
+    }
+
+    // YENİ EKLENEN DEPARTMAN FİLTRESİ
+    if (options?.departmentCode) {
+      // 'departmentEntity' join ettiğimiz Department entity'sinin alias'ı
+      // Department entity'sindeki 'code' alanı üzerinden filtreleme yapıyoruz.
+      queryBuilder.andWhere('departmentEntity.code = :departmentCode', {
+        departmentCode: options.departmentCode,
+      });
     }
 
     const [reports, total] = await queryBuilder.getManyAndCount();
@@ -71,10 +85,18 @@ export class ReportRepository {
     };
   }
 
+  // findById metodunu da ilişkileri çekecek şekilde güncelleyelim (findOne gibi)
   async findById(id: number): Promise<Report | null> {
     return this.reportRepository.findOne({
       where: { id },
-      relations: ['reportMedias'],
+      relations: [
+        'reportMedias',
+        'currentDepartment',
+        'user',
+        'assignedEmployee',
+        'category',
+        // 'departmentHistory' gerekirse eklenebilir ama genellikle ayrı bir endpoint ile alınır.
+      ],
     });
   }
 
@@ -85,11 +107,11 @@ export class ReportRepository {
     options?: {
       limit?: number;
       page?: number;
-      type?: ReportType;
+      reportType?: ReportType; // type -> reportType
       status?: ReportStatus;
+      departmentCode?: MunicipalityDepartment; // department -> departmentCode
     }
   ): Promise<ISpatialQueryResult> {
-    // TODO: add tests for spatial queries
     const limit = options?.limit || 10;
     const page = options?.page || 1;
     const skip = (page - 1) * limit;
@@ -104,6 +126,7 @@ export class ReportRepository {
     const queryBuilder = this.reportRepository
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.reportMedias', 'media')
+      .leftJoinAndSelect('report.currentDepartment', 'departmentEntity')
       .where(
         `ST_DWithin(
           report.location,
@@ -122,12 +145,16 @@ export class ReportRepository {
       .skip(skip)
       .take(limit);
 
-    if (options?.type) {
-      queryBuilder.andWhere('report.type = :type', { type: options.type });
+    if (options?.reportType) {
+      queryBuilder.andWhere('report.reportType = :reportType', { reportType: options.reportType });
     }
-
     if (options?.status) {
       queryBuilder.andWhere('report.status = :status', { status: options.status });
+    }
+    if (options?.departmentCode) {
+      queryBuilder.andWhere('departmentEntity.code = :departmentCode', {
+        departmentCode: options.departmentCode,
+      });
     }
 
     const [reports, total] = await queryBuilder.getManyAndCount();
@@ -157,9 +184,11 @@ export class ReportRepository {
         description: data.description,
         location: data.location, // TypeORM handles Point objects correctly
         address: data.address,
-        reportType: data.type,
+        reportType: data.reportType,
         status: data.status || ReportStatus.SUBMITTED,
         userId,
+        currentDepartmentId: data.currentDepartmentId,
+        categoryId: data.categoryId,
       });
 
       const savedReport = await queryRunner.manager.save(newReport);
@@ -260,7 +289,8 @@ export class ReportRepository {
     // TODO: add tests for complex filtering options
     const queryBuilder = this.reportRepository
       .createQueryBuilder('report')
-      .leftJoinAndSelect('report.reportMedias', 'media');
+      .leftJoinAndSelect('report.reportMedias', 'media')
+      .leftJoinAndSelect('report.currentDepartment', 'departmentEntity'); // Join eklendi
 
     if (options.id) {
       queryBuilder.andWhere('report.id = :id', { id: options.id });
@@ -270,12 +300,20 @@ export class ReportRepository {
       queryBuilder.andWhere('report.userId = :userId', { userId: options.userId });
     }
 
-    if (options.type) {
-      queryBuilder.andWhere('report.type = :type', { type: options.type });
+    if (options.reportType) {
+      // type -> reportType
+      queryBuilder.andWhere('report.reportType = :reportType', { reportType: options.reportType });
     }
 
     if (options.status) {
       queryBuilder.andWhere('report.status = :status', { status: options.status });
+    }
+
+    if (options.departmentCode) {
+      // Yeni eklendi (IReportFindOptions'a da eklenmeli)
+      queryBuilder.andWhere('departmentEntity.code = :departmentCode', {
+        departmentCode: options.departmentCode,
+      });
     }
 
     if (options.withinRadius) {

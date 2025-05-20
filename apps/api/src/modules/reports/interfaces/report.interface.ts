@@ -84,11 +84,11 @@ export interface IReportFindOptions {
   id?: number;
   userId?: number;
   status?: ReportStatus; // Use imported enum
-  type?: ReportType; // Use imported enum
-  department?: MunicipalityDepartment; // Use imported enum
-  categoryId?: number; // Added categoryId
-  limit?: number;
-  offset?: number;
+  reportType?: ReportType; // type -> reportType olarak güncellendi
+  departmentCode?: MunicipalityDepartment; // department -> departmentCode olarak güncellendi ve eklendi
+  categoryId?: number; // Korundu
+  limit?: number; // Korundu
+  offset?: number; // Korundu
   withinRadius?: {
     latitude: number;
     longitude: number;

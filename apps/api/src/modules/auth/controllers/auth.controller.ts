@@ -1,31 +1,41 @@
+// apps/api/src/modules/auth/controllers/auth.controller.ts
 import { Controller, Post, Body, UseGuards, Get, Req, UnauthorizedException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from '../services/auth.service';
 import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
 import { JwtAuthGuard } from '../guards/jwt.guard';
-import { RolesGuard } from '../guards/roles.guard';
-import { Roles } from '../decorators/roles.decorator';
+// RolesGuard ve Roles importları artık bu spesifik endpoint için gerekmeyebilir,
+// ama controller'ın başka yerlerinde kullanılıyorsa kalabilir.
+// import { RolesGuard } from '../guards/roles.guard';
+// import { Roles } from '../decorators/roles.decorator';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { Public } from '../../../core/decorators/public.decorator';
+import { UserProfileDto } from '../../users/dto/user-profile.dto'; // UserProfileDto'yu import et
+import { UsersService } from '../../users/services/users.service'; // UsersService'i import et
 
 // Custom interface for Request with JWT user
 interface RequestWithUser {
-  user: JwtPayload;
+  user: JwtPayload; // Bu JwtPayload, sub, email, roles, departmentId, jti içerir
   headers: { authorization?: string };
 }
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService // UsersService'i inject et
+  ) {}
 
   @Public()
   @Post('login')
   @ApiOperation({ summary: 'User login' })
   @ApiResponse({
-    status: 201,
+    status: 201, // Genellikle login sonrası 200 OK veya 201 Created kullanılır.
     description: 'User successfully logged in',
+    // Swagger şeması Token arayüzünüze veya TokenResponseDto'nuza göre olmalı.
+    // Şimdilik basit bir örnek bırakıyorum, kendi TokenResponseDto'nuzla güncelleyebilirsiniz.
     schema: {
       properties: {
         accessToken: { type: 'string' },
@@ -96,31 +106,40 @@ export class AuthController {
   }
 
   @Post('logout')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard) // Sadece login olmuş kullanıcılar logout yapabilir
   @ApiOperation({ summary: 'User logout' })
   @ApiResponse({
-    status: 201,
+    status: 200, // Logout için genellikle 200 OK veya 204 No Content
     description: 'User successfully logged out',
+    type: () => ({ success: Boolean }), // Swagger için dönüş tipi
   })
   @ApiBearerAuth()
   async logout(@Req() req: RequestWithUser): Promise<{ success: boolean }> {
+    const tokenToInvalidate = req.headers.authorization?.split(' ')[1];
+    if (!tokenToInvalidate) {
+      // Bu durum normalde JwtAuthGuard tarafından yakalanır ama ek kontrol
+      throw new UnauthorizedException('No token provided for logout');
+    }
     const success = await this.authService.logout(
-      req.user.sub,
-      req.headers.authorization?.split(' ')[1] || ''
+      req.user.sub, // Kullanıcı ID'si
+      tokenToInvalidate // Geçerli access token
     );
     return { success };
   }
 
+  // --- GÜNCELLENMİŞ GET PROFILE METODU ---
   @Get('profile')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('user')
-  @ApiOperation({ summary: 'Get user profile' })
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get current user profile' })
   @ApiBearerAuth()
   @ApiResponse({
     status: 200,
-    description: 'User profile information',
+    description: 'User profile information retrieved successfully',
+    type: UserProfileDto,
   })
-  getProfile(): { data: { message: string } } {
-    return { data: { message: 'Profile endpoint' } };
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'User profile not found' })
+  async getProfile(@Req() req: RequestWithUser): Promise<UserProfileDto> {
+    return this.usersService.findOneProfile(req.user.sub);
   }
 }

@@ -19,27 +19,15 @@ import { UsersService } from '../../users/services/users.service';
 import { ForwardReportDto } from '../dto/forward-report.dto';
 import { DepartmentHistoryResponseDto } from '../dto/department-history.response.dto';
 import { ReportMedia } from '../entities/report-media.entity';
-import { Point } from 'geojson';
+import { CreateReportData } from '../repositories/report.repository';
 
 interface IReportFindAllOptions {
   limit?: number;
   page?: number;
   userId?: number;
-  type?: ReportType;
+  reportType?: ReportType; // type -> reportType olarak güncellendi
   status?: ReportStatus;
-  department?: MunicipalityDepartment;
-}
-
-interface ICreateReportDataForRepo {
-  title: string;
-  description: string;
-  location: Point;
-  address: string;
-  type: ReportType;
-  status: ReportStatus;
-  categoryId?: number;
-  currentDepartmentId: number;
-  reportMedias?: Array<{ url: string; type: string }>;
+  departmentCode?: MunicipalityDepartment; // department -> departmentCode olarak güncellendi
 }
 
 @Injectable()
@@ -194,10 +182,11 @@ export class ReportsService {
       authUser.roles.includes(UserRole.DEPARTMENT_EMPLOYEE)
     ) {
       if (authUser.departmentId) {
-        if (!options?.department && authUser.departmentId) {
+        // Eğer kullanıcı kendi departmanına ait raporları istiyorsa ve özellikle bir departman filtresi belirtmemişse
+        if (!options?.departmentCode && authUser.departmentId) {
           try {
             const userDepartment = await this.departmentService.findById(authUser.departmentId);
-            queryOptions.department = userDepartment.code;
+            queryOptions.departmentCode = userDepartment.code; // department -> departmentCode
           } catch (error) {
             console.error(
               `Department not found for user ${authUser.sub} with departmentId ${authUser.departmentId}: ${(error as Error).message}`
@@ -210,14 +199,21 @@ export class ReportsService {
             };
           }
         }
+        // Eğer kullanıcı bir departman filtresi belirtmişse ve bu kendi departmanı değilse (ve admin değilse) hata verilebilir.
+        // Ancak şu anki mantıkta, eğer departmentCode belirtilmişse o kullanılır, belirtilmemişse kullanıcının departmanı kullanılır.
+        // Bu davranış şimdilik korunuyor.
       } else {
-        if (!options?.department && !authUser.roles.includes(UserRole.SYSTEM_ADMIN)) {
+        // Kullanıcının departman ID'si yoksa ve admin değilse ve departman filtresi de yoksa hata fırlat.
+        if (!options?.departmentCode && !authUser.roles.includes(UserRole.SYSTEM_ADMIN)) {
           throw new UnauthorizedException(
             'User department information is missing and no department filter provided.'
           );
         }
       }
     }
+    // reportRepository.findAll çağrısında options doğrudan geçiliyor, bu options IReportFindAllOptions tipinde olmalı
+    // ve reportRepository.findAll da bu güncellenmiş alan adlarını (reportType, departmentCode) beklemeli.
+    // Bir önceki adımda ReportRepository güncellenmişti.
     return this.reportRepository.findAll(queryOptions);
   }
 
@@ -254,17 +250,19 @@ export class ReportsService {
       targetDepartmentId = generalDepartment.id;
     }
 
-    const dataForRepoCreate: ICreateReportDataForRepo = {
-      ...reportData,
+    const dataForRepoCreate: CreateReportData = {
+      title: reportData.title,
+      description: reportData.description,
       location: point,
-      type: reportType,
+      address: reportData.address,
+      reportType: reportType,
       status: ReportStatus.SUBMITTED,
       categoryId: categoryId,
       currentDepartmentId: targetDepartmentId,
+      reportMedias: reportMedias
+        ? reportMedias.map(m => ({ url: m.url, type: m.type }))
+        : undefined,
     };
-    if (reportMedias) {
-      dataForRepoCreate.reportMedias = reportMedias.map(m => ({ url: m.url, type: m.type }));
-    }
 
     const createdReport = await this.reportRepository.create(dataForRepoCreate, userId);
     return createdReport;
@@ -454,9 +452,16 @@ export class ReportsService {
 
   async getReportsByUser(
     authUser: AuthUser,
-    options?: IReportFindAllOptions
+    options?: IReportFindAllOptions // IReportFindAllOptions kullanılacak şekilde güncellendi
   ): Promise<ISpatialQueryResult> {
-    const queryOptions: IReportFindAllOptions = { ...options, userId: authUser.sub };
+    // options'dan type ve status gelebilir, bunları reportType ve status olarak doğru şekilde iletmeliyiz.
+    const queryOptions: IReportFindAllOptions = {
+      ...options,
+      userId: authUser.sub,
+      // options.type varsa queryOptions.reportType'a ata, yoksa undefined kalsın.
+      reportType: options?.reportType, // Eğer options.type geliyorsa, bunu reportType olarak ata.
+      // departmentCode burada yönetilmiyor, çünkü bu sadece kullanıcının kendi raporları.
+    };
     return this.reportRepository.findAll(queryOptions);
   }
 
@@ -465,12 +470,15 @@ export class ReportsService {
     options?: {
       limit?: number;
       page?: number;
-      type?: ReportType;
+      reportType?: ReportType; // type -> reportType
       status?: ReportStatus;
-      department?: MunicipalityDepartment;
+      departmentCode?: MunicipalityDepartment; // department -> departmentCode
     }
   ): Promise<ISpatialQueryResult> {
     const { latitude, longitude, radius } = searchDto;
+    // reportRepository.findNearby çağrısında options doğrudan geçiliyor.
+    // ReportRepository.findNearby'ın da bu güncellenmiş alan adlarını (reportType, departmentCode) beklemesi gerekir.
+    // Bir önceki adımda ReportRepository güncellenmişti.
     return this.reportRepository.findNearby(latitude, longitude, radius, options);
   }
 

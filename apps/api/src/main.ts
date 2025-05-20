@@ -6,7 +6,7 @@ import { AppModule } from './app.module';
 import { setupSwagger } from './config/swagger.config';
 import { ConfigService } from '@nestjs/config';
 import './modules/media/interfaces/multer-file.interface';
-
+import { HttpExceptionFilter } from './core/filters/http-exception.filter';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
     // Keep this logger configuration
@@ -14,6 +14,8 @@ async function bootstrap(): Promise<void> {
   });
 
   const configService = app.get(ConfigService);
+
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({

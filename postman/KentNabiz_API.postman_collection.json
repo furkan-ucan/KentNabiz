@@ -224,7 +224,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"title\": \"Test Report Title from Postman\",\n    \"description\": \"Detailed description of the issue.\",\n    \"location\": {\n        \"type\": \"Point\",\n        \"coordinates\": [ 28.9784, 41.0082 ] \n    },\n    \"address\": \"123 Test Street, Example City\",\n    \"type\": \"POTHOLE\",\n    \"categoryId\": 7 \n}",
+              "raw": "{\n    \"title\": \"Test Report Title from Postman\",\n    \"description\": \"Detailed description of the issue.\",\n    \"location\": { \"type\": \"Point\", \"coordinates\": [28.9784, 41.0082] },\n    \"address\": \"123 Test Street, Example City\",\n    \"reportType\": \"POTHOLE\",\n    \"departmentCode\": \"ROADS\",\n    \"categoryId\": 7\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -275,6 +275,90 @@
               "path": ["reports", "my-reports"]
             },
             "description": "Gets reports created by the logged-in user. Requires auth."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Report Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newStatus\": \"UNDER_REVIEW\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reports/:reportId/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", ":reportId", "status"]
+            },
+            "description": "Updates the status of a report. Requires authentication."
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Report to Employee",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reports/:reportId/assign/:employeeId",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", ":reportId", "assign", ":employeeId"]
+            },
+            "description": "Assigns a report to an employee. Requires authentication."
+          },
+          "response": []
+        },
+        {
+          "name": "Forward Report",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newDepartment\": \"WATER\",\n  \"reason\": \"Açıklama...\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reports/:reportId/forward",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", ":reportId", "forward"]
+            },
+            "description": "Forwards a report to a new department. Requires authentication."
           },
           "response": []
         }

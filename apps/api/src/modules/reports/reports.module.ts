@@ -16,10 +16,12 @@ import { Department } from './entities/department.entity';
 import { DepartmentHistory } from './entities/department-history.entity';
 import { ReportCategory } from './entities/report-category.entity';
 import { ReportMedia } from './entities/report-media.entity';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Report, Department, DepartmentHistory, ReportCategory, ReportMedia]),
+    UsersModule,
   ],
   controllers: [ReportsController, CategoryController, ReportAnalyticsController],
   providers: [

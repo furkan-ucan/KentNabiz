@@ -57,8 +57,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       })
       .filter((role): role is UserRole => role !== undefined);
 
-    // departmentId varsa number mı diye kontrol edilebilir
-    if (payload.departmentId !== undefined && typeof payload.departmentId !== 'number') {
+    // departmentId varsa ve null değilse number mı diye kontrol et
+    if (
+      payload.departmentId !== undefined &&
+      payload.departmentId !== null &&
+      typeof payload.departmentId !== 'number'
+    ) {
       throw new UnauthorizedException('Invalid token: departmentId is malformed.');
     }
 

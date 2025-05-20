@@ -50,24 +50,24 @@ export class ReportsController {
   @Roles(UserRole.SYSTEM_ADMIN, UserRole.DEPARTMENT_SUPERVISOR, UserRole.DEPARTMENT_EMPLOYEE)
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'reportType', required: false, enum: ReportType }) // type -> reportType
   @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
-  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'departmentCode', required: false, enum: MunicipalityDepartment }) // department -> departmentCode
   @ApiResponse({ status: 200, description: 'Paginated list of reports' })
   async findAll(
     @Req() req: RequestWithUser,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Query('type') type?: ReportType,
+    @Query('reportType') reportType?: ReportType, // type -> reportType
     @Query('status') status?: ReportStatus,
-    @Query('department') department?: MunicipalityDepartment
+    @Query('departmentCode') departmentCode?: MunicipalityDepartment // department -> departmentCode
   ) {
     return this.reportsService.findAll(req.user, {
       page: page ? +page : 1,
       limit: limit ? +limit : 10,
-      type,
+      reportType, // type -> reportType
       status,
-      department,
+      departmentCode, // department -> departmentCode
     });
   }
 
@@ -83,26 +83,33 @@ export class ReportsController {
   )
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'reportType', required: false, enum: ReportType }) // type -> reportType
   @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
-  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'departmentCode', required: false, enum: MunicipalityDepartment }) // department -> departmentCode
   @ApiResponse({ status: 200, description: 'Paginated list of nearby reports' })
   findNearby(
     @Req() req: RequestWithUser,
-    @Query() searchDto: RadiusSearchDto,
+    @Query() searchDto: RadiusSearchDto, // searchDto latitude, longitude, radius içerir
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Query('type') type?: ReportType,
+    @Query('reportType') reportType?: ReportType, // type -> reportType
     @Query('status') status?: ReportStatus,
-    @Query('department') department?: MunicipalityDepartment
+    @Query('departmentCode') departmentCode?: MunicipalityDepartment // department -> departmentCode
   ) {
-    return this.reportsService.findNearby(searchDto, {
-      page: page ? +page : 1,
-      limit: limit ? +limit : 10,
-      type,
-      status,
-      department,
-    });
+    // ReportsService.findNearby metodu ilk parametre olarak searchDto'yu, ikinci olarak diğer opsiyonları alır.
+    // searchDto içinde latitude, longitude, radius zaten var.
+    // Diğer opsiyonlar (page, limit, reportType, status, departmentCode) ayrıca Query ile alınıp service metoduna iletilmeli.
+    return this.reportsService.findNearby(
+      searchDto, // { latitude, longitude, radius } içeren DTO
+      {
+        // Opsiyonel filtreler
+        page: page ? +page : 1,
+        limit: limit ? +limit : 10,
+        reportType,
+        status,
+        departmentCode,
+      }
+    );
   }
 
   @Get('my-reports')
@@ -115,20 +122,20 @@ export class ReportsController {
   )
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'reportType', required: false, enum: ReportType }) // type -> reportType
   @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
   @ApiResponse({ status: 200, description: "Paginated list of user's reports" })
   async getMyReports(
     @Req() req: RequestWithUser,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Query('type') type?: ReportType,
+    @Query('reportType') reportType?: ReportType, // type -> reportType
     @Query('status') status?: ReportStatus
   ) {
     return this.reportsService.getReportsByUser(req.user, {
       page: page ? +page : 1,
       limit: limit ? +limit : 10,
-      type,
+      reportType, // type -> reportType
       status,
     });
   }
