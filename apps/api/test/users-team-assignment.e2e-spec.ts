@@ -1,16 +1,23 @@
+// Set test environment variables for JWT BEFORE any imports
+process.env.JWT_SECRET = 'test-jwt-secret-for-e2e-tests-fixed';
+process.env.JWT_REFRESH_SECRET = 'test-jwt-refresh-secret-for-e2e-tests-fixed';
+
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { UserRole } from '@KentNabiz/shared';
+import { UserRole } from '../../../packages/shared/src/types/user.types';
+import { AuthHelper } from './auth-helper';
 
 describe('Users Team Assignment Workflow (E2E)', () => {
   let app: INestApplication;
+  let authHelper: AuthHelper;
   let systemAdminToken: string;
   let departmentSupervisorToken: string;
   let teamMemberToken: string;
   let createdUserId: number;
   let createdTeamId: number;
+  const timestamp = Date.now();
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -18,12 +25,23 @@ describe('Users Team Assignment Workflow (E2E)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+
+    // Apply the same validation pipe as in main.ts
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        forbidNonWhitelisted: true,
+      })
+    );
+
     await app.init();
 
-    // TODO: In real E2E tests, authenticate and get real JWT tokens
-    systemAdminToken = 'mock-system-admin-jwt';
-    departmentSupervisorToken = 'mock-dept-supervisor-jwt';
-    teamMemberToken = 'mock-team-member-jwt';
+    // Create AuthHelper instance and get real JWT tokens
+    authHelper = new AuthHelper();
+    systemAdminToken = authHelper.getSystemAdminToken();
+    departmentSupervisorToken = authHelper.getSupervisorToken();
+    teamMemberToken = authHelper.getTeamMemberToken();
   });
 
   afterAll(async () => {
@@ -33,7 +51,7 @@ describe('Users Team Assignment Workflow (E2E)', () => {
   describe('User Management', () => {
     it('should create a new user (SYSTEM_ADMIN)', async () => {
       const createUserDto = {
-        email: 'new-employee@test.com',
+        email: `new-employee-${timestamp}@test.com`,
         fullName: 'John Doe',
         password: 'SecurePassword123!',
         roles: [UserRole.TEAM_MEMBER],
@@ -46,30 +64,38 @@ describe('Users Team Assignment Workflow (E2E)', () => {
         .send(createUserDto)
         .expect(201);
 
-      expect(response.body).toMatchObject({
-        email: 'new-employee@test.com',
+      expect(response.body.data).toMatchObject({
+        email: `new-employee-${timestamp}@test.com`,
         fullName: 'John Doe',
         roles: [UserRole.TEAM_MEMBER],
         departmentId: 1,
       });
 
-      createdUserId = response.body.id;
+      createdUserId = response.body.data.id;
+      expect(createdUserId).toBeDefined();
+      expect(typeof createdUserId).toBe('number');
     });
 
     it('should get user profile', async () => {
+      expect(createdUserId).toBeDefined();
+      expect(typeof createdUserId).toBe('number');
+
       const response = await request(app.getHttpServer())
         .get(`/users/${createdUserId}`)
         .set('Authorization', `Bearer ${systemAdminToken}`)
         .expect(200);
 
-      expect(response.body).toMatchObject({
+      expect(response.body.data).toMatchObject({
         id: createdUserId,
-        email: 'new-employee@test.com',
+        email: `new-employee-${timestamp}@test.com`,
         fullName: 'John Doe',
       });
     });
 
     it('should update user roles (SYSTEM_ADMIN)', async () => {
+      expect(createdUserId).toBeDefined();
+      expect(typeof createdUserId).toBe('number');
+
       const updateRolesDto = {
         roles: [UserRole.TEAM_MEMBER, UserRole.DEPARTMENT_SUPERVISOR],
       };
@@ -80,7 +106,10 @@ describe('Users Team Assignment Workflow (E2E)', () => {
         .send(updateRolesDto)
         .expect(200);
 
-      expect(response.body.roles).toEqual([UserRole.TEAM_MEMBER, UserRole.DEPARTMENT_SUPERVISOR]);
+      expect(response.body.data.roles).toEqual([
+        UserRole.TEAM_MEMBER,
+        UserRole.DEPARTMENT_SUPERVISOR,
+      ]);
     });
   });
 
@@ -89,7 +118,7 @@ describe('Users Team Assignment Workflow (E2E)', () => {
       const createTeamDto = {
         name: 'Assignment Test Team',
         departmentId: 1,
-        teamLeaderId: 2,
+        teamLeaderId: 3, // DEPARTMENT_SUPERVISOR
         baseLocation: {
           type: 'Point',
           coordinates: [29.0, 41.0],
@@ -102,12 +131,19 @@ describe('Users Team Assignment Workflow (E2E)', () => {
         .send(createTeamDto)
         .expect(201);
 
-      createdTeamId = response.body.id;
+      createdTeamId = response.body.data.id;
+      expect(createdTeamId).toBeDefined();
+      expect(typeof createdTeamId).toBe('number');
     });
   });
 
   describe('Team Assignment Workflow', () => {
     it('should assign user to team (DEPARTMENT_SUPERVISOR)', async () => {
+      expect(createdUserId).toBeDefined();
+      expect(createdTeamId).toBeDefined();
+      expect(typeof createdUserId).toBe('number');
+      expect(typeof createdTeamId).toBe('number');
+
       const assignmentDto = {
         teamId: createdTeamId,
       };
@@ -118,19 +154,22 @@ describe('Users Team Assignment Workflow (E2E)', () => {
         .send(assignmentDto)
         .expect(200);
 
-      expect(response.body).toMatchObject({
+      expect(response.body.data).toMatchObject({
         id: createdUserId,
         activeTeamId: createdTeamId,
       });
     });
 
     it('should verify user is now part of the team', async () => {
+      expect(createdTeamId).toBeDefined();
+      expect(typeof createdTeamId).toBe('number');
+
       const response = await request(app.getHttpServer())
         .get(`/teams/${createdTeamId}/members`)
         .set('Authorization', `Bearer ${departmentSupervisorToken}`)
         .expect(200);
 
-      expect(response.body).toEqual(
+      expect(response.body.data).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             userId: createdUserId,
@@ -141,15 +180,18 @@ describe('Users Team Assignment Workflow (E2E)', () => {
     });
 
     it('should get user team membership history', async () => {
+      expect(createdUserId).toBeDefined();
+      expect(typeof createdUserId).toBe('number');
+
       const response = await request(app.getHttpServer())
         .get(`/users/${createdUserId}/team-history`)
         .set('Authorization', `Bearer ${departmentSupervisorToken}`)
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeGreaterThan(0);
-      expect(response.body[0]).toHaveProperty('teamId');
-      expect(response.body[0]).toHaveProperty('joinedAt');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data.length).toBeGreaterThan(0);
+      expect(response.body.data[0]).toHaveProperty('teamId');
+      expect(response.body.data[0]).toHaveProperty('joinedAt');
     });
 
     it('should move user to different team', async () => {
@@ -157,7 +199,7 @@ describe('Users Team Assignment Workflow (E2E)', () => {
       const createAnotherTeamDto = {
         name: 'Another Test Team',
         departmentId: 1,
-        teamLeaderId: 2,
+        teamLeaderId: 3, // DEPARTMENT_SUPERVISOR
         baseLocation: {
           type: 'Point',
           coordinates: [29.1, 41.1],
@@ -170,7 +212,7 @@ describe('Users Team Assignment Workflow (E2E)', () => {
         .send(createAnotherTeamDto)
         .expect(201);
 
-      const anotherTeamId = teamResponse.body.id;
+      const anotherTeamId = teamResponse.body.data.id;
 
       // Now move user to the new team
       const assignmentDto = {
@@ -183,7 +225,7 @@ describe('Users Team Assignment Workflow (E2E)', () => {
         .send(assignmentDto)
         .expect(200);
 
-      expect(response.body.activeTeamId).toBe(anotherTeamId);
+      expect(response.body.data.activeTeamId).toBe(anotherTeamId);
     });
 
     it('should remove user from team (assign null)', async () => {
@@ -197,7 +239,7 @@ describe('Users Team Assignment Workflow (E2E)', () => {
         .send(assignmentDto)
         .expect(200);
 
-      expect(response.body.activeTeamId).toBeNull();
+      expect(response.body.data.activeTeamId).toBeNull();
     });
   });
 
@@ -219,7 +261,7 @@ describe('Users Team Assignment Workflow (E2E)', () => {
       const crossDeptTeamDto = {
         name: 'Cross Department Team',
         departmentId: 2,
-        teamLeaderId: 4, // Different department leader
+        teamLeaderId: 4, // SYSTEM_ADMIN (can be in any department)
         baseLocation: {
           type: 'Point',
           coordinates: [30.0, 42.0],
@@ -232,7 +274,7 @@ describe('Users Team Assignment Workflow (E2E)', () => {
         .send(crossDeptTeamDto)
         .expect(201);
 
-      const crossDeptTeamId = teamResponse.body.id;
+      const crossDeptTeamId = teamResponse.body.data.id;
 
       // Try to assign user from dept 1 to team in dept 2
       const assignmentDto = {
@@ -249,7 +291,7 @@ describe('Users Team Assignment Workflow (E2E)', () => {
     it('should allow SYSTEM_ADMIN to assign users across departments', async () => {
       // Create user in different department
       const createUserDto = {
-        email: 'cross-dept-user@test.com',
+        email: `cross-dept-user-${timestamp}@test.com`,
         fullName: 'Cross Dept User',
         password: 'SecurePassword123!',
         roles: [UserRole.TEAM_MEMBER],
@@ -262,7 +304,7 @@ describe('Users Team Assignment Workflow (E2E)', () => {
         .send(createUserDto)
         .expect(201);
 
-      const crossDeptUserId = userResponse.body.id;
+      const crossDeptUserId = userResponse.body.data.id;
 
       // System admin should be able to assign cross-department
       const assignmentDto = {

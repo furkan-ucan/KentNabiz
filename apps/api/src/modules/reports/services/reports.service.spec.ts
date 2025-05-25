@@ -296,7 +296,7 @@ describe('ReportsService - Core Methods', () => {
       expect(entityManager.create).toHaveBeenCalledWith(Assignment, {
         reportId: 1,
         assigneeType: AssigneeType.TEAM,
-        assigneeId: 1,
+        assigneeTeamId: 1,
         assignedById: supervisorUser.sub,
         status: AssignmentStatus.ACTIVE,
         assignedAt: expect.any(Date),
@@ -392,7 +392,7 @@ describe('ReportsService - Core Methods', () => {
       expect(entityManager.create).toHaveBeenNthCalledWith(1, Assignment, {
         reportId: 1,
         assigneeType: AssigneeType.TEAM,
-        assigneeId: 1,
+        assigneeTeamId: 1,
         assignedById: supervisorUser.sub,
         status: AssignmentStatus.ACTIVE,
         assignedAt: expect.any(Date),
@@ -444,7 +444,7 @@ describe('ReportsService - Core Methods', () => {
       expect(entityManager.create).toHaveBeenCalledWith(Assignment, {
         reportId: 1,
         assigneeType: AssigneeType.USER,
-        assigneeId: 2,
+        assigneeUserId: 2,
         assignedById: supervisorUser.sub,
         status: AssignmentStatus.ACTIVE,
         assignedAt: expect.any(Date),
@@ -509,7 +509,7 @@ describe('ReportsService - Core Methods', () => {
       expect(entityManager.create).toHaveBeenNthCalledWith(1, Assignment, {
         reportId: 1,
         assigneeType: AssigneeType.USER,
-        assigneeId: 2,
+        assigneeUserId: 2,
         assignedById: supervisorUser.sub,
         status: AssignmentStatus.ACTIVE,
         assignedAt: expect.any(Date),

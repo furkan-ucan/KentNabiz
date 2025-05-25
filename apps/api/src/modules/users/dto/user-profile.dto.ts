@@ -56,6 +56,13 @@ export class UserProfileDto {
   })
   departmentName?: string; // Bu, Department entity'sinden alınabilir
 
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'ID of the active team the user is currently assigned to, if any',
+    nullable: true,
+  })
+  activeTeamId?: number | null;
+
   // Constructor, User entity'sinden UserProfileDto oluşturmak için kullanılıyor.
   // departmentName'i de burada atamak gerekebilir.
   constructor(userEntity: Partial<User & { department?: Partial<Department> }>) {
@@ -71,6 +78,7 @@ export class UserProfileDto {
     this.createdAt = userEntity.createdAt!;
     this.updatedAt = userEntity.updatedAt!;
     this.departmentId = userEntity.departmentId ?? null;
+    this.activeTeamId = userEntity.activeTeamId ?? null;
     // Eğer User entity'si Department entity'si ile eager/lazy loaded ise departmentName'i alabiliriz.
     // Ya da UsersService bu DTO'yu oluştururken departmentName'i ayrıca ekleyebilir.
     this.departmentName = userEntity.department?.name;

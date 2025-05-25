@@ -46,7 +46,9 @@ export class ReportRepository {
       .leftJoinAndSelect('report.reportMedias', 'media')
       .leftJoinAndSelect('report.currentDepartment', 'departmentEntity') // Departman bilgisini join et
       .leftJoinAndSelect('report.user', 'userEntity') // Kullanıcı bilgisini join et
-      .leftJoinAndSelect('report.assignedEmployee', 'assignedEmployeeEntity') // Atanan çalışanı join et
+      .leftJoinAndSelect('report.assignments', 'assignments') // Atama bilgilerini join et
+      .leftJoinAndSelect('assignments.assigneeUser', 'assigneeUser') // Atanan kullanıcıyı join et
+      .leftJoinAndSelect('assignments.assigneeTeam', 'assigneeTeam') // Atanan takımı join et
       .leftJoinAndSelect('report.category', 'categoryEntity') // Kategoriyi join et
       .skip(skip)
       .take(limit)
@@ -93,7 +95,9 @@ export class ReportRepository {
         'reportMedias',
         'currentDepartment',
         'user',
-        'assignedEmployee',
+        'assignments',
+        'assignments.assigneeUser',
+        'assignments.assigneeTeam',
         'category',
         // 'departmentHistory' gerekirse eklenebilir ama genellikle ayrı bir endpoint ile alınır.
       ],
@@ -116,17 +120,27 @@ export class ReportRepository {
     const page = options?.page || 1;
     const skip = (page - 1) * limit;
 
-    // Create a point using the provided coordinates
     const point: Point = {
       type: 'Point',
       coordinates: [longitude, latitude],
     };
 
-    // Build query using ST_DWithin for better performance with spatial index
     const queryBuilder = this.reportRepository
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.reportMedias', 'media')
       .leftJoinAndSelect('report.currentDepartment', 'departmentEntity')
+      .leftJoinAndSelect('report.user', 'userEntity')
+      .leftJoinAndSelect('report.assignments', 'assignments')
+      .leftJoinAndSelect('assignments.assigneeUser', 'assigneeUser')
+      .leftJoinAndSelect('assignments.assigneeTeam', 'assigneeTeam')
+      .leftJoinAndSelect('report.category', 'categoryEntity')
+      .addSelect(
+        `ST_Distance(
+          report.location,
+          ST_SetSRID(ST_GeomFromGeoJSON(:point), 4326)
+        )`,
+        'distance'
+      )
       .where(
         `ST_DWithin(
           report.location,
@@ -135,13 +149,7 @@ export class ReportRepository {
         )`,
         { point: JSON.stringify(point), radius: radiusInMeters }
       )
-      .orderBy(
-        `ST_Distance(
-          report.location,
-          ST_SetSRID(ST_GeomFromGeoJSON(:point), 4326)
-        )`,
-        'ASC'
-      )
+      .orderBy('distance', 'ASC')
       .skip(skip)
       .take(limit);
 

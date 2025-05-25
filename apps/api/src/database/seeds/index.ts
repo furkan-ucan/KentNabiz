@@ -6,6 +6,7 @@ import { UsersSeed } from './users.seed';
 import { DepartmentsSeed } from './departments.seed';
 import { CategoriesSeed } from './categories.seed';
 import { ReportsSeed } from './reports.seed';
+import { TeamsSeed } from './teams.seed';
 
 // Fix: Use default import for AppDataSource
 import AppDataSource from '../../config/data-source';
@@ -20,6 +21,7 @@ async function runSeeds(dataSource: DataSource): Promise<void> {
     await DepartmentsSeed(dataSource);
     await CategoriesSeed(dataSource);
     await UsersSeed(dataSource);
+    await TeamsSeed(dataSource);
     await ReportsSeed(dataSource);
     console.log('✅ Tüm seed işlemleri başarıyla tamamlandı!');
   } catch (error) {

@@ -16,10 +16,10 @@ export class Specialization {
   @Column({ type: 'text', nullable: true })
   description?: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true, name: 'typical_department_code' })
   typicalDepartmentCode?: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true, name: 'example_source' })
   exampleSource?: string;
 
   @OneToMany(() => TeamSpecialization, (ts: TeamSpecialization) => ts.specialization)

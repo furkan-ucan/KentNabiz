@@ -357,4 +357,50 @@ export class UsersService {
       await queryRunner.release();
     }
   }
+
+  async getUserTeamHistory(
+    userId: number,
+    currentUser: JwtPayload
+  ): Promise<TeamMembershipHistory[]> {
+    // Authorization: Users can view their own history, supervisors can view their department users, admins can view all
+    const targetUser = await this.userRepository.findById(userId);
+    if (!targetUser) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    // Check authorization
+    const canView =
+      currentUser.sub === userId || // Own history
+      currentUser.roles.includes(UserRole.SYSTEM_ADMIN) || // System admin
+      (currentUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR) &&
+        currentUser.departmentId === targetUser.departmentId); // Same department supervisor
+
+    if (!canView) {
+      throw new ForbiddenException("You do not have permission to view this user's team history.");
+    }
+
+    // Get team membership history with team details
+    return await this.teamMembershipHistoryRepository.find({
+      where: { userId },
+      relations: ['team', 'team.department'],
+      order: { joinedAt: 'DESC' },
+    });
+  }
+
+  toUserProfile(user: User): UserProfileDto {
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      roles: user.roles,
+      departmentId: user.departmentId,
+      isEmailVerified: user.isEmailVerified || false,
+      phoneNumber: user.phoneNumber,
+      avatar: user.avatar,
+      lastLoginAt: user.lastLoginAt,
+      activeTeamId: user.activeTeamId,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+  }
 }

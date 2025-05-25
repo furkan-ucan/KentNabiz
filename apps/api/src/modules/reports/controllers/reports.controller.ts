@@ -37,6 +37,7 @@ import { Report } from '../entities/report.entity';
 import { DepartmentHistoryResponseDto } from '../dto/department-history.response.dto';
 import { CheckPolicies, PoliciesGuard } from '../../../core/guards/policies.guard';
 import { AppAbility, Action } from '../../../core/authorization/ability.factory';
+import { ReportStatusHistory } from '../entities/report-status-history.entity';
 
 @ApiTags('reports')
 @Controller('reports')
@@ -267,6 +268,41 @@ export class ReportsController {
     @Req() req: RequestWithUser
   ): Promise<DepartmentHistoryResponseDto[]> {
     return this.reportsService.getDepartmentHistory(id, req.user);
+  }
+
+  @Get(':id/status-history')
+  @ApiOperation({ summary: 'Get status change history for a report (role-based)' })
+  @Roles(UserRole.SYSTEM_ADMIN, UserRole.DEPARTMENT_SUPERVISOR, UserRole.TEAM_MEMBER)
+  @ApiParam({ name: 'id', description: 'Report ID', type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Status history retrieved successfully',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'number' },
+          reportId: { type: 'number' },
+          previousStatus: { type: 'string', enum: Object.values(ReportStatus) },
+          newStatus: { type: 'string', enum: Object.values(ReportStatus) },
+          previousSubStatus: { type: 'string', nullable: true },
+          newSubStatus: { type: 'string', nullable: true },
+          changedByUserId: { type: 'number' },
+          changedAt: { type: 'string', format: 'date-time' },
+          notes: { type: 'string', nullable: true },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Report not found' })
+  async getStatusHistory(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: RequestWithUser
+  ): Promise<ReportStatusHistory[]> {
+    return await this.reportsService.getStatusHistory(id, req.user);
   }
 
   @Get('suggest-department/:type')

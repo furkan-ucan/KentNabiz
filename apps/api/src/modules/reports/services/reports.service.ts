@@ -662,6 +662,18 @@ export class ReportsService {
     });
   }
 
+  async getStatusHistory(reportId: number, authUser: AuthUser): Promise<ReportStatusHistory[]> {
+    // Verify user has access to the report
+    await this.findOne(reportId, authUser);
+
+    // Get status history for the report
+    return this.reportStatusHistoryRepository.find({
+      where: { reportId },
+      order: { changedAt: 'DESC' },
+      relations: ['changedBy'],
+    });
+  }
+
   async suggestDepartmentForReportType(type: ReportType): Promise<MunicipalityDepartment> {
     const department = await this.departmentService.suggestDepartmentForReport(type);
     return department.code;
@@ -743,7 +755,7 @@ export class ReportsService {
       const newAssignment = queryRunner.manager.create(Assignment, {
         reportId,
         assigneeType: AssigneeType.TEAM,
-        assigneeId: teamId,
+        assigneeTeamId: teamId,
         assignedById: authUser.sub,
         status: AssignmentStatus.ACTIVE,
         assignedAt: new Date(),
@@ -871,7 +883,7 @@ export class ReportsService {
       const newAssignment = queryRunner.manager.create(Assignment, {
         reportId,
         assigneeType: AssigneeType.USER,
-        assigneeId: userId,
+        assigneeUserId: userId,
         assignedById: authUser.sub,
         status: AssignmentStatus.ACTIVE,
         assignedAt: new Date(),

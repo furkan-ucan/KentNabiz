@@ -61,6 +61,44 @@ export const UsersSeed = async (dataSource: DataSource): Promise<void> => {
     isEmailVerified: false,
   });
 
+  // Testte kullanılan kullanıcılar (ID ve e-posta eşleşecek)
+  const testCitizen = userRepository.create({
+    id: 1,
+    email: 'citizen@test.com',
+    fullName: 'Test Citizen',
+    password: defaultPassword,
+    roles: [UserRole.CITIZEN],
+    isEmailVerified: true,
+    departmentId: null,
+  });
+  const testTeamMember = userRepository.create({
+    id: 2,
+    email: 'team.member@test.com',
+    fullName: 'Test Team Member',
+    password: defaultPassword,
+    roles: [UserRole.TEAM_MEMBER],
+    isEmailVerified: true,
+    departmentId: 1,
+  });
+  const testSupervisor = userRepository.create({
+    id: 3,
+    email: 'supervisor@test.com',
+    fullName: 'Test Supervisor',
+    password: defaultPassword,
+    roles: [UserRole.DEPARTMENT_SUPERVISOR],
+    isEmailVerified: true,
+    departmentId: 1,
+  });
+  const testAdmin = userRepository.create({
+    id: 4,
+    email: 'admin@test.com',
+    fullName: 'Test Admin',
+    password: defaultPassword,
+    roles: [UserRole.SYSTEM_ADMIN],
+    isEmailVerified: true,
+    departmentId: null,
+  });
+
   // --- START ADDED LOG ---
   logger.log(`Prepared to save user: ${user.email}, With Hashed Password: ${user.password}`);
   logger.log(`Prepared to save admin: ${admin.email}, With Hashed Password: ${admin.password}`);
@@ -76,6 +114,11 @@ export const UsersSeed = async (dataSource: DataSource): Promise<void> => {
     await userRepository.save(moderator);
     await userRepository.save(user);
     await userRepository.save(testUser);
+    // Test kullanıcılarını da kaydet
+    await userRepository.save(testCitizen);
+    await userRepository.save(testTeamMember);
+    await userRepository.save(testSupervisor);
+    await userRepository.save(testAdmin);
     logger.log('Users saved successfully.');
   } catch (error) {
     logger.error('Error saving users during seed:', error);

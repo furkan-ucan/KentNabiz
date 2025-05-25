@@ -31,13 +31,25 @@ export class Team {
   @Column({ type: 'enum', enum: TeamStatus, default: TeamStatus.AVAILABLE })
   status!: TeamStatus;
 
-  @Column({ type: 'geometry', spatialFeatureType: 'Point', srid: 4326, nullable: true })
+  @Column({
+    type: 'geometry',
+    spatialFeatureType: 'Point',
+    srid: 4326,
+    nullable: true,
+    name: 'base_location',
+  })
   baseLocation?: Point;
 
-  @Column({ type: 'geometry', spatialFeatureType: 'Point', srid: 4326, nullable: true })
+  @Column({
+    type: 'geometry',
+    spatialFeatureType: 'Point',
+    srid: 4326,
+    nullable: true,
+    name: 'current_location',
+  })
   currentLocation?: Point;
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true, name: 'last_location_update' })
   lastLocationUpdate?: Date;
 
   @OneToMany(() => TeamSpecialization, ts => ts.team)

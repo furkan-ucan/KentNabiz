@@ -6,8 +6,8 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
-  "moduleNameMapping": {
-    "^@KentNabiz/shared(.*)$": "<rootDir>/../../../packages/shared/src$1"
+  "moduleNameMapper": {
+    "^@KentNabiz/shared(.*)$": "<rootDir>/../../packages/shared/src$1"
   },
   "setupFilesAfterEnv": ["<rootDir>/test/setup-e2e.ts"],
   "testTimeout": 30000,

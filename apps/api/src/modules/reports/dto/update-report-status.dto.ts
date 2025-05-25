@@ -18,4 +18,10 @@ export class UpdateReportStatusDto {
   @IsOptional()
   @IsString()
   resolutionNotes?: string;
+
+  @ApiPropertyOptional({ description: 'General notes for status change' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  notes?: string;
 }

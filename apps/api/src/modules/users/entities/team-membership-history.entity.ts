@@ -21,12 +21,12 @@ export class TeamMembershipHistory {
   @JoinColumn({ name: 'team_id' })
   team!: Team;
 
-  @Column({ type: 'timestamptz' })
+  @Column({ name: 'joined_at', type: 'timestamptz' })
   joinedAt!: Date;
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ name: 'left_at', type: 'timestamptz', nullable: true })
   leftAt?: Date;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ name: 'role_in_team', type: 'varchar', length: 100, nullable: true })
   roleInTeam?: string;
 }
