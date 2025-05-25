@@ -325,9 +325,9 @@ export class ReportsController {
   @Patch(':id/cancel')
   @ApiOperation({ summary: 'Cancel a report (CITIZEN - ABAC POC)' })
   @UseGuards(JwtAuthGuard, PoliciesGuard)
-  @CheckPolicies((ability: AppAbility, report: Report | typeof Report) => {
+  @CheckPolicies((ability: AppAbility, subject) => {
     // Gerçek yetki kontrolü: sadece kendi raporunu ve açık durumda olanı iptal edebilir
-    return ability.can(Action.Cancel, report as Report);
+    return ability.can(Action.Cancel, subject as Report);
   })
   @ApiParam({ name: 'id', description: 'Report ID', type: Number })
   @ApiResponse({ status: 200, description: 'Report cancelled successfully', type: Report })
@@ -345,9 +345,9 @@ export class ReportsController {
   @Patch(':id/complete-work')
   @ApiOperation({ summary: 'Complete work on report (TEAM_MEMBER - ABAC POC)' })
   @UseGuards(JwtAuthGuard, PoliciesGuard)
-  @CheckPolicies((ability: AppAbility, report: Report | typeof Report) => {
+  @CheckPolicies((ability: AppAbility, subject) => {
     // Gerçek yetki kontrolü: sadece atanmış ekip üyeleri işi tamamlayabilir
-    return ability.can(Action.CompleteWork, report as Report);
+    return ability.can(Action.CompleteWork, subject as Report);
   })
   @ApiParam({ name: 'id', description: 'Report ID', type: Number })
   @ApiResponse({ status: 200, description: 'Work completed successfully', type: Report })
@@ -365,9 +365,9 @@ export class ReportsController {
   @Patch(':id/approve')
   @ApiOperation({ summary: 'Approve completed report (DEPARTMENT_SUPERVISOR - ABAC POC)' })
   @UseGuards(JwtAuthGuard, PoliciesGuard)
-  @CheckPolicies((ability: AppAbility, report: Report | typeof Report) => {
+  @CheckPolicies((ability: AppAbility, subject) => {
     // Gerçek yetki kontrolü: sadece departman süpervizörü onay verebilir
-    return ability.can(Action.Approve, report as Report);
+    return ability.can(Action.Approve, subject as Report);
   })
   @ApiParam({ name: 'id', description: 'Report ID', type: Number })
   @ApiResponse({ status: 200, description: 'Report approved successfully', type: Report })
@@ -385,9 +385,9 @@ export class ReportsController {
   @Post(':id/support')
   @ApiOperation({ summary: 'Support a report (CITIZEN - ABAC POC)' })
   @UseGuards(JwtAuthGuard, PoliciesGuard)
-  @CheckPolicies((ability: AppAbility, report: Report | typeof Report) => {
+  @CheckPolicies((ability: AppAbility, subject) => {
     // Gerçek yetki kontrolü: vatandaş başkalarının raporlarını destekleyebilir
-    return ability.can(Action.Support, report as Report);
+    return ability.can(Action.Support, subject as Report);
   })
   @ApiParam({ name: 'id', description: 'Report ID', type: Number })
   @ApiResponse({ status: 201, description: 'Report supported successfully' })

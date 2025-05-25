@@ -18,7 +18,10 @@ interface IPolicyHandler {
   handle(ability: AppAbility, request: Request): boolean; // request'ten subject'i almak için
 }
 
-type PolicyHandlerCallback = (ability: AppAbility, subject: Subjects | typeof Report) => boolean; // subject zorunlu
+type PolicyHandlerCallback = (
+  ability: AppAbility,
+  subject: Subjects | typeof Report | Report
+) => boolean; // subject zorunlu
 export type PolicyHandler = IPolicyHandler | PolicyHandlerCallback;
 
 export const CHECK_POLICIES_KEY = 'check_policy';
