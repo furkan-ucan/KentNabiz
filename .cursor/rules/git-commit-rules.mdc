@@ -1,5 +1,190 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
+# Git Commit Kuralları - KentNabız Projesi
+
+Bu kural dosyası KentNabız projesi için git commit standartlarını ve hatırlatıcılarını içerir.
+
+## Commit Mesaj Formatı
+
+Projede **Conventional Commits** standardı kullanılır:
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+[optional footer(s)]
+```
+
+## İzin Verilen Commit Tipleri
+
+- `feat` - Yeni özellik ekleme
+- `fix` - Bug düzeltme  
+- `chore` - Bakım işleri, dependency güncellemeleri
+- `docs` - Dokümantasyon değişiklikleri
+- `refactor` - Kod yeniden düzenleme (özellik/bug değişikliği olmadan)
+- `test` - Test ekleme veya düzeltme
+
+## Scope Örnekleri
+
+- `api` - Backend API değişiklikleri
+- `web` - Frontend web uygulaması
+- `shared` - Paylaşılan paketler
+- `ui` - UI bileşenleri
+- `auth` - Kimlik doğrulama sistemi
+- `reports` - Rapor modülü
+- `users` - Kullanıcı modülü
+- `teams` - Takım modülü
+- `config` - Konfigürasyon dosyaları
+- `db` - Veritabanı değişiklikleri
+
+## Commit Mesajı Örnekleri
+
+### ✅ İyi Örnekler
+```
+feat(reports): implement ABAC authorization for report actions
+fix(api): resolve TypeScript type conflicts in PolicyHandler
+refactor(shared): clean up build output files from src directory
+test(ability): add 28 comprehensive test cases for all user roles
+docs(api): add Swagger documentation for new endpoints
+chore: update @nestjs packages to latest stable versions
+```
+
+### ❌ Kötü Örnekler
+```
+fix: bug fix                    // Çok genel
+add new feature                 // Tip eksik
+feat: update                    // Açıklama yetersiz
+feat: yeni özellik eklendi      // Türkçe kullanım
+```
+
+## Günlük Commit Kontrol Listesi
+
+Her gün sonunda kontrol edin:
+- [ ] Bugün yaptığım değişiklikler commit edildi mi?
+- [ ] Commit mesajları conventional format'a uygun mu?
+- [ ] Her commit tek bir mantıksal değişikliği içeriyor mu?
+- [ ] Test edilmemiş kod commit edilmedi mi?
+
+## Özellik Geliştirme Süreci
+
+1. **Başlangıç:** `feat(scope): start implementing [feature-name]`
+2. **Ara adımlar:** `feat(scope): add [specific-component] for [feature-name]`
+3. **Test ekleme:** `test(scope): add tests for [feature-name]`
+4. **Dokümantasyon:** `docs(scope): document [feature-name] API endpoints`
+5. **Tamamlama:** `feat(scope): complete [feature-name] implementation`
+
+## Bug Düzeltme Süreci
+
+1. **Tespit:** `fix(scope): identify issue with [problem-description]`
+2. **Düzeltme:** `fix(scope): resolve [specific-issue] in [component]`
+3. **Test:** `test(scope): add regression tests for [bug-fix]`
+
+## Proje Spesifik Commit Senaryoları
+
+### ABAC Authorization Sistemi
+```
+feat(auth): implement ABAC authorization with CasL
+feat(auth): add ability factory for role-based permissions
+test(auth): add comprehensive tests for all user roles
+fix(auth): resolve subject type detection in policies guard
+refactor(auth): improve type safety in policy handlers
+```
+
+### Reports Modülü
+```
+feat(reports): add support report functionality
+feat(reports): implement department forwarding system
+fix(reports): resolve status transition validation
+test(reports): add integration tests for report lifecycle
+docs(reports): update API documentation for new endpoints
+```
+
+### Shared Packages
+```
+feat(shared): add new TypeScript types for team management
+fix(shared): clean up build output files from src directory
+chore(shared): update build configuration for proper dist output
+refactor(shared): reorganize type definitions structure
+```
+
+## Commit Sıklığı Önerileri
+
+### İdeal Sıklık
+- **Günlük:** En az 1-3 commit
+- **Özellik başına:** 3-8 commit (küçük, mantıksal adımlar)
+- **Bug fix başına:** 1-2 commit
+
+### Kaçınılması Gerekenler
+- Günlerce commit yapmamak
+- Çok büyük, karmaşık commit'ler
+- "WIP" commit'leri main branch'e atmak
+
+## Commit Mesajı Kalite Kontrol
+
+Her commit öncesi şu soruları sorun:
+1. ✅ Commit mesajım ne yaptığımı açık şekilde anlatıyor mu?
+2. ✅ Gelecekte bu commit'i ararken bulabilir miyim?
+3. ✅ Başka bir geliştirici bu mesajdan ne yapıldığını anlayabilir mi?
+4. ✅ Conventional commits formatına uygun mu?
+5. ✅ Scope doğru belirtilmiş mi?
+
+## Acil Durum Commit'leri
+
+Kritik bug'lar için:
+```
+fix(critical): resolve security vulnerability in auth system
+
+BREAKING CHANGE: Updated JWT token validation logic.
+All existing tokens will be invalidated.
+
+Fixes: #123
+```
+
+## Git Hooks
+
+Projede aktif hooks:
+- **Pre-commit:** ESLint kontrolü, Prettier formatlama, TypeScript tip kontrolü
+- **Commit-msg:** Conventional commits format kontrolü (commitlint)
+
+## Faydalı Git Komutları
+
+```bash
+# Son commit mesajını düzenleme
+git commit --amend
+
+# Commit geçmişini görme
+git log --oneline --graph
+
+# Belirli dosyaları commit etme
+git add <file1> <file2>
+git commit -m "feat(scope): specific change description"
+
+# Commit'i geri alma
+git revert <commit-hash>
+```
+
+## Commit Mesajı Şablonu
+
+`.gitmessage` dosyası için:
+```
+# <type>(<scope>): <subject>
+#
+# <body>
+#
+# <footer>
+
+# Type: feat, fix, chore, docs, refactor, test
+# Scope: api, web, shared, ui, auth, reports, users, teams, config, db
+# Subject: Imperative mood, no period, max 50 chars
+# Body: Explain what and why (optional)
+# Footer: Breaking changes, issue references (optional)
+```
+
+---
+
+**Hatırlatma:** Düzenli ve kaliteli commit'ler proje geçmişini takip etmeyi, bug'ları bulmayı ve ekip çalışmasını kolaylaştırır. Her commit projenin hikayesinin bir parçasıdır!
+
+
