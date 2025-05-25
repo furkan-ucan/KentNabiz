@@ -14,33 +14,33 @@ export async function SpecializationsSeed(dataSource: DataSource): Promise<void>
   const specializations = [
     {
       id: 1,
+      code: 'ROAD_MAINTENANCE',
       name: 'Yol Bakım',
       description: 'Yol ve kaldırım bakım onarım işleri',
-      isActive: true,
     },
     {
       id: 2,
+      code: 'ENVIRONMENTAL_CLEANING',
       name: 'Çevre Temizliği',
       description: 'Park ve bahçe temizlik işleri',
-      isActive: true,
     },
     {
       id: 3,
+      code: 'INFRASTRUCTURE',
       name: 'Altyapı',
       description: 'Su, kanalizasyon ve elektrik altyapı işleri',
-      isActive: true,
     },
     {
       id: 4,
+      code: 'TRAFFIC_MANAGEMENT',
       name: 'Trafik Düzenleme',
       description: 'Trafik işaretleri ve düzenleme işleri',
-      isActive: true,
     },
     {
       id: 5,
+      code: 'SOCIAL_SERVICES',
       name: 'Sosyal Hizmetler',
       description: 'Vatandaş hizmetleri ve sosyal destek',
-      isActive: true,
     },
   ];
 

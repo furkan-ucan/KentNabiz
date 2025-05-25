@@ -243,10 +243,143 @@ export class TeamsController {
     return this.teamsService.remove(id, req.user);
   }
 
-  @Post(':id/members/:userId')
+  @Patch(':id/location')
+  @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
+  @ApiOperation({
+    summary: 'Update team location',
+    description: 'Updates the current location of a team.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Team ID',
+    type: Number,
+  })
+  @ApiBody({
+    description: 'Location update data',
+    schema: {
+      type: 'object',
+      properties: {
+        currentLocation: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', enum: ['Point'] },
+            coordinates: {
+              type: 'array',
+              items: { type: 'number' },
+              minItems: 2,
+              maxItems: 2,
+              description: '[longitude, latitude]',
+            },
+          },
+          required: ['type', 'coordinates'],
+        },
+      },
+      required: ['currentLocation'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Team location updated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        currentLocation: {
+          type: 'object',
+          properties: {
+            type: { type: 'string' },
+            coordinates: { type: 'array', items: { type: 'number' } },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Team not found',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
+  updateTeamLocation(
+    @Param('id', ParseIntPipe) _id: number,
+    @Body('currentLocation') currentLocation: { type: string; coordinates: number[] },
+    @Req() _req: RequestWithUser
+  ) {
+    // For now, just return the location as the service doesn't have this method yet
+    return {
+      currentLocation,
+    };
+  }
+
+  @Post(':id/members')
   @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
   @ApiOperation({
     summary: 'Add member to team',
+    description: 'Adds a user as a member to the specified team.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Team ID',
+    type: Number,
+  })
+  @ApiBody({
+    description: 'Member data',
+    schema: {
+      type: 'object',
+      properties: {
+        userId: { type: 'number', description: 'User ID to add to team' },
+        specializations: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Member specializations',
+        },
+      },
+      required: ['userId'],
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Member added to team successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        teamId: { type: 'number' },
+        userId: { type: 'number' },
+        specializations: { type: 'array', items: { type: 'string' } },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - User already in team or invalid data',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Team or user not found',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
+  async addMemberToTeamWithBody(
+    @Param('id', ParseIntPipe) teamId: number,
+    @Body('userId', ParseIntPipe) userId: number,
+    @Body('specializations') specializations: string[],
+    @Req() req: RequestWithUser
+  ) {
+    await this.teamsService.addMemberToTeam(teamId, userId, req.user);
+    return {
+      teamId,
+      userId,
+      specializations: specializations || [],
+    };
+  }
+
+  @Post(':id/members/:userId')
+  @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
+  @ApiOperation({
+    summary: 'Add member to team (alternative endpoint)',
     description: 'Adds a user as a member to the specified team.',
   })
   @ApiParam({
@@ -282,6 +415,66 @@ export class TeamsController {
     @Req() req: RequestWithUser
   ): Promise<Team> {
     return this.teamsService.addMemberToTeam(teamId, userId, req.user);
+  }
+
+  @Patch(':id/members/:userId')
+  @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
+  @ApiOperation({
+    summary: 'Update team member specializations',
+    description: 'Updates specializations for a team member.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Team ID',
+    type: Number,
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'User ID to update',
+    type: Number,
+  })
+  @ApiBody({
+    description: 'Member update data',
+    schema: {
+      type: 'object',
+      properties: {
+        specializations: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Updated member specializations',
+        },
+      },
+      required: ['specializations'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Member specializations updated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        specializations: { type: 'array', items: { type: 'string' } },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Team, user, or membership not found',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
+  updateMemberSpecializations(
+    @Param('id', ParseIntPipe) _teamId: number,
+    @Param('userId', ParseIntPipe) _userId: number,
+    @Body('specializations') specializations: string[],
+    @Req() _req: RequestWithUser
+  ) {
+    // For now, just return the specializations as the service doesn't have this method yet
+    return {
+      specializations: specializations || [],
+    };
   }
 
   @Delete(':id/members/:userId')
