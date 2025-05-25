@@ -82,7 +82,7 @@ describe('Team Management E2E', () => {
         coordinates: [29.0, 41.0],
       });
 
-      createdTeamId = response.body.id;
+      createdTeamId = response.body.data.id;
       expect(createdTeamId).toBeDefined();
       expect(typeof createdTeamId).toBe('number');
     });

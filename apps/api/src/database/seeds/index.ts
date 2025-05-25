@@ -7,6 +7,7 @@ import { DepartmentsSeed } from './departments.seed';
 import { CategoriesSeed } from './categories.seed';
 import { ReportsSeed } from './reports.seed';
 import { TeamsSeed } from './teams.seed';
+import { SpecializationsSeed } from './specializations.seed';
 
 // Fix: Use default import for AppDataSource
 import AppDataSource from '../../config/data-source';
@@ -20,6 +21,7 @@ async function runSeeds(dataSource: DataSource): Promise<void> {
     console.log('✅ PostGIS varsayılan olarak etkinleştirildi veya kontrol edildi.');
     await DepartmentsSeed(dataSource);
     await CategoriesSeed(dataSource);
+    await SpecializationsSeed(dataSource);
     await UsersSeed(dataSource);
     await TeamsSeed(dataSource);
     await ReportsSeed(dataSource);

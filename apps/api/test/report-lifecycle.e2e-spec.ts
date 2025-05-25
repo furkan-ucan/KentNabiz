@@ -52,8 +52,8 @@ describe('Report Lifecycle E2E', () => {
         description: 'There is a dangerous pothole that needs immediate attention',
         reportType: ReportType.POTHOLE,
         location: {
-          type: 'Point',
-          coordinates: [29.0, 41.0],
+          latitude: 41.0,
+          longitude: 29.0,
         },
         address: '123 Main Street, Istanbul',
       };
