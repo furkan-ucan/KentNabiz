@@ -35,6 +35,12 @@ import { SUB_STATUS } from '../constants/report.constants';
 import { CreateReportDto } from '../dto/create-report.dto';
 import { UpdateReportStatusDto } from '../dto/update-report-status.dto';
 import { ForwardReportDto } from '../dto/forward-report.dto';
+import { canTransition } from '../utils/report-status.utils';
+
+// Mock the canTransition utility function
+jest.mock('../utils/report-status.utils', () => ({
+  canTransition: jest.fn(),
+}));
 
 describe('ReportsService - Core Methods', () => {
   let service: ReportsService;
@@ -45,6 +51,7 @@ describe('ReportsService - Core Methods', () => {
   let abilityFactory: jest.Mocked<AbilityFactory>;
   let queryRunner: any;
   let entityManager: any;
+  let mockCanTransition: jest.MockedFunction<typeof canTransition>;
 
   // Mock users
   const supervisorUser: AuthUser = {
@@ -174,7 +181,9 @@ describe('ReportsService - Core Methods', () => {
 
     const mockDataSource = {
       createQueryRunner: jest.fn().mockReturnValue(mockQueryRunner),
-      transaction: jest.fn(),
+      transaction: jest.fn().mockImplementation((callback: (manager: any) => Promise<any>) => {
+        return callback(mockEntityManager);
+      }),
     };
 
     const mockAbility = {
@@ -244,6 +253,7 @@ describe('ReportsService - Core Methods', () => {
     abilityFactory = module.get(AbilityFactory);
     queryRunner = mockQueryRunner;
     entityManager = mockEntityManager;
+    mockCanTransition = canTransition as jest.MockedFunction<typeof canTransition>;
 
     // Setup default mocks
     reportRepository.findById.mockResolvedValue(mockReport);
@@ -251,11 +261,16 @@ describe('ReportsService - Core Methods', () => {
       can: jest.fn().mockReturnValue(true),
       throwUnlessCan: jest.fn(),
     } as any);
+
+    // Setup canTransition mock to return true by default
+    mockCanTransition.mockReturnValue(true);
   });
 
   describe('assignReportToTeam', () => {
     beforeEach(() => {
-      entityManager.findOne.mockResolvedValue(mockTeam);
+      // Ensure team has correct status
+      const availableTeam = { ...mockTeam, status: TeamStatus.AVAILABLE };
+      entityManager.findOne.mockResolvedValue(availableTeam);
       entityManager.save.mockResolvedValue(mockReport);
       entityManager.create.mockReturnValue({} as any);
       entityManager.update.mockResolvedValue({ affected: 1 } as any);
@@ -360,9 +375,31 @@ describe('ReportsService - Core Methods', () => {
     });
 
     it('should create status history record', async () => {
+      // Use a report with OPEN status to test OPEN → IN_REVIEW transition
+      const openReport = { ...mockReport, status: ReportStatus.OPEN };
+      reportRepository.findById.mockResolvedValue(openReport);
+
+      // Ensure we return the correct team with AVAILABLE status
+      const availableTeam = { ...mockTeam, status: TeamStatus.AVAILABLE };
+      entityManager.findOne.mockResolvedValueOnce(availableTeam);
+
       await service.assignReportToTeam(1, 1, supervisorUser);
 
-      expect(entityManager.create).toHaveBeenCalledWith(ReportStatusHistory, {
+      // Check that create was called for both Assignment and ReportStatusHistory
+      expect(entityManager.create).toHaveBeenCalledTimes(2);
+
+      // Check Assignment creation (first call)
+      expect(entityManager.create).toHaveBeenNthCalledWith(1, Assignment, {
+        reportId: 1,
+        assigneeType: AssigneeType.TEAM,
+        assigneeId: 1,
+        assignedById: supervisorUser.sub,
+        status: AssignmentStatus.ACTIVE,
+        assignedAt: expect.any(Date),
+      });
+
+      // Check ReportStatusHistory creation (second call) - OPEN → IN_REVIEW
+      expect(entityManager.create).toHaveBeenNthCalledWith(2, ReportStatusHistory, {
         reportId: 1,
         previousStatus: ReportStatus.OPEN,
         newStatus: ReportStatus.IN_REVIEW,
@@ -458,9 +495,28 @@ describe('ReportsService - Core Methods', () => {
     });
 
     it('should create status history record with user email', async () => {
+      // Use a report with OPEN status to test OPEN → IN_REVIEW transition
+      const openReport = { ...mockReport, status: ReportStatus.OPEN };
+      reportRepository.findById.mockResolvedValue(openReport);
+      entityManager.findOne.mockResolvedValue(openReport);
+
       await service.assignReportToUser(1, 2, supervisorUser);
 
-      expect(entityManager.create).toHaveBeenCalledWith(ReportStatusHistory, {
+      // Check that create was called for both Assignment and ReportStatusHistory
+      expect(entityManager.create).toHaveBeenCalledTimes(2);
+
+      // Check Assignment creation (first call)
+      expect(entityManager.create).toHaveBeenNthCalledWith(1, Assignment, {
+        reportId: 1,
+        assigneeType: AssigneeType.USER,
+        assigneeId: 2,
+        assignedById: supervisorUser.sub,
+        status: AssignmentStatus.ACTIVE,
+        assignedAt: expect.any(Date),
+      });
+
+      // Check ReportStatusHistory creation (second call) - OPEN → IN_REVIEW
+      expect(entityManager.create).toHaveBeenNthCalledWith(2, ReportStatusHistory, {
         reportId: 1,
         previousStatus: ReportStatus.OPEN,
         newStatus: ReportStatus.IN_REVIEW,
@@ -485,13 +541,17 @@ describe('ReportsService - Core Methods', () => {
       entityManager.create.mockReturnValue({} as any);
       jest.spyOn(service, 'findOne').mockResolvedValue(mockReport);
 
-      // Mock canTransition to return true by default
-      jest.doMock('../utils/report-status.utils', () => ({
-        canTransition: jest.fn().mockReturnValue(true),
-      }));
+      // Reset and setup canTransition mock for each test
+      mockCanTransition.mockReset();
+      mockCanTransition.mockReturnValue(true);
     });
 
     it('should successfully update report status', async () => {
+      // Use a report with OPEN status for this test
+      const openReport = { ...mockReport, status: ReportStatus.OPEN };
+      reportRepository.findById.mockResolvedValue(openReport);
+      entityManager.findOne.mockResolvedValue(openReport);
+
       const result = await service.updateStatus(1, updateStatusDto, supervisorUser);
 
       expect(reportRepository.findById).toHaveBeenCalledWith(1);
@@ -501,6 +561,11 @@ describe('ReportsService - Core Methods', () => {
         relations: ['currentDepartment'],
         lock: { mode: 'pessimistic_write' },
       });
+      expect(mockCanTransition).toHaveBeenCalledWith(
+        supervisorUser.roles,
+        ReportStatus.OPEN,
+        ReportStatus.IN_PROGRESS
+      );
       expect(result).toEqual(mockReport);
     });
 
@@ -612,6 +677,11 @@ describe('ReportsService - Core Methods', () => {
     });
 
     it('should create status history record', async () => {
+      // Use a report with OPEN status for this test
+      const openReport = { ...mockReport, status: ReportStatus.OPEN };
+      reportRepository.findById.mockResolvedValue(openReport);
+      entityManager.findOne.mockResolvedValue(openReport);
+
       await service.updateStatus(1, updateStatusDto, supervisorUser);
 
       expect(entityManager.create).toHaveBeenCalledWith(ReportStatusHistory, {
@@ -636,10 +706,8 @@ describe('ReportsService - Core Methods', () => {
     beforeEach(() => {
       jest.spyOn(service as any, 'canUserPerformActionOnReport').mockReturnValue(true);
       entityManager.findOne.mockResolvedValue(mockReport);
-      departmentService.findByCode.mockResolvedValue({
-        id: 2,
-        name: 'Environment Department',
-      } as Department);
+      // Reset department service mock for each test
+      departmentService.findByCode.mockReset();
       entityManager.save.mockResolvedValue(mockReport);
       entityManager.create.mockReturnValue({} as any);
       entityManager.update.mockResolvedValue({ affected: 1 } as any);
@@ -647,6 +715,12 @@ describe('ReportsService - Core Methods', () => {
     });
 
     it('should successfully forward report', async () => {
+      // Ensure different department for successful forwarding
+      departmentService.findByCode.mockResolvedValue({
+        id: 2,
+        name: 'Environment Department',
+      } as Department);
+
       const result = await service.forwardReport(1, forwardDto, supervisorUser);
 
       expect(entityManager.findOne).toHaveBeenCalledWith(Report, {
@@ -689,10 +763,21 @@ describe('ReportsService - Core Methods', () => {
     });
 
     it('should throw BadRequestException when forwarding to same department', async () => {
+      departmentService.findByCode.mockReset();
       departmentService.findByCode.mockResolvedValue({
         id: 1,
-        name: 'Same Department',
+        name: 'Current Department',
       } as Department);
+
+      // Her test için temiz bir mockReport
+      const report = {
+        ...mockReport,
+        status: ReportStatus.OPEN,
+        subStatus: SUB_STATUS.NONE,
+        currentDepartmentId: 1,
+      };
+      entityManager.findOne.mockResolvedValue(report);
+      reportRepository.findById.mockResolvedValue(report);
 
       await expect(service.forwardReport(1, forwardDto, supervisorUser)).rejects.toThrow(
         BadRequestException
@@ -700,6 +785,12 @@ describe('ReportsService - Core Methods', () => {
     });
 
     it('should throw BadRequestException when reason is empty', async () => {
+      // Mock department to avoid NotFoundException
+      departmentService.findByCode.mockResolvedValue({
+        id: 2,
+        name: 'Environment Department',
+      } as Department);
+
       const invalidDto = { ...forwardDto, reason: '' };
 
       await expect(service.forwardReport(1, invalidDto, supervisorUser)).rejects.toThrow(
@@ -708,6 +799,24 @@ describe('ReportsService - Core Methods', () => {
     });
 
     it('should create department history record', async () => {
+      departmentService.findByCode.mockReset();
+      departmentService.findByCode.mockResolvedValue({
+        id: 2,
+        name: 'Environment Department',
+      } as Department);
+
+      // Temiz mockReport (currentDepartmentId: 1)
+      const report = {
+        ...mockReport,
+        status: ReportStatus.OPEN,
+        subStatus: SUB_STATUS.NONE,
+        currentDepartmentId: 1,
+      };
+      entityManager.findOne.mockReset();
+      reportRepository.findById.mockReset();
+      entityManager.findOne.mockResolvedValue(report);
+      reportRepository.findById.mockResolvedValue(report);
+
       await service.forwardReport(1, forwardDto, supervisorUser);
 
       expect(entityManager.create).toHaveBeenCalledWith(DepartmentHistory, {
@@ -721,6 +830,22 @@ describe('ReportsService - Core Methods', () => {
     });
 
     it('should create status history record for forwarding', async () => {
+      departmentService.findByCode.mockReset();
+      departmentService.findByCode.mockResolvedValue({
+        id: 2,
+        name: 'Environment Department',
+      } as Department);
+
+      // Temiz mockReport
+      const report = {
+        ...mockReport,
+        status: ReportStatus.OPEN,
+        subStatus: SUB_STATUS.NONE,
+        currentDepartmentId: 1,
+      };
+      entityManager.findOne.mockResolvedValue(report);
+      reportRepository.findById.mockResolvedValue(report);
+
       await service.forwardReport(1, forwardDto, supervisorUser);
 
       expect(entityManager.create).toHaveBeenCalledWith(ReportStatusHistory, {
@@ -736,6 +861,22 @@ describe('ReportsService - Core Methods', () => {
     });
 
     it('should cancel active assignments when forwarding', async () => {
+      departmentService.findByCode.mockReset();
+      departmentService.findByCode.mockResolvedValue({
+        id: 2,
+        name: 'Environment Department',
+      } as Department);
+
+      // Temiz mockReport
+      const report = {
+        ...mockReport,
+        status: ReportStatus.OPEN,
+        subStatus: SUB_STATUS.NONE,
+        currentDepartmentId: 1,
+      };
+      entityManager.findOne.mockResolvedValue(report);
+      reportRepository.findById.mockResolvedValue(report);
+
       await service.forwardReport(1, forwardDto, supervisorUser);
 
       expect(entityManager.update).toHaveBeenCalledWith(
