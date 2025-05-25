@@ -19,13 +19,13 @@ import {
   ApiOperation,
   ApiResponse,
   ApiParam,
-  ApiQuery,
   ApiBearerAuth,
   ApiBody,
 } from '@nestjs/swagger';
 import { TeamsService } from '../services/teams.service';
 import { CreateTeamDto } from '../dto/create-team.dto';
 import { UpdateTeamDto } from '../dto/update-team.dto';
+import { FindNearbyTeamsDto } from '../dto/query-teams.dto';
 import { JwtAuthGuard } from '../../../core/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
@@ -100,24 +100,6 @@ export class TeamsController {
     description:
       'Finds the nearest available teams for a given location and optional specialization.',
   })
-  @ApiQuery({
-    name: 'lat',
-    description: 'Latitude coordinate',
-    type: Number,
-    example: 41.0082,
-  })
-  @ApiQuery({
-    name: 'lng',
-    description: 'Longitude coordinate',
-    type: Number,
-    example: 28.9784,
-  })
-  @ApiQuery({
-    name: 'specializationId',
-    description: 'Filter by specialization ID',
-    type: Number,
-    required: false,
-  })
   @ApiResponse({
     status: 200,
     description: 'Nearby teams found',
@@ -127,12 +109,20 @@ export class TeamsController {
     status: 400,
     description: 'Bad Request - Invalid coordinates',
   })
-  findNearbyTeams(
-    @Query('lat') latitude: number,
-    @Query('lng') longitude: number,
-    @Query('specializationId') specializationId?: number
-  ): Promise<Team[]> {
-    return this.teamsService.findNearestAvailableTeams(latitude, longitude, specializationId);
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden',
+  })
+  findNearbyTeams(@Query() queryDto: FindNearbyTeamsDto): Promise<Team[]> {
+    return this.teamsService.findNearestAvailableTeams(
+      queryDto.lat,
+      queryDto.lng,
+      queryDto.specializationId
+    );
   }
 
   @Get('department/:departmentId')

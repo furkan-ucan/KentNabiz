@@ -27,6 +27,7 @@ import { UpdateReportDto } from '../dto/update-report.dto';
 import { UpdateReportStatusDto } from '../dto/update-report-status.dto';
 import { ForwardReportDto } from '../dto/forward-report.dto';
 import { RadiusSearchDto } from '../dto/location.dto';
+import { QueryReportsDto } from '../dto/query-reports.dto';
 import { ReportStatus, ReportType, MunicipalityDepartment, UserRole } from '@KentNabiz/shared';
 import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
@@ -50,27 +51,12 @@ export class ReportsController {
     description: 'Returns paginated list of reports based on user role and filters.',
   })
   @Roles(UserRole.SYSTEM_ADMIN, UserRole.DEPARTMENT_SUPERVISOR, UserRole.TEAM_MEMBER)
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'reportType', required: false, enum: ReportType }) // type -> reportType
-  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
-  @ApiQuery({ name: 'departmentCode', required: false, enum: MunicipalityDepartment }) // department -> departmentCode
   @ApiResponse({ status: 200, description: 'Paginated list of reports' })
-  async findAll(
-    @Req() req: RequestWithUser,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('reportType') reportType?: ReportType, // type -> reportType
-    @Query('status') status?: ReportStatus,
-    @Query('departmentCode') departmentCode?: MunicipalityDepartment // department -> departmentCode
-  ) {
-    return this.reportsService.findAll(req.user, {
-      page: page ? +page : 1,
-      limit: limit ? +limit : 10,
-      reportType, // type -> reportType
-      status,
-      departmentCode, // department -> departmentCode
-    });
+  @ApiResponse({ status: 400, description: 'Invalid query parameters' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  async findAll(@Req() req: RequestWithUser, @Query() queryDto: QueryReportsDto) {
+    return this.reportsService.findAll(req.user, queryDto);
   }
 
   @Get('nearby')
@@ -298,6 +284,10 @@ export class ReportsController {
   @ApiParam({ name: 'id', description: 'Report ID', type: Number })
   @ApiParam({ name: 'teamId', description: 'Team ID', type: Number })
   @ApiResponse({ status: 200, description: 'Report assigned to team successfully', type: Report })
+  @ApiResponse({ status: 400, description: 'Bad Request - Team not available or invalid data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Report or team not found' })
   async assignReportToTeam(
     @Param('id', ParseIntPipe) id: number,
     @Param('teamId', ParseIntPipe) teamId: number,
@@ -312,6 +302,10 @@ export class ReportsController {
   @ApiParam({ name: 'id', description: 'Report ID', type: Number })
   @ApiParam({ name: 'userId', description: 'User ID', type: Number })
   @ApiResponse({ status: 200, description: 'Report assigned to user successfully', type: Report })
+  @ApiResponse({ status: 400, description: 'Bad Request - User not available or invalid data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Report or user not found' })
   async assignReportToUser(
     @Param('id', ParseIntPipe) id: number,
     @Param('userId', ParseIntPipe) userId: number,

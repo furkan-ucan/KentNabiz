@@ -1,0 +1,183 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Implementation Reporting Guide
+
+This rule defines how to generate comprehensive implementation reports when completing development tasks for the KentNabiz project.
+
+## When to Generate Reports
+
+Generate a detailed implementation report when:
+- Completing a development task or feature implementation
+- Finishing a bug fix with multiple steps
+- Completing a refactoring or optimization task
+- Finishing any multi-step development process
+- User explicitly requests a report
+
+## Report Structure Template
+
+Use this exact structure for implementation reports:
+
+```
+✅ [Task Name] - [Brief Description] Tamamlandı!
+
+🎯 Hedef Başarıyla Gerçekleştirildi:
+[Brief summary of what was accomplished]
+
+📋 Tamamlanan Adımlar:
+
+✅ ADIM 1: [Step Name]
+Durum: [Status] ✅
+Konum: [File path]
+Implementasyon:
+[Code snippet or description]
+
+✅ ADIM 2: [Step Name]
+Durum: [Status] ✅
+Konum: [File path]
+🔧 Implementasyon Özellikleri:
+✅ [Feature 1]: [Description]
+✅ [Feature 2]: [Description]
+✅ [Feature 3]: [Description]
+
+[Continue for all steps...]
+
+🧪 Test Coverage:
+Test Dosyası: [Test file path]
+Test Senaryoları ([X]/[Y] Geçiyor):
+✅ [Test scenario 1]
+✅ [Test scenario 2]
+✅ [Test scenario 3]
+
+🚀 Build ve Test Sonuçları:
+✅ Build: [Build status]
+✅ Unit Tests: [Test results]
+✅ Linter: [Linter status]
+✅ API: [API status if applicable]
+
+📊 [Additional Section if applicable]:
+[Relevant technical details]
+
+🔄 [Code Quality/Security Section if applicable]:
+[Important code snippets or security considerations]
+
+🎯 Commit Geçmişi:
+[List of commits made]
+```
+
+## Report Content Guidelines
+
+### Status Indicators
+- ✅ for completed items
+- ❌ for failed items
+- ⚠️ for warnings or partial completion
+- 🔄 for in-progress items
+
+### Technical Details to Include
+1. **File Locations**: Always include exact file paths
+2. **Code Snippets**: Include relevant code implementations
+3. **Test Results**: Specific test counts and status
+4. **Build Status**: Compilation and linting results
+5. **Dependencies**: Any new dependencies or imports added
+6. **Configuration Changes**: Module imports, providers, etc.
+
+### Language and Tone
+- Use Turkish for section headers and descriptions
+- Use English for technical terms and code
+- Be enthusiastic and positive (🎉, 🚀, ✅)
+- Include emojis for visual appeal
+- Use "Mükemmel!", "Harika!", "Başarılı!" for positive outcomes
+
+### Code Quality Sections
+Include when relevant:
+- **Transaction Safety**: For database operations
+- **Error Handling**: Exception handling patterns
+- **ABAC/Security**: Authorization implementations
+- **Performance**: Optimization details
+- **Type Safety**: TypeScript improvements
+
+### Commit Message Format
+Follow the project's conventional commit format:
+```
+type(scope): description
+```
+
+## Example Sections for Different Task Types
+
+### For Feature Implementation:
+```
+🔧 Implementasyon Özellikleri:
+✅ Entity Tanımları: [Description]
+✅ Service Metodları: [Description]
+✅ Controller Endpoint'leri: [Description]
+✅ ABAC Yetkilendirme: [Description]
+✅ Validation Rules: [Description]
+```
+
+### For Bug Fixes:
+```
+🐛 Düzeltilen Problemler:
+✅ Problem 1: [Description and solution]
+✅ Problem 2: [Description and solution]
+✅ Root Cause: [Analysis]
+```
+
+### For Database Changes:
+```
+🗄️ Veritabanı Değişiklikleri:
+✅ Entity Updates: [Changes made]
+✅ Migration Files: [If applicable]
+✅ Repository Methods: [New methods added]
+```
+
+### For API Changes:
+```
+📊 API Endpoint'leri:
+Endpoint: [HTTP method and path]
+Guard'lar: [Security guards applied]
+ABAC Kontrolü: [Permission checks]
+Request/Response: [Data structures]
+```
+
+## Quality Checklist
+
+Before generating the report, ensure:
+- [ ] All code changes are tested
+- [ ] Build is successful
+- [ ] Linter passes
+- [ ] Commits follow conventional format
+- [ ] All file paths are accurate
+- [ ] Code snippets are properly formatted
+- [ ] Test results are included
+- [ ] Security considerations are mentioned
+
+## Report Triggers
+
+Generate reports automatically when:
+1. User says "tamamlandı", "bitti", "finished", "done"
+2. Multiple steps are completed in sequence
+3. Tests are run successfully after implementation
+4. Commits are made with significant changes
+5. User explicitly asks for a report
+
+## Customization by Module
+
+### For Reports Module:
+- Include ABAC permission details
+- Mention transaction safety
+- Include status transition logic
+
+### For Auth Module:
+- Include JWT and security details
+- Mention role-based access control
+- Include session management
+
+### For Shared Packages:
+- Include type definitions
+- Mention cross-package dependencies
+- Include build output considerations
+
+This reporting format ensures consistent, comprehensive documentation of all development work completed on the KentNabiz project.
+

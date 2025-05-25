@@ -1,4 +1,4 @@
-import { IsEnum, IsString, IsOptional } from 'class-validator';
+import { IsEnum, IsString, IsOptional, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { MunicipalityDepartment } from '@KentNabiz/shared';
 
@@ -14,8 +14,11 @@ export class ForwardReportDto {
   @ApiProperty({
     description: 'Rapor yönlendirme nedeni',
     example: 'Bu konu yollar ve altyapı birimimizin sorumluluk alanına giriyor.',
+    minLength: 10,
+    maxLength: 500,
   })
   @IsString()
+  @IsNotEmpty()
   reason!: string;
 
   @ApiProperty({
