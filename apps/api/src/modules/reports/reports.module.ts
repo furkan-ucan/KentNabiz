@@ -21,6 +21,7 @@ import { ReportMedia } from './entities/report-media.entity';
 import { ReportSupport } from './entities/report-support.entity';
 import { Team } from '../teams/entities/team.entity';
 import { UsersModule } from '../users/users.module';
+import { AbilityModule } from '../../core/authorization/ability.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { UsersModule } from '../users/users.module';
       Team,
     ]),
     forwardRef(() => UsersModule),
+    AbilityModule,
   ],
   controllers: [ReportsController, CategoryController, ReportAnalyticsController],
   providers: [
