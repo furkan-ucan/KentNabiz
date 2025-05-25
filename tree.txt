@@ -1,0 +1,261 @@
+﻿|____.cursor
+     |____rules
+          |    -- apps-and-packages-structure.mdc
+          |    -- documentation-guide.mdc
+          |    -- project-overview.mdc
+|    -- .env
+|    -- .env.example
+|    -- .gitattributes
+|____.github
+     |    -- README.md
+     |    -- ruleset.yml
+     |____workflows
+          |    -- ci.yml
+|    -- .gitignore
+|____.husky
+     |_____
+          |    -- .gitignore
+          |    -- husky.sh
+     |    -- commit-msg
+     |    -- pre-commit
+|    -- .prettierrc
+|____apps
+     |____api
+          |    -- .env
+          |    -- .env.example
+          |    -- jest.config.ts
+          |    -- nest-cli.json
+          |    -- package.json
+          |    -- README.md
+          |____src
+               |    -- app.controller.spec.ts
+               |    -- app.controller.ts
+               |    -- app.module.ts
+               |    -- app.service.ts
+               |____config
+                    |    -- data-source.ts
+                    |    -- redis.config.ts
+                    |    -- redis.service.ts
+                    |    -- swagger.config.ts
+                    |    -- typeorm.config.ts
+               |____core
+                    |    -- core.module.ts
+                    |____decorators
+                         |    -- public.decorator.ts
+                    |____filters
+                         |    -- http-exception.filter.ts
+                    |____guards
+                         |    -- jwt-auth.guard.ts
+                    |____interceptors
+                         |    -- transform.interceptor.ts
+                    |____pipes
+                         |    -- validation.pipe.ts
+               |____database
+                    |____migrations
+                         |    -- 1680268800000-CreateUsers.ts
+                         |    -- 1680268900000-AddPostGISAndDepartments.ts
+                         |    -- 1680269000000-CreateCategoriesAndReportsTable.ts
+                         |    -- 1680269100000-CreateMediaTable.ts
+                         |    -- 1680269200000-AddPerformanceIndexes.ts
+                         |    -- 1712673200000-CreateReportSupportsTable.ts
+                    |    -- ormconfig.ts
+                    |____seeds
+                         |    -- categories.seed.ts
+                         |    -- departments.seed.ts
+                         |    -- index.ts
+                         |    -- reports.seed.ts
+                         |    -- report-supports.seed.ts
+                         |    -- users.seed.ts
+               |    -- main.ts
+               |____modules
+                    |____auth
+                         |    -- auth.module.ts
+                         |____controllers
+                              |    -- auth.controller.ts
+                         |____decorators
+                              |    -- roles.decorator.ts
+                         |____dto
+                              |    -- login.dto.ts
+                              |    -- logout.response.dto.ts
+                              |    -- refresh-token.dto.ts
+                              |    -- register.dto.ts
+                              |    -- token.response.dto.ts
+                         |____guards
+                              |    -- jwt.guard.ts
+                              |    -- roles.guard.ts
+                         |____interfaces
+                              |    -- jwt-payload.interface.ts
+                              |    -- token.interface.ts
+                         |____services
+                              |    -- auth.service.ts
+                              |    -- token.service.ts
+                         |____strategies
+                              |    -- jwt.strategy.ts
+                              |    -- refresh.strategy.ts
+                    |____media
+                         |____controllers
+                              |    -- media.controller.spec.ts
+                              |    -- media.controller.ts
+                         |____dto
+                              |    -- upload-file.dto.ts
+                         |____entities
+                              |    -- media.entity.ts
+                         |____interceptors
+                              |    -- file-upload.interceptor.ts
+                         |____interfaces
+                              |    -- file-metadata.interface.ts
+                              |    -- multer-file.interface.ts
+                         |    -- media.module.ts
+                         |____services
+                              |    -- image-processor.service.spec.ts
+                              |    -- image-processor.service.ts
+                              |    -- media.service.spec.ts
+                              |    -- media.service.ts
+                              |    -- minio.service.spec.ts
+                              |    -- minio.service.ts
+                    |____reports
+                         |____constants
+                              |    -- index.ts
+                              |    -- report.constants.ts
+                              |    -- report-transitions.constants.ts
+                         |____controllers
+                              |    -- category.controller.ts
+                              |    -- report-analytics.controller.ts
+                              |    -- reports.controller.ts
+                              |    -- report-support.controller.ts
+                         |____dto
+                              |    -- analytics.dto.ts
+                              |    -- category.dto.ts
+                              |    -- create-report.dto.ts
+                              |    -- department.dto.ts
+                              |    -- department-history.response.dto.ts
+                              |    -- forward-report.dto.ts
+                              |    -- location.dto.ts
+                              |    -- point.dto.ts
+                              |    -- report-support.dto.ts
+                              |    -- update-report.dto.ts
+                              |    -- update-report-status.dto.ts
+                         |____entities
+                              |    -- assignment.entity.ts
+                              |    -- department.entity.ts
+                              |    -- department-history.entity.ts
+                              |    -- report.entity.ts
+                              |    -- report-category.entity.ts
+                              |    -- report-media.entity.ts
+                              |    -- report-status-history.entity.ts
+                              |    -- report-support.entity.ts
+                         |____interfaces
+                              |    -- report.analytics.interface.ts
+                              |    -- report.interface.ts
+                              |    -- report-search.interface.ts
+                         |    -- reports.module.ts
+                         |____repositories
+                              |    -- category.repository.ts
+                              |    -- department.repository.ts
+                              |    -- report.repository.ts
+                              |    -- report-support.repository.ts
+                         |____services
+                              |    -- category.service.ts
+                              |    -- department.service.ts
+                              |    -- location.service.ts
+                              |    -- report-analytics.service.ts
+                              |    -- reports.service.ts
+                              |    -- report-support.service.spec.ts
+                              |    -- report-support.service.ts
+                         |____utils
+                              |    -- report-status.utils.ts
+                    |____specializations
+                         |____entities
+                              |    -- specialization.entity.ts
+                    |____teams
+                         |____entities
+                              |    -- team.entity.ts
+                              |    -- team-specialization.entity.ts
+                    |____users
+                         |____controllers
+                              |    -- users.controller.ts
+                         |____dto
+                              |    -- create-user.dto.ts
+                              |    -- update-user.dto.ts
+                              |    -- user-profile.dto.ts
+                         |____entities
+                              |    -- team-membership-history.entity.ts
+                              |    -- user.entity.ts
+                         |____interfaces
+                              |    -- user.interface.ts
+                         |____repositories
+                              |    -- user.repository.ts
+                         |____services
+                              |    -- users.service.ts
+                         |    -- users.module.ts
+               |____shared
+                    |____entities
+                         |    -- base.entity.ts
+                    |    -- shared.module.ts
+          |    -- tsconfig.build.json
+          |    -- tsconfig.build.tsbuildinfo
+          |    -- tsconfig.json
+|    -- commitlint.config.js
+|    -- docker-compose.yml
+|    -- eslint.config.js
+|    -- jest.config.ts
+|    -- package.json
+|____packages
+     |____shared
+          |    -- jest.config.ts
+          |    -- package.json
+          |____src
+               |______tests__
+                    |____utils
+                         |    -- formatting.test.ts
+                         |    -- validation.test.ts
+               |____constants
+                    |    -- api.ts
+                    |    -- app.ts
+                    |    -- errors.ts
+                    |    -- index.ts
+                    |    -- regex.ts
+               |    -- index.ts
+               |____types
+                    |    -- assignment.types.ts
+                    |    -- department.types.ts
+                    |    -- index.ts
+                    |    -- report.types.ts
+                    |    -- report-category.types.ts
+                    |    -- team.types.ts
+                    |    -- user.types.ts
+               |____utils
+                    |    -- formatting.ts
+                    |    -- index.ts
+                    |    -- validation.ts
+          |    -- tsconfig.json
+          |    -- tsconfig.tsbuildinfo
+     |____ui
+          |    -- jest.config.ts
+          |    -- package.json
+          |____src
+               |____components
+                    |____Button
+                         |    -- index.tsx
+                    |____Card
+                         |    -- Card.tsx
+                         |    -- index.tsx
+                    |____Input
+                         |    -- Input.tsx
+                         |    -- index.tsx
+               |____hooks
+                    |____useAuth
+                         |    -- index.tsx
+                    |____useForm
+                         |    -- index.tsx
+               |    -- index.ts
+               |    -- test-setup.ts
+          |    -- tsconfig.json
+          |    -- tsconfig.tsbuildinfo
+|    -- pnpm-lock.yaml
+|    -- pnpm-workspace.yaml
+|    -- README.md
+|    -- structure.txt
+|    -- tree.txt
+|    -- tsconfig.json
+|    -- turbo.json

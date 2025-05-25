@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Department } from '../entities/department.entity';
@@ -7,10 +7,12 @@ import { DepartmentDto } from '../dto/department.dto';
 import { Report } from '../entities/report.entity';
 import { DepartmentHistory } from '../entities/department-history.entity';
 import { ForwardReportDto } from '../dto/forward-report.dto';
-import { MunicipalityDepartment, ReportType } from '@KentNabiz/shared';
+import { MunicipalityDepartment, ReportStatus, ReportType } from '@KentNabiz/shared';
 
 @Injectable()
 export class DepartmentService {
+  private readonly logger = new Logger(DepartmentService.name);
+
   constructor(
     private departmentRepository: DepartmentRepository,
     @InjectRepository(Report)
@@ -44,33 +46,27 @@ export class DepartmentService {
     const departments = await this.departmentRepository.findByReportType(reportType);
 
     if (!departments || departments.length === 0) {
-      // Eğer belirli rapor türü için özel bir birim bulunamazsa, GENERAL birimini döndür
       const generalDepartment = await this.findByCode(MunicipalityDepartment.GENERAL);
-      // findByCode zaten NotFoundException fırlatacak, ayrıca kontrol gerekmiyor
       return generalDepartment;
     }
-
-    // Sorumlu birimlerden ilkini dön
     return departments[0];
   }
 
   async create(departmentDto: DepartmentDto): Promise<Department> {
-    // Aynı kodla kayıtlı birim var mı kontrol et
     const existingDepartment = await this.departmentRepository.findByCode(departmentDto.code);
     if (existingDepartment) {
       throw new BadRequestException(`${departmentDto.code} kodlu birim zaten kayıtlı`);
     }
-
     return this.departmentRepository.create(departmentDto);
   }
 
   async update(id: number, departmentDto: Partial<DepartmentDto>): Promise<Department> {
-    await this.findById(id); // Check if department exists
+    await this.findById(id);
     return this.departmentRepository.update(id, departmentDto);
   }
 
   async delete(id: number): Promise<void> {
-    await this.findById(id); // Check if department exists
+    await this.findById(id);
     await this.departmentRepository.delete(id);
   }
 
@@ -79,45 +75,41 @@ export class DepartmentService {
     forwardDto: ForwardReportDto,
     changedByUserId: number
   ): Promise<Report> {
-    const report = await this.reportRepository.findOne({
-      where: { id: reportId },
-      relations: ['departmentHistory', 'currentDepartment'],
-    });
-
-    if (!report) {
-      throw new NotFoundException(`Rapor ID ${reportId} bulunamadı`);
-    }
-
-    const newDepartmentEntity = await this.findByCode(forwardDto.newDepartment);
-    if (!newDepartmentEntity) {
-      throw new NotFoundException(`Hedef birim kodu ${forwardDto.newDepartment} bulunamadı`);
-    }
-
-    if (report.currentDepartmentId === newDepartmentEntity.id) {
-      throw new BadRequestException(`Rapor zaten ${newDepartmentEntity.name} biriminde`);
-    }
-
     const queryRunner = this.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
+      const report = await queryRunner.manager.findOne(Report, {
+        where: { id: reportId },
+      });
+
+      if (!report) {
+        throw new NotFoundException(`Rapor ID ${reportId} bulunamadı`);
+      }
+
+      const newDepartmentEntity = await this.findByCode(forwardDto.newDepartment);
+
+      if (report.currentDepartmentId === newDepartmentEntity.id) {
+        throw new BadRequestException(`Rapor zaten ${newDepartmentEntity.name} biriminde`);
+      }
+
       const oldDepartmentId = report.currentDepartmentId;
 
-      const departmentHistory = new DepartmentHistory();
-      departmentHistory.reportId = report.id;
-      if (oldDepartmentId) {
-        departmentHistory.previousDepartmentId = oldDepartmentId;
-      }
-      departmentHistory.newDepartmentId = newDepartmentEntity.id;
-      departmentHistory.reason = forwardDto.reason;
-      departmentHistory.changedByUserId = changedByUserId;
+      const departmentHistoryEntry = queryRunner.manager.create(DepartmentHistory, {
+        reportId: report.id,
+        previousDepartmentId: oldDepartmentId,
+        newDepartmentId: newDepartmentEntity.id,
+        reason: forwardDto.reason,
+        changedByUserId: changedByUserId,
+      });
 
       report.currentDepartmentId = newDepartmentEntity.id;
       report.currentDepartment = newDepartmentEntity;
+      report.status = ReportStatus.IN_REVIEW;
 
-      await queryRunner.manager.save(departmentHistory);
-      await queryRunner.manager.save(report);
+      await queryRunner.manager.save(DepartmentHistory, departmentHistoryEntry);
+      await queryRunner.manager.save(Report, report);
 
       await queryRunner.commitTransaction();
 
@@ -128,19 +120,45 @@ export class DepartmentService {
           'user',
           'reportMedias',
           'assignedEmployee',
+          'category',
           'departmentHistory',
+          'departmentHistory.previousDepartment',
+          'departmentHistory.newDepartment',
+          'departmentHistory.changedByUser',
         ],
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      // Changed Error to unknown
       await queryRunner.rollbackTransaction();
-      throw error;
+      let errorMessage = `Error during forwardReport for reportId ${reportId}`;
+      let errorStack;
+
+      if (error instanceof Error) {
+        errorMessage += `: ${error.message}`;
+        errorStack = error.stack;
+      } else if (typeof error === 'string') {
+        errorMessage += `: ${error}`;
+      } else {
+        errorMessage += ': Unknown error occurred';
+      }
+
+      this.logger.error(errorMessage, errorStack);
+      // Re-throw the original error or a new custom error as appropriate
+      // If you re-throw 'error', its type is 'unknown'.
+      // If you want to throw an Error instance, you might need to wrap it.
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(errorMessage); // Or a more specific error type
     } finally {
       await queryRunner.release();
     }
   }
 
   async getReportDepartmentHistory(reportId: number): Promise<DepartmentHistory[]> {
-    const reportExists = await this.reportRepository.exists({ where: { id: reportId } });
+    const reportExists = await this.reportRepository.exists({
+      where: { id: reportId },
+    });
     if (!reportExists) {
       throw new NotFoundException(`Rapor ID ${reportId} bulunamadı`);
     }

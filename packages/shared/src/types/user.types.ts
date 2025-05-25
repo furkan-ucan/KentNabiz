@@ -3,7 +3,7 @@
 // UPDATED Role Definitions (in English)
 export enum UserRole {
   CITIZEN = 'CITIZEN', // VATANDAS
-  DEPARTMENT_EMPLOYEE = 'DEPARTMENT_EMPLOYEE', // DEPARTMAN_CALISANI
+  TEAM_MEMBER = 'TEAM_MEMBER',
   DEPARTMENT_SUPERVISOR = 'DEPARTMENT_SUPERVISOR', // DEPARTMAN_SORUMLUSU
   SYSTEM_ADMIN = 'SYSTEM_ADMIN', // SISTEM_YONETICISI (replaces old 'ADMIN')
 }
@@ -13,7 +13,7 @@ export interface UserProfile {
   email: string;
   fullName: string;
   roles: UserRole[]; // Will use the new UserRole enum
-  departmentId?: number; // For DEPARTMENT_EMPLOYEE and DEPARTMENT_SUPERVISOR
+  departmentId?: number; // For TEAM_MEMBER & DEPARTMENT_SUPERVISOR
   departmentName?: string; // For convenience
   isEmailVerified: boolean;
   phoneNumber?: string;

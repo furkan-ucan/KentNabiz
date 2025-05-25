@@ -9,6 +9,7 @@ import {
 // Keep import for type hints
 import { Report } from './report.entity';
 import { MunicipalityDepartment, ReportType } from '@KentNabiz/shared';
+import { Team } from '../../teams/entities/team.entity';
 
 @Entity('departments')
 export class Department {
@@ -36,6 +37,9 @@ export class Department {
 
   @OneToMany(() => Report, (report: Report) => report.currentDepartment)
   reports!: Report[];
+
+  @OneToMany(() => Team, team => team.department)
+  teams!: Team[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

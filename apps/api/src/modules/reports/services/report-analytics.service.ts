@@ -155,7 +155,7 @@ export class ReportAnalyticsService {
     // Other filters matching Report entity properties
     if (filter.department) {
       if (typeof filter.department === 'number') {
-        (whereClause as any).currentDepartmentId = filter.department;
+        (whereClause as Partial<Report>).currentDepartmentId = filter.department;
       } else {
         this.logger.warn(
           'Department filter provided as enum, needs mapping to ID for Report entity'
@@ -166,7 +166,7 @@ export class ReportAnalyticsService {
       whereClause.status = filter.status;
     }
     if (filter.type) {
-      (whereClause as any).reportType = filter.type;
+      (whereClause as Partial<Report>).reportType = filter.type;
     }
     if (filter.userId) {
       whereClause.userId = filter.userId;
@@ -215,11 +215,10 @@ export class ReportAnalyticsService {
 
       // Calculate derived stats
       const totalResolvedReports =
-        statusDistribution.find(s => s.status === ReportStatus.RESOLVED)?.count || 0;
+        statusDistribution.find(s => s.status === ReportStatus.DONE)?.count || 0;
       const totalPendingReports =
-        (statusDistribution.find(s => s.status === ReportStatus.SUBMITTED)?.count || 0) +
-        (statusDistribution.find(s => s.status === ReportStatus.UNDER_REVIEW)?.count || 0) +
-        (statusDistribution.find(s => s.status === ReportStatus.FORWARDED)?.count || 0);
+        (statusDistribution.find(s => s.status === ReportStatus.IN_REVIEW)?.count || 0) +
+        (statusDistribution.find(s => s.status === ReportStatus.IN_REVIEW)?.count || 0);
       const totalRejectedReports =
         statusDistribution.find(s => s.status === ReportStatus.REJECTED)?.count || 0;
 
@@ -406,10 +405,10 @@ export class ReportAnalyticsService {
    * Resolution time metrics by department.
    */
   async getResolutionTimeByDepartment(filter?: IAnalyticsFilter): Promise<IResolutionTime[]> {
-    // Apply base filters, ensure status is RESOLVED
+    // Apply base filters, ensure status is DONE
     const whereClause = this.buildFilterQuery({
       ...filter,
-      status: ReportStatus.RESOLVED,
+      status: ReportStatus.DONE,
     });
     // Ensure only reports where resolution happened AFTER creation are considered
     whereClause.updatedAt = Raw(alias => `${alias} > report.created_at`);
@@ -566,7 +565,7 @@ export class ReportAnalyticsService {
 
     // Apply the NOT IN status condition using Raw
     whereClause.status = Raw(alias => `${alias} NOT IN (:...statuses)`, {
-      statuses: [ReportStatus.RESOLVED, ReportStatus.REJECTED],
+      statuses: [ReportStatus.DONE, ReportStatus.REJECTED],
     });
 
     return this.reportRepository.find({

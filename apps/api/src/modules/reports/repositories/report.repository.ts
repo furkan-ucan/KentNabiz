@@ -185,7 +185,7 @@ export class ReportRepository {
         location: data.location, // TypeORM handles Point objects correctly
         address: data.address,
         reportType: data.reportType,
-        status: data.status || ReportStatus.SUBMITTED,
+        status: data.status || ReportStatus.OPEN,
         userId,
         currentDepartmentId: data.currentDepartmentId,
         categoryId: data.categoryId,

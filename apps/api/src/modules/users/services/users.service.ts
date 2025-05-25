@@ -4,6 +4,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UserRepository } from '../repositories/user.repository';
 import { CreateUserDto } from '../dto/create-user.dto';
@@ -11,12 +12,31 @@ import { UpdateUserDto } from '../dto/update-user.dto';
 import { User } from '../entities/user.entity'; // Bu User entity'si güncellenmiş olmalı
 import { UserProfileDto } from '../dto/user-profile.dto';
 import { UserRole } from '@KentNabiz/shared'; // UserRole import eklendi
+import { DepartmentService } from '../../reports/services/department.service'; // DepartmentService importu
+import { forwardRef, Inject } from '@nestjs/common'; // forwardRef ve Inject eklendi
+import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface'; // JwtPayload import eklendi
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, DataSource } from 'typeorm';
+import { Team } from '../../teams/entities/team.entity';
+import { TeamMembershipHistory } from '../entities/team-membership-history.entity';
 
 // TODO: cover edge cases in user service logic - coverage: 70.73%
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    // DepartmentService'i inject etmek için UsersModule'de ReportsModule'ü import etmeniz
+    // ve ReportsModule'ün DepartmentService'i export etmesi gerekir.
+    // Döngüsel bağımlılık varsa forwardRef kullanılabilir.
+    @Inject(forwardRef(() => DepartmentService))
+    private readonly departmentService: DepartmentService,
+    @InjectRepository(Team)
+    private readonly teamRepository: Repository<Team>,
+    @InjectRepository(TeamMembershipHistory)
+    private readonly teamMembershipHistoryRepository: Repository<TeamMembershipHistory>,
+    private readonly dataSource: DataSource
+  ) {}
 
   async findAll(): Promise<UserProfileDto[]> {
     const users = await this.userRepository.findAllWithRelations(['department']);
@@ -61,21 +81,49 @@ export class UsersService {
       throw new ConflictException('Email is already in use');
     }
 
-    // Eğer rol DEPARTMENT_EMPLOYEE veya DEPARTMENT_SUPERVISOR ise
-    // ve departmentId gönderilmemişse, burada bir BadRequestException fırlatılabilir.
-    if (
-      (createUserDto.roles?.includes(UserRole.DEPARTMENT_EMPLOYEE) ||
-        createUserDto.roles?.includes(UserRole.DEPARTMENT_SUPERVISOR)) &&
-      (createUserDto.departmentId === undefined || createUserDto.departmentId === null)
-    ) {
-      throw new BadRequestException(
-        'Department ID is required for DEPARTMENT_EMPLOYEE or DEPARTMENT_SUPERVISOR roles.'
-      );
-    }
-    // İsteğe bağlı: departmentId gönderilmişse, bu ID'ye sahip bir departmanın var olup olmadığını kontrol et.
-    // Bu kontrol DepartmentService veya benzeri bir servis üzerinden yapılabilir.
-    // Örnek: if (createUserDto.departmentId) { await this.departmentService.findOne(createUserDto.departmentId); }
+    const isDepartmentRole = createUserDto.roles?.some(
+      role => role === UserRole.TEAM_MEMBER || role === UserRole.DEPARTMENT_SUPERVISOR
+    );
 
+    if (isDepartmentRole) {
+      if (createUserDto.departmentId === undefined || createUserDto.departmentId === null) {
+        throw new BadRequestException(
+          'Department ID is required for TEAM_MEMBER or DEPARTMENT_SUPERVISOR roles.'
+        );
+      }
+      // DepartmentService üzerinden departmanın varlığını kontrol et
+      try {
+        await this.departmentService.findById(createUserDto.departmentId);
+      } catch (error) {
+        if (error instanceof NotFoundException) {
+          throw new BadRequestException(
+            `Department with ID ${createUserDto.departmentId} not found.`
+          );
+        }
+        throw error; // Diğer hataları tekrar fırlat
+      }
+    } else {
+      // Eğer rol departman rolü değilse ve departmentId gönderilmişse, bunu yok say veya hata ver.
+      // Şimdilik, DTO'daki @IsOptional nedeniyle departmentId tanımsız olabilir, bu durumda sorun yok.
+      // Eğer gönderilmişse ve rol uygun değilse, belki null'a set etmek veya hata vermek daha doğru olabilir.
+      // Ancak whitelist:true ve forbidNonWhitelisted:true ile DTO zaten bunu yönetiyor olmalı.
+      // Eğer rol departmanla ilgili değilse departmentId'nin createUserDto'da olmaması beklenir.
+      // Eğer varsa ve rol uygun değilse, bunu temizleyebiliriz:
+      if (createUserDto.departmentId !== undefined && createUserDto.departmentId !== null) {
+        // Ya da burada bir BadRequestException fırlatılabilir:
+        // throw new BadRequestException("Department ID should only be provided for department-specific roles.");
+        // Şimdilik null yapalım, User entity'si bunu handle edebilir.
+        // createUserDto.departmentId = null; // Veya undefined
+        // Ya da userRepository.create çağrısına departmentId'yi koşullu ekleyebiliriz.
+        // En temizi, DTO'nun bu durumu zaten forbidNonWhitelisted ile yakalaması.
+        // Eğer DTO'da departmentId opsiyonel ise ve rol uygun değilse, bu alanın gönderilmemesi en doğrusu.
+        // Eğer gönderilmişse ve rol uygun değilse, bir uyarı/hata loglanabilir veya hata fırlatılabilir.
+        // Şimdilik, userRepository.create'in bunu doğru işlemesini bekliyoruz.
+      }
+    }
+
+    // CreateUserDto'da roles alanı yoksa, User entity'sindeki default ([UserRole.CITIZEN]) kullanılacak.
+    // departmentId null ise, User entity'sinde department ilişkisi kurulmayacak.
     return this.userRepository.create(createUserDto);
   }
 
@@ -100,10 +148,24 @@ export class UsersService {
       }
     }
 
-    // updateUserDto'da roller veya departmanId varsa, bunların atanması için
-    // özel yetki kontrolü (örneğin sadece SYSTEM_ADMIN yapabilir) gerekebilir.
-    // Bu mantık burada veya controller'da eklenebilir.
-    // Şimdilik doğrudan update yapıyoruz.
+    // Departman ID'si güncelleniyorsa, departmanın varlığını kontrol et
+    if (updateUserDto.departmentId !== undefined) {
+      // null da geçerli bir değer olabilir (departmandan çıkarma)
+      if (updateUserDto.departmentId !== null) {
+        try {
+          await this.departmentService.findById(updateUserDto.departmentId);
+        } catch (error) {
+          if (error instanceof NotFoundException) {
+            throw new BadRequestException(
+              `Department with ID ${updateUserDto.departmentId} not found.`
+            );
+          }
+          throw error;
+        }
+      }
+      // Eğer departmentId null ise, kullanıcıyı departmandan çıkarıyoruz demektir, bu geçerli.
+    }
+
     const updatedUserEntity = await this.userRepository.update(id, updateUserDto);
     return new UserProfileDto(updatedUserEntity);
   }
@@ -135,12 +197,6 @@ export class UsersService {
     if (!isPasswordValid) {
       throw new BadRequestException('Current password is incorrect');
     }
-
-    // User entity'sindeki @BeforeUpdate hook'u şifreyi hashleyecektir.
-    // Bu yüzden direkt user.password = newPassword ve save yapmak yerine,
-    // DTO ile sadece password'ü göndermek daha temiz olabilir.
-    // Ancak user.password'ü güncelleyip user'ı save etmek de hashlemeyi tetikler.
-    // Şimdilik userRepository.update çağrısı doğru.
     user.password = newPassword; // Entity @BeforeUpdate hook'u hashlemeli
     await this.userRepository.save(user); // UserRepository.save kullanılıyor
   }
@@ -149,54 +205,156 @@ export class UsersService {
   async updateUserRoles(userId: number, roles: UserRole[]): Promise<User> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found.`);
+      throw new NotFoundException(`User with ID ${userId} not found`);
     }
+    // TODO: Rollerin geçerliliğini ve iş mantığını kontrol et (örneğin bir kullanıcı hem CITIZEN hem de ADMIN olamaz gibi)
     user.roles = roles;
-    await this.userRepository.save(user);
-
-    // Save sonrası entity ilişkilerle birlikte gelmeyebilir, bu yüzden tekrar çekiyoruz.
-    const updatedUserWithRelations = await this.userRepository.findByIdWithRelations(userId, [
-      'department',
-    ]);
-    if (!updatedUserWithRelations) {
-      // Bu durum normalde oluşmamalı, save başarılı olduysa kullanıcı bulunmalı.
-      throw new NotFoundException(
-        `User with ID ${userId} could not be refetched after role update.`
-      );
-    }
-    return updatedUserWithRelations;
+    // Eğer rollerden biri departmanla ilgiliyse ve departmentId yoksa ne yapılmalı?
+    // Ya da rollerden hiçbiri departmanla ilgili değilse departmentId null yapılmalı mı?
+    // Bu mantık updateUserDto içinde ve update metodunda ele alınmalı.
+    return this.userRepository.save(user);
   }
 
   async assignDepartmentToUser(userId: number, departmentId: number | null): Promise<User> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found.`);
+      throw new NotFoundException(`User with ID ${userId} not found`);
     }
-    // User entity'sinde departmentId: number | null | undefined olabilir.
-    // departmentId null ise, null olarak atanır. undefined ise tanımsız kalır.
-    // TypeORM genellikle null değerleri doğru yönetir.
-    user.departmentId = departmentId;
-    await this.userRepository.save(user);
-
-    // Save sonrası entity ilişkilerle birlikte gelmeyebilir, bu yüzden tekrar çekiyoruz.
-    const updatedUserWithRelations = await this.userRepository.findByIdWithRelations(userId, [
-      'department',
-    ]);
-    if (!updatedUserWithRelations) {
-      // Bu durum normalde oluşmamalı.
-      throw new NotFoundException(
-        `User with ID ${userId} could not be refetched after department assignment.`
-      );
+    if (departmentId !== null) {
+      // Departmanın varlığını kontrol et
+      try {
+        await this.departmentService.findById(departmentId);
+      } catch (error) {
+        if (error instanceof NotFoundException) {
+          throw new BadRequestException(`Department with ID ${departmentId} not found.`);
+        }
+        throw error;
+      }
+      user.departmentId = departmentId;
+    } else {
+      user.departmentId = null; // Departmandan çıkar
     }
-    return updatedUserWithRelations;
+    return this.userRepository.save(user);
   }
 
   async findEmployeeInDepartment(employeeId: number, departmentId: number): Promise<User | null> {
     const user = await this.userRepository.findByIdWithRelations(employeeId, ['department']);
     if (!user) return null;
-    if (user.departmentId === departmentId && user.roles.includes(UserRole.DEPARTMENT_EMPLOYEE)) {
+    if (user.departmentId === departmentId && user.roles.includes(UserRole.TEAM_MEMBER)) {
       return user;
     }
     return null;
+  }
+
+  // Yeni team management metodları
+  async updateUserActiveTeam(
+    userId: number,
+    teamId: number | null,
+    currentUser: JwtPayload
+  ): Promise<User> {
+    // Authorization: Only SYSTEM_ADMIN or DEPARTMENT_SUPERVISOR can update team assignments
+    if (
+      !currentUser.roles.includes(UserRole.SYSTEM_ADMIN) &&
+      !currentUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR)
+    ) {
+      throw new ForbiddenException(
+        'Only system administrators and department supervisors can update team assignments.'
+      );
+    }
+
+    // Find the user
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    // Store old team ID for history management
+    const oldTeamId = user.activeTeamId;
+
+    // If assigning to a new team
+    if (teamId !== null) {
+      // Verify team exists
+      const team = await this.teamRepository.findOne({
+        where: { id: teamId },
+        relations: ['department'],
+      });
+
+      if (!team) {
+        throw new NotFoundException(`Team with ID ${teamId} not found`);
+      }
+
+      // Department supervisor can only assign users to teams in their department
+      if (
+        currentUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR) &&
+        !currentUser.roles.includes(UserRole.SYSTEM_ADMIN)
+      ) {
+        if (!currentUser.departmentId || team.departmentId !== currentUser.departmentId) {
+          throw new ForbiddenException(
+            'Department supervisors can only assign users to teams in their own department.'
+          );
+        }
+      }
+
+      // Check if user's department matches team's department
+      if (user.departmentId !== team.departmentId) {
+        throw new BadRequestException('User must be from the same department as the team.');
+      }
+
+      // Check if user has appropriate role for team membership
+      if (
+        !user.roles.includes(UserRole.TEAM_MEMBER) &&
+        !user.roles.includes(UserRole.DEPARTMENT_SUPERVISOR)
+      ) {
+        throw new BadRequestException(
+          'User must have TEAM_MEMBER or DEPARTMENT_SUPERVISOR role to be assigned to a team.'
+        );
+      }
+    }
+
+    // Use queryRunner for transaction to ensure data consistency
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // End previous team membership if exists and different
+      if (oldTeamId && oldTeamId !== teamId) {
+        await queryRunner.manager.update(
+          TeamMembershipHistory,
+          {
+            userId,
+            teamId: oldTeamId,
+            leftAt: null,
+          },
+          { leftAt: new Date() }
+        );
+      }
+
+      // Create new team membership history if joining a team
+      if (teamId !== null && teamId !== oldTeamId) {
+        const membershipHistory = queryRunner.manager.create(TeamMembershipHistory, {
+          userId,
+          teamId,
+          joinedAt: new Date(),
+        });
+        await queryRunner.manager.save(membershipHistory);
+      }
+
+      // Update user's active team
+      user.activeTeamId = teamId;
+      const updatedUser = await queryRunner.manager.save(User, user);
+
+      // Commit transaction
+      await queryRunner.commitTransaction();
+
+      return updatedUser;
+    } catch (error) {
+      // Rollback transaction on error
+      await queryRunner.rollbackTransaction();
+      throw error as Error;
+    } finally {
+      // Release query runner
+      await queryRunner.release();
+    }
   }
 }

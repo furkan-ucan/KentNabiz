@@ -20,7 +20,7 @@ export class AddPostGISAndDepartments1680268900000 implements MigrationInterface
 
     // Belediye birimleri tablosunu oluştur
     await queryRunner.query(`
-      CREATE TABLE "departments" (
+      CREATE TABLE "public"."departments" (
         "id" SERIAL NOT NULL,
         "code" "public"."municipality_department_enum" NOT NULL,
         "name" character varying(100) NOT NULL,
@@ -36,12 +36,12 @@ export class AddPostGISAndDepartments1680268900000 implements MigrationInterface
 
     // Departman kodu için indeks oluştur
     await queryRunner.query(`
-      CREATE INDEX "IDX_departments_code" ON "departments" ("code")
+      CREATE INDEX "IDX_departments_code" ON "public"."departments" ("code")
     `);
 
     // Aktif departmanlar için indeks
     await queryRunner.query(`
-      CREATE INDEX "IDX_departments_active" ON "departments" ("is_active")
+      CREATE INDEX "IDX_departments_active" ON "public"."departments" ("is_active")
     `);
 
     // users tablosuna department_id için foreign key ekle
@@ -64,7 +64,7 @@ export class AddPostGISAndDepartments1680268900000 implements MigrationInterface
 
     await queryRunner.query(`DROP INDEX "IDX_departments_active"`);
     await queryRunner.query(`DROP INDEX "IDX_departments_code"`);
-    await queryRunner.query(`DROP TABLE "departments"`);
+    await queryRunner.query(`DROP TABLE "public"."departments"`);
     await queryRunner.query(`DROP TYPE "public"."municipality_department_enum"`);
     // PostGIS eklentilerini kaldırma işlemini production'da yapmamak daha güvenli
   }

@@ -18,6 +18,9 @@ import * as bcrypt from 'bcryptjs';
 import { UserRole } from '@KentNabiz/shared'; // Adjust path if necessary
 import { Department } from '../../reports/entities/department.entity';
 import { Report } from '../../reports/entities/report.entity';
+import { TeamMembershipHistory } from './team-membership-history.entity';
+import { Team } from '../../teams/entities/team.entity';
+import { Assignment } from '../../reports/entities/assignment.entity';
 
 @Entity('users')
 export class User {
@@ -64,7 +67,7 @@ export class User {
   @Column({ name: 'last_login_at', nullable: true, type: 'timestamp' })
   lastLoginAt?: Date;
 
-  // Link to department for DEPARTMENT_EMPLOYEE and DEPARTMENT_SUPERVISOR roles
+  // Link to department for TEAM_MEMBER and DEPARTMENT_SUPERVISOR roles
   @Column({ name: 'department_id', type: 'int', nullable: true })
   departmentId?: number | null;
 
@@ -72,13 +75,22 @@ export class User {
   @JoinColumn({ name: 'department_id' })
   department?: Department;
 
-  // Reports assigned to this user (if they are a DEPARTMENT_EMPLOYEE)
-  @OneToMany(() => Report, report => report.assignedEmployee)
-  assignedReports?: Report[];
-
   // Reports created by this user (if they are a CITIZEN)
   @OneToMany(() => Report, report => report.user)
   createdReports?: Report[];
+
+  @OneToMany(() => TeamMembershipHistory, tmh => tmh.user)
+  teamMembershipHistory!: TeamMembershipHistory[];
+
+  @Column({ name: 'active_team_id', type: 'int', nullable: true })
+  activeTeamId?: number | null;
+
+  @ManyToOne(() => Team, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'active_team_id' })
+  activeTeam?: Team;
+
+  @OneToMany(() => Assignment, assignment => assignment.assigneeUser)
+  assignmentsToUser!: Assignment[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

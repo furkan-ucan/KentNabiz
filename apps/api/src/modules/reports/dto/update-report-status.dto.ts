@@ -3,7 +3,7 @@ import { IsEnum, IsString, IsOptional, MaxLength, IsNotEmpty } from 'class-valid
 import { ReportStatus } from '@KentNabiz/shared';
 
 export class UpdateReportStatusDto {
-  @ApiProperty({ enum: ReportStatus, example: ReportStatus.UNDER_REVIEW })
+  @ApiProperty({ enum: ReportStatus, example: ReportStatus.IN_REVIEW })
   @IsEnum(ReportStatus)
   @IsNotEmpty()
   newStatus!: ReportStatus;

@@ -29,6 +29,7 @@
     "listEmittedFiles": "npx tsc -p apps/api/tsconfig.build.json --listEmittedFiles"
   },
   "dependencies": {
+    "@casl/ability": "^6.7.3",
     "@nestjs-modules/ioredis": "^2.0.2",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.1",

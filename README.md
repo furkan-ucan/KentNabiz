@@ -25,7 +25,12 @@ KentNabız, şehirde meydana gelen çeşitli altyapı sorunlarını (örneğin; 
   Raporunuzun durumu hakkında anlık bildirimler alarak, sürecin her adımını takip edebilirsiniz.
 
 - **Rol Tabanlı Yetkilendirme:**
-  Vatandaş, Moderatör ve Admin rollerine göre farklı yetkilendirme seviyeleri uygulanır.
+  Platformda dört temel kullanıcı rolü bulunmaktadır:
+
+  1.  `CITIZEN` (Vatandaş): Sorunları bildirebilir ve kendi bildirimlerini takip edebilir.
+  2.  `DEPARTMENT_EMPLOYEE` (Departman Çalışanı): Atandığı departmanla ilgili sorunları görüntüleyebilir, güncelleyebilir ve çözüm sürecinde rol alabilir.
+  3.  `DEPARTMENT_SUPERVISOR` (Departman Sorumlusu): Departmanındaki tüm sorunları yönetebilir, çalışanlara görev atayabilir ve raporları başka departmanlara yönlendirebilir.
+  4.  `SYSTEM_ADMIN` (Sistem Yöneticisi): Tüm sistem üzerinde tam yetkiye sahiptir; kullanıcıları, departmanları yönetebilir ve tüm raporlara erişebilir.
 
 - **Sorun Analizi ve Raporlama:**
   Toplanan veriler, detaylı istatistikler ve raporlar halinde sunularak, şehir yönetimlerinin stratejik kararlar almasına yardımcı olur.
@@ -249,11 +254,3 @@ Bu proje MIT lisansı altında lisanslanmıştır. Daha fazla bilgi için `LICEN
 ---
 
 🌟 KentNabız ile şehrinizi iyileştirmeye katkıda bulunun! 🌟
-
-```
-
-```
-
-```
-
-```

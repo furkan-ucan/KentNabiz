@@ -8,6 +8,9 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { MediaModule } from './modules/media/media.module';
+import { TeamsModule } from './modules/teams/teams.module';
+import { SpecializationsModule } from './modules/specializations/specializations.module';
+import { AbilityModule } from './core/authorization/ability.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { getTypeOrmConfig } from './config/typeorm.config'; // yapılandırma fonksiyonu
@@ -35,6 +38,9 @@ import { getTypeOrmConfig } from './config/typeorm.config'; // yapılandırma fo
     UsersModule,
     ReportsModule,
     MediaModule,
+    TeamsModule,
+    SpecializationsModule,
+    AbilityModule,
   ],
   controllers: [AppController],
   providers: [AppService],

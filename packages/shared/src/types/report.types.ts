@@ -3,15 +3,12 @@ import { Point } from 'geojson';
 
 // UPDATED Report Statuses (in English)
 export enum ReportStatus {
-  SUBMITTED = 'SUBMITTED', // Citizen created, assigned to initial department
-  UNDER_REVIEW = 'UNDER_REVIEW', // Department Supervisor or Employee is reviewing
-  FORWARDED = 'FORWARDED', // Forwarded from one department to another (was DEPARTMENT_CHANGED)
-  ASSIGNED_TO_EMPLOYEE = 'ASSIGNED_TO_EMPLOYEE', // Assigned to an employee by Department Supervisor
-  FIELD_WORK_IN_PROGRESS = 'FIELD_WORK_IN_PROGRESS', // Employee or Supervisor started fieldwork (a form of old IN_PROGRESS)
-  PENDING_APPROVAL = 'PENDING_APPROVAL', // Employee completed, awaiting Supervisor's approval
-  RESOLVED = 'RESOLVED', // Department Supervisor approved (was RESOLVED)
-  REJECTED = 'REJECTED', // Department Supervisor/Admin rejected (was REJECTED)
-  AWAITING_INFORMATION = 'AWAITING_INFORMATION', // Awaiting additional info from citizen or other unit
+  OPEN = 'OPEN',
+  IN_REVIEW = 'IN_REVIEW',
+  IN_PROGRESS = 'IN_PROGRESS',
+  DONE = 'DONE',
+  REJECTED = 'REJECTED',
+  CANCELLED = 'CANCELLED',
 }
 
 /** Defines the possible types/categories of a report, based on API usage. */

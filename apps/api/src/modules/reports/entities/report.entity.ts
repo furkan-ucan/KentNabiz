@@ -18,6 +18,9 @@ import { Department } from './department.entity';
 import { ReportCategory } from './report-category.entity';
 // CORRECTED IMPORT PATH: Ensure this path is valid for your monorepo setup.
 import { ReportStatus, ReportType } from '@KentNabiz/shared'; // Adjust path if necessary
+import { SubStatus } from '../constants/report.constants';
+import { Assignment } from './assignment.entity';
+import { ReportStatusHistory } from './report-status-history.entity';
 
 @Entity('reports')
 export class Report {
@@ -31,7 +34,7 @@ export class Report {
   description!: string;
 
   @Column({
-    type: 'geography',
+    type: 'geometry',
     spatialFeatureType: 'Point',
     srid: 4326,
   })
@@ -59,7 +62,7 @@ export class Report {
   @Column({
     type: 'enum',
     enum: ReportStatus, // Updated ReportStatus enum from packages/shared
-    default: ReportStatus.SUBMITTED,
+    default: ReportStatus.OPEN,
   })
   status!: ReportStatus;
 
@@ -69,13 +72,6 @@ export class Report {
   @ManyToOne(() => Department, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'current_department_id' })
   currentDepartment!: Department;
-
-  @Column({ name: 'assigned_employee_id', type: 'int', nullable: true })
-  assignedEmployeeId?: number;
-
-  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'assigned_employee_id' })
-  assignedEmployee?: User; // This User should have DEPARTMENT_EMPLOYEE role
 
   @Column({ name: 'resolution_notes', type: 'text', nullable: true })
   resolutionNotes?: string;
@@ -117,4 +113,16 @@ export class Report {
 
   @Column({ name: 'resolved_at', type: 'timestamp', nullable: true })
   resolvedAt?: Date;
+
+  @Column({ name: 'sub_status', type: 'varchar', length: 40, nullable: true, default: null })
+  subStatus!: SubStatus | null;
+
+  @Column({ type: 'int', default: 0, name: 'support_count' })
+  supportCount!: number;
+
+  @OneToMany(() => Assignment, assignment => assignment.report)
+  assignments!: Assignment[];
+
+  @OneToMany(() => ReportStatusHistory, statusHistory => statusHistory.report)
+  statusHistory!: ReportStatusHistory[];
 }

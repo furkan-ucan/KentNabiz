@@ -34,6 +34,8 @@ import { RolesGuard } from '../../auth/guards/roles.guard';
 import { RequestWithUser } from '../../auth/interfaces/jwt-payload.interface';
 import { Report } from '../entities/report.entity';
 import { DepartmentHistoryResponseDto } from '../dto/department-history.response.dto';
+import { CheckPolicies, PoliciesGuard } from '../../../core/guards/policies.guard';
+import { AppAbility, Action } from '../../../core/authorization/ability.factory';
 
 @ApiTags('reports')
 @Controller('reports')
@@ -47,7 +49,7 @@ export class ReportsController {
     summary: 'Get all reports (role-based)',
     description: 'Returns paginated list of reports based on user role and filters.',
   })
-  @Roles(UserRole.SYSTEM_ADMIN, UserRole.DEPARTMENT_SUPERVISOR, UserRole.DEPARTMENT_EMPLOYEE)
+  @Roles(UserRole.SYSTEM_ADMIN, UserRole.DEPARTMENT_SUPERVISOR, UserRole.TEAM_MEMBER)
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'reportType', required: false, enum: ReportType }) // type -> reportType
@@ -78,7 +80,7 @@ export class ReportsController {
   @Roles(
     UserRole.SYSTEM_ADMIN,
     UserRole.DEPARTMENT_SUPERVISOR,
-    UserRole.DEPARTMENT_EMPLOYEE,
+    UserRole.TEAM_MEMBER,
     UserRole.CITIZEN
   )
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -116,7 +118,7 @@ export class ReportsController {
   @ApiOperation({ summary: "Get current user's reports" })
   @Roles(
     UserRole.CITIZEN,
-    UserRole.DEPARTMENT_EMPLOYEE,
+    UserRole.TEAM_MEMBER,
     UserRole.DEPARTMENT_SUPERVISOR,
     UserRole.SYSTEM_ADMIN
   )
@@ -145,7 +147,7 @@ export class ReportsController {
   @Roles(
     UserRole.SYSTEM_ADMIN,
     UserRole.DEPARTMENT_SUPERVISOR,
-    UserRole.DEPARTMENT_EMPLOYEE,
+    UserRole.TEAM_MEMBER,
     UserRole.CITIZEN
   )
   @ApiParam({ name: 'id', description: 'Report ID', type: Number })
@@ -188,7 +190,7 @@ export class ReportsController {
 
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update report status (role-based)' })
-  @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.DEPARTMENT_EMPLOYEE, UserRole.SYSTEM_ADMIN)
+  @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.TEAM_MEMBER, UserRole.SYSTEM_ADMIN)
   @ApiParam({ name: 'id', description: 'Report ID', type: Number })
   @ApiResponse({ status: 200, description: 'Report status updated successfully', type: Report })
   async updateStatus(
@@ -196,10 +198,7 @@ export class ReportsController {
     @Body() updateStatusDto: UpdateReportStatusDto,
     @Req() req: RequestWithUser
   ): Promise<Report> {
-    return this.reportsService.updateStatus(id, updateStatusDto.newStatus, req.user, {
-      rejectionReason: updateStatusDto.rejectionReason,
-      resolutionNotes: updateStatusDto.resolutionNotes,
-    });
+    return this.reportsService.updateStatus(id, updateStatusDto, req.user);
   }
 
   @Patch(':id/assign/:employeeId')
@@ -232,23 +231,45 @@ export class ReportsController {
   @ApiOperation({ summary: 'Forward a report to another department (role-based)' })
   @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
   @ApiParam({ name: 'id', description: 'Report ID', type: Number })
-  @ApiResponse({ status: 200, description: 'Report forwarded successfully', type: Report })
+  @ApiResponse({
+    status: 200,
+    description: 'Report forwarded successfully',
+    schema: {
+      type: 'object', // Anahtar şema bir nesne olmalı
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: {
+          type: 'string',
+          example: 'Report ID 1 successfully forwarded to department PARKS.',
+        },
+        reportId: { type: 'number', example: 1 },
+        newDepartmentCode: {
+          type: 'string',
+          enum: Object.values(MunicipalityDepartment), // Enum değerlerini kullan
+          example: MunicipalityDepartment.PARKS,
+        },
+      },
+      required: ['success', 'message', 'reportId', 'newDepartmentCode'], // Gerekli alanlar
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request (e.g., already in target department, reason missing)',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized (e.g., user not logged in)' })
+  @ApiResponse({ status: 403, description: 'Forbidden (e.g., user does not have permission)' })
+  @ApiResponse({ status: 404, description: 'Report or target department not found' })
   async forwardReport(
     @Param('id', ParseIntPipe) id: number,
     @Body() forwardReportDto: ForwardReportDto,
     @Req() req: RequestWithUser
   ): Promise<Report> {
-    return this.reportsService.changeDepartment(
-      id,
-      forwardReportDto.newDepartment,
-      forwardReportDto.reason,
-      req.user
-    );
+    return this.reportsService.forwardReport(id, forwardReportDto, req.user);
   }
 
   @Get(':id/history')
   @ApiOperation({ summary: 'Get department change history for a report (role-based)' })
-  @Roles(UserRole.SYSTEM_ADMIN, UserRole.DEPARTMENT_SUPERVISOR, UserRole.DEPARTMENT_EMPLOYEE)
+  @Roles(UserRole.SYSTEM_ADMIN, UserRole.DEPARTMENT_SUPERVISOR, UserRole.TEAM_MEMBER)
   @ApiParam({ name: 'id', description: 'Report ID', type: Number })
   @ApiResponse({
     status: 200,
@@ -268,5 +289,113 @@ export class ReportsController {
   @ApiResponse({ status: 200, description: 'Suggested department code' })
   suggestDepartment(@Param('type') type: ReportType): Promise<MunicipalityDepartment> {
     return this.reportsService.suggestDepartmentForReportType(type);
+  }
+
+  // Yeni team assignment endpoint'leri
+  @Patch(':id/assign-team/:teamId')
+  @ApiOperation({ summary: 'Assign a report to a team (role-based)' })
+  @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
+  @ApiParam({ name: 'id', description: 'Report ID', type: Number })
+  @ApiParam({ name: 'teamId', description: 'Team ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Report assigned to team successfully', type: Report })
+  async assignReportToTeam(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('teamId', ParseIntPipe) teamId: number,
+    @Req() req: RequestWithUser
+  ): Promise<Report> {
+    return this.reportsService.assignReportToTeam(id, teamId, req.user);
+  }
+
+  @Patch(':id/assign-user/:userId')
+  @ApiOperation({ summary: 'Assign report to a specific user' })
+  @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
+  @ApiParam({ name: 'id', description: 'Report ID', type: Number })
+  @ApiParam({ name: 'userId', description: 'User ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Report assigned to user successfully', type: Report })
+  async assignReportToUser(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('userId', ParseIntPipe) userId: number,
+    @Req() req: RequestWithUser
+  ): Promise<Report> {
+    return this.reportsService.assignReportToUser(id, userId, req.user);
+  }
+
+  // ========== POC ENDPOINTS FOR ABAC TESTING ==========
+
+  @Patch(':id/cancel')
+  @ApiOperation({ summary: 'Cancel a report (CITIZEN - ABAC POC)' })
+  @UseGuards(JwtAuthGuard, PoliciesGuard)
+  @CheckPolicies((ability: AppAbility, report: Report | typeof Report) => {
+    // Gerçek yetki kontrolü: sadece kendi raporunu ve açık durumda olanı iptal edebilir
+    return ability.can(Action.Cancel, report as Report);
+  })
+  @ApiParam({ name: 'id', description: 'Report ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Report cancelled successfully', type: Report })
+  cancelReport(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: RequestWithUser
+  ): { message: string; reportId: number } {
+    // POC için geçici response - gerçek implementasyonda service method kullanılacak
+    return {
+      message: `Report ${id} cancellation requested by user ${req.user.sub} - ABAC POC`,
+      reportId: id,
+    };
+  }
+
+  @Patch(':id/complete-work')
+  @ApiOperation({ summary: 'Complete work on report (TEAM_MEMBER - ABAC POC)' })
+  @UseGuards(JwtAuthGuard, PoliciesGuard)
+  @CheckPolicies((ability: AppAbility, report: Report | typeof Report) => {
+    // Gerçek yetki kontrolü: sadece atanmış ekip üyeleri işi tamamlayabilir
+    return ability.can(Action.CompleteWork, report as Report);
+  })
+  @ApiParam({ name: 'id', description: 'Report ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Work completed successfully', type: Report })
+  completeWork(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: RequestWithUser
+  ): { message: string; reportId: number } {
+    // POC için geçici response - gerçek implementasyonda service method kullanılacak
+    return {
+      message: `Work completed on report ${id} by user ${req.user.sub} - ABAC POC`,
+      reportId: id,
+    };
+  }
+
+  @Patch(':id/approve')
+  @ApiOperation({ summary: 'Approve completed report (DEPARTMENT_SUPERVISOR - ABAC POC)' })
+  @UseGuards(JwtAuthGuard, PoliciesGuard)
+  @CheckPolicies((ability: AppAbility, report: Report | typeof Report) => {
+    // Gerçek yetki kontrolü: sadece departman süpervizörü onay verebilir
+    return ability.can(Action.Approve, report as Report);
+  })
+  @ApiParam({ name: 'id', description: 'Report ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Report approved successfully', type: Report })
+  approveReport(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: RequestWithUser
+  ): { message: string; reportId: number } {
+    // POC için geçici response - gerçek implementasyonda service method kullanılacak
+    return {
+      message: `Report ${id} approved by supervisor ${req.user.sub} - ABAC POC`,
+      reportId: id,
+    };
+  }
+
+  @Post(':id/support')
+  @ApiOperation({ summary: 'Support a report (CITIZEN - ABAC POC)' })
+  @UseGuards(JwtAuthGuard, PoliciesGuard)
+  @CheckPolicies((ability: AppAbility, report: Report | typeof Report) => {
+    // Gerçek yetki kontrolü: vatandaş başkalarının raporlarını destekleyebilir
+    return ability.can(Action.Support, report as Report);
+  })
+  @ApiParam({ name: 'id', description: 'Report ID', type: Number })
+  @ApiResponse({ status: 201, description: 'Report supported successfully' })
+  async supportReport(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: RequestWithUser
+  ): Promise<Report> {
+    // Gerçek service metodunu çağır
+    return this.reportsService.supportReport(id, req.user);
   }
 }

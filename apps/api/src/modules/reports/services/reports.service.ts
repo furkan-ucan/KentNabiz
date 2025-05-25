@@ -5,21 +5,43 @@ import {
   UnauthorizedException,
   Inject,
   forwardRef,
+  ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { ReportRepository } from '../repositories/report.repository';
 import { CreateReportDto } from '../dto/create-report.dto';
 import { UpdateReportDto } from '../dto/update-report.dto';
+import { UpdateReportStatusDto } from '../dto/update-report-status.dto';
+import { ForwardReportDto } from '../dto/forward-report.dto';
 import { Report } from '../entities/report.entity';
+import { Assignment } from '../entities/assignment.entity';
+import { ReportStatusHistory } from '../entities/report-status-history.entity';
+import { DepartmentHistory } from '../entities/department-history.entity';
+import { Team } from '../../teams/entities/team.entity';
 import { LocationService } from './location.service';
 import { DepartmentService } from './department.service';
-import { ReportStatus, ReportType, UserRole, MunicipalityDepartment } from '@KentNabiz/shared';
+import {
+  ReportStatus,
+  ReportType,
+  UserRole,
+  MunicipalityDepartment,
+  TeamStatus,
+  AssignmentStatus,
+  AssigneeType,
+} from '@KentNabiz/shared';
 import { ISpatialQueryResult } from '../interfaces/report.interface';
 import { JwtPayload as AuthUser } from '../../auth/interfaces/jwt-payload.interface';
 import { UsersService } from '../../users/services/users.service';
-import { ForwardReportDto } from '../dto/forward-report.dto';
 import { DepartmentHistoryResponseDto } from '../dto/department-history.response.dto';
 import { ReportMedia } from '../entities/report-media.entity';
+import { ReportSupport } from '../entities/report-support.entity';
 import { CreateReportData } from '../repositories/report.repository';
+import { canTransition } from '../utils/report-status.utils';
+import { SUB_STATUS } from '../constants';
+import { AbilityFactory, Action } from '../../../core/authorization/ability.factory';
+import { User } from '../../users/entities/user.entity';
 
 interface IReportFindAllOptions {
   limit?: number;
@@ -35,140 +57,100 @@ export class ReportsService {
   constructor(
     private readonly reportRepository: ReportRepository,
     private readonly locationService: LocationService,
-    @Inject(forwardRef(() => DepartmentService))
     private readonly departmentService: DepartmentService,
-    private readonly usersService: UsersService
+    @Inject(forwardRef(() => UsersService))
+    private readonly usersService: UsersService,
+    @InjectRepository(Assignment)
+    private readonly assignmentRepository: Repository<Assignment>,
+    @InjectRepository(ReportStatusHistory)
+    private readonly reportStatusHistoryRepository: Repository<ReportStatusHistory>,
+    @InjectRepository(DepartmentHistory)
+    private readonly departmentHistoryRepository: Repository<DepartmentHistory>,
+    @InjectRepository(Team)
+    private readonly teamRepository: Repository<Team>,
+    @InjectRepository(ReportSupport)
+    private readonly reportSupportRepository: Repository<ReportSupport>,
+    private readonly dataSource: DataSource,
+    private readonly abilityFactory: AbilityFactory
   ) {}
-
-  private isTransitionAllowed(currentStatus: ReportStatus, newStatus: ReportStatus): boolean {
-    const allowedTransitions: Record<ReportStatus, ReportStatus[]> = {
-      [ReportStatus.SUBMITTED]: [
-        ReportStatus.UNDER_REVIEW,
-        ReportStatus.REJECTED,
-        ReportStatus.AWAITING_INFORMATION,
-        ReportStatus.FORWARDED,
-      ],
-      [ReportStatus.UNDER_REVIEW]: [
-        ReportStatus.FORWARDED,
-        ReportStatus.ASSIGNED_TO_EMPLOYEE,
-        ReportStatus.FIELD_WORK_IN_PROGRESS,
-        ReportStatus.RESOLVED,
-        ReportStatus.REJECTED,
-        ReportStatus.AWAITING_INFORMATION,
-      ],
-      [ReportStatus.FORWARDED]: [
-        ReportStatus.UNDER_REVIEW,
-        ReportStatus.ASSIGNED_TO_EMPLOYEE,
-        ReportStatus.REJECTED,
-      ],
-      [ReportStatus.ASSIGNED_TO_EMPLOYEE]: [
-        ReportStatus.FIELD_WORK_IN_PROGRESS,
-        ReportStatus.PENDING_APPROVAL,
-        ReportStatus.AWAITING_INFORMATION,
-        ReportStatus.UNDER_REVIEW,
-      ],
-      [ReportStatus.FIELD_WORK_IN_PROGRESS]: [
-        ReportStatus.PENDING_APPROVAL,
-        ReportStatus.RESOLVED,
-        ReportStatus.AWAITING_INFORMATION,
-      ],
-      [ReportStatus.PENDING_APPROVAL]: [
-        ReportStatus.RESOLVED,
-        ReportStatus.REJECTED,
-        ReportStatus.FIELD_WORK_IN_PROGRESS,
-        ReportStatus.UNDER_REVIEW,
-      ],
-      [ReportStatus.AWAITING_INFORMATION]: [
-        ReportStatus.UNDER_REVIEW,
-        ReportStatus.FIELD_WORK_IN_PROGRESS,
-      ],
-      [ReportStatus.REJECTED]: [],
-      [ReportStatus.RESOLVED]: [],
-    };
-    return allowedTransitions[currentStatus]?.includes(newStatus) ?? false;
-  }
 
   private canUserPerformActionOnReport(
     report: Report,
     authUser: AuthUser,
     action: 'view' | 'update_basic' | 'delete' | 'change_status' | 'assign' | 'forward'
   ): boolean {
-    if (authUser.roles.includes(UserRole.SYSTEM_ADMIN)) return true;
+    console.log('[canUserPerformActionOnReport] AuthUser:', JSON.stringify(authUser));
+    console.log('[canUserPerformActionOnReport] Report:', JSON.stringify(report));
+    console.log('[canUserPerformActionOnReport] Action:', action);
+
+    if (authUser.roles.includes(UserRole.SYSTEM_ADMIN)) {
+      console.log('[canUserPerformActionOnReport] SYSTEM_ADMIN check: true');
+      return true;
+    }
 
     if (authUser.roles.includes(UserRole.CITIZEN)) {
       if (report.userId !== authUser.sub) return false;
       if (action === 'view') return true;
       if (
         action === 'update_basic' &&
-        (report.status === ReportStatus.SUBMITTED ||
-          report.status === ReportStatus.AWAITING_INFORMATION)
+        (report.status === ReportStatus.OPEN || report.status === ReportStatus.IN_REVIEW)
       )
         return true;
-      if (action === 'delete' && report.status === ReportStatus.SUBMITTED) return true;
+      if (action === 'delete' && report.status === ReportStatus.OPEN) return true;
       return false;
     }
 
+    // AuthUser'ın departmentId'si var mı? (Bu kontrolü ekleyelim)
+    if (
+      action !== 'view' &&
+      (authUser.departmentId === undefined || authUser.departmentId === null)
+    ) {
+      // Sadece 'view' dışındaki aksiyonlar için departman ID'si kesinlikle gerekli.
+      // Admin zaten yukarıda geçti. Diğer roller (Supervisor, Employee) için departman ID'si olmalı.
+      // Vatandaşın departman ID'si olmayabilir, o kendi raporlarını userId ile kontrol ediyor.
+      if (
+        authUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR) ||
+        authUser.roles.includes(UserRole.TEAM_MEMBER)
+      ) {
+        console.log(
+          '[canUserPerformActionOnReport] Department role without departmentId, action:',
+          action
+        );
+        return false;
+      }
+    }
+
     if (authUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR)) {
-      if (report.currentDepartmentId !== authUser.departmentId) return false;
+      console.log('[canUserPerformActionOnReport] DEPARTMENT_SUPERVISOR check');
+      console.log(
+        `[canUserPerformActionOnReport] Report Dept ID: ${report.currentDepartmentId}, User Dept ID: ${authUser.departmentId}`
+      );
+      if (report.currentDepartmentId !== authUser.departmentId) {
+        console.log('[canUserPerformActionOnReport] Supervisor Dept Mismatch: true');
+        return false;
+      }
+      console.log('[canUserPerformActionOnReport] Supervisor Dept Mismatch: false');
       if (
         action === 'view' ||
         action === 'update_basic' ||
         action === 'change_status' ||
         action === 'assign' ||
         action === 'forward'
-      )
+      ) {
+        console.log(`[canUserPerformActionOnReport] Supervisor Action Allowed: ${action}`);
         return true;
+      }
+      console.log(`[canUserPerformActionOnReport] Supervisor Action NOT Allowed: ${action}`);
       return false;
     }
 
-    if (authUser.roles.includes(UserRole.DEPARTMENT_EMPLOYEE)) {
-      if (
-        report.currentDepartmentId !== authUser.departmentId ||
-        report.assignedEmployeeId !== authUser.sub
-      )
-        return false;
+    if (authUser.roles.includes(UserRole.TEAM_MEMBER)) {
+      if (report.currentDepartmentId !== authUser.departmentId) return false;
       if (action === 'view') return true;
       if (action === 'update_basic' || action === 'change_status') return true;
       return false;
     }
-    return false;
-  }
-
-  private canRoleTransitionStatus(
-    reportStatus: ReportStatus,
-    newStatus: ReportStatus,
-    authUserRoles: UserRole[]
-  ): boolean {
-    if (authUserRoles.includes(UserRole.SYSTEM_ADMIN)) return true;
-
-    if (authUserRoles.includes(UserRole.DEPARTMENT_SUPERVISOR)) {
-      const supervisorAllowed: ReportStatus[] = [
-        ReportStatus.UNDER_REVIEW,
-        ReportStatus.ASSIGNED_TO_EMPLOYEE,
-        ReportStatus.FIELD_WORK_IN_PROGRESS,
-        ReportStatus.PENDING_APPROVAL,
-        ReportStatus.RESOLVED,
-        ReportStatus.REJECTED,
-        ReportStatus.FORWARDED,
-        ReportStatus.AWAITING_INFORMATION,
-      ];
-      return supervisorAllowed.includes(newStatus);
-    }
-    if (authUserRoles.includes(UserRole.DEPARTMENT_EMPLOYEE)) {
-      const employeeAllowed: ReportStatus[] = [
-        ReportStatus.FIELD_WORK_IN_PROGRESS,
-        ReportStatus.PENDING_APPROVAL,
-        ReportStatus.AWAITING_INFORMATION,
-      ];
-      if (
-        newStatus === ReportStatus.SUBMITTED ||
-        newStatus === ReportStatus.RESOLVED ||
-        newStatus === ReportStatus.REJECTED ||
-        newStatus === ReportStatus.FORWARDED
-      )
-        return false;
-      return employeeAllowed.includes(newStatus);
-    }
+    console.log('[canUserPerformActionOnReport] No matching role or condition, returning false');
     return false;
   }
 
@@ -179,7 +161,7 @@ export class ReportsService {
       queryOptions.userId = authUser.sub;
     } else if (
       authUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR) ||
-      authUser.roles.includes(UserRole.DEPARTMENT_EMPLOYEE)
+      authUser.roles.includes(UserRole.TEAM_MEMBER)
     ) {
       if (authUser.departmentId) {
         // Eğer kullanıcı kendi departmanına ait raporları istiyorsa ve özellikle bir departman filtresi belirtmemişse
@@ -218,11 +200,14 @@ export class ReportsService {
   }
 
   async findOne(id: number, authUser: AuthUser): Promise<Report> {
+    console.log('[findOne] AuthUser:', JSON.stringify(authUser));
     const report = await this.reportRepository.findById(id);
+    console.log('[findOne] Report fetched:', JSON.stringify(report));
     if (!report) {
       throw new NotFoundException(`Report with ID ${id} not found`);
     }
     if (!this.canUserPerformActionOnReport(report, authUser, 'view')) {
+      console.error('[findOne] Permission denied by canUserPerformActionOnReport for view action');
       throw new UnauthorizedException('You do not have permission to view this report.');
     }
     return report;
@@ -250,22 +235,57 @@ export class ReportsService {
       targetDepartmentId = generalDepartment.id;
     }
 
-    const dataForRepoCreate: CreateReportData = {
-      title: reportData.title,
-      description: reportData.description,
-      location: point,
-      address: reportData.address,
-      reportType: reportType,
-      status: ReportStatus.SUBMITTED,
-      categoryId: categoryId,
-      currentDepartmentId: targetDepartmentId,
-      reportMedias: reportMedias
-        ? reportMedias.map(m => ({ url: m.url, type: m.type }))
-        : undefined,
-    };
+    // Use transaction for consistency
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    const createdReport = await this.reportRepository.create(dataForRepoCreate, userId);
-    return createdReport;
+    try {
+      const dataForRepoCreate: CreateReportData = {
+        title: reportData.title,
+        description: reportData.description,
+        location: point,
+        address: reportData.address,
+        reportType: reportType,
+        status: ReportStatus.OPEN,
+        categoryId: categoryId,
+        currentDepartmentId: targetDepartmentId,
+        reportMedias: reportMedias
+          ? reportMedias.map(m => ({ url: m.url, type: m.type }))
+          : undefined,
+      };
+
+      const createdReport = await this.reportRepository.create(dataForRepoCreate, userId);
+
+      // Set initial subStatus after creation
+      createdReport.subStatus = SUB_STATUS.NONE;
+      await queryRunner.manager.save(Report, createdReport);
+
+      // Create initial ReportStatusHistory record
+      const statusHistory = queryRunner.manager.create(ReportStatusHistory, {
+        reportId: createdReport.id,
+        previousStatus: null,
+        newStatus: ReportStatus.OPEN,
+        previousSubStatus: null,
+        newSubStatus: SUB_STATUS.NONE,
+        changedByUserId: authUser.sub,
+        changedAt: new Date(),
+        notes: 'Report created',
+      });
+      await queryRunner.manager.save(statusHistory);
+
+      // Commit transaction
+      await queryRunner.commitTransaction();
+
+      return createdReport;
+    } catch (error) {
+      // Rollback transaction on error
+      await queryRunner.rollbackTransaction();
+      throw error as Error;
+    } finally {
+      // Release query runner
+      await queryRunner.release();
+    }
   }
 
   async update(id: number, updateReportDto: UpdateReportDto, authUser: AuthUser): Promise<Report> {
@@ -277,8 +297,8 @@ export class ReportsService {
 
     if (
       authUser.roles.includes(UserRole.CITIZEN) &&
-      report.status !== ReportStatus.SUBMITTED &&
-      report.status !== ReportStatus.AWAITING_INFORMATION
+      report.status !== ReportStatus.OPEN &&
+      report.status !== ReportStatus.IN_REVIEW
     ) {
       throw new BadRequestException(
         `Report in status ${report.status} cannot be updated by citizen.`
@@ -320,48 +340,195 @@ export class ReportsService {
   }
 
   async updateStatus(
-    id: number,
-    newStatus: ReportStatus,
-    authUser: AuthUser,
-    details?: { rejectionReason?: string; resolutionNotes?: string }
+    reportId: number,
+    dto: UpdateReportStatusDto,
+    authUser: AuthUser
   ): Promise<Report> {
-    const report = await this.findOne(id, authUser);
+    // İlk olarak raporu çek ve ABAC yetki kontrolü yap
+    const report = await this.findOneForAuthCheck(reportId);
 
-    if (!this.canUserPerformActionOnReport(report, authUser, 'change_status')) {
-      throw new UnauthorizedException(
-        'You do not have permission to change the status of this report.'
-      );
-    }
-    if (!this.canRoleTransitionStatus(report.status, newStatus, authUser.roles)) {
-      throw new BadRequestException(
-        `User role ${authUser.roles.join(', ')} is not allowed to transition to ${newStatus}.`
-      );
-    }
-    if (!this.isTransitionAllowed(report.status, newStatus)) {
-      throw new BadRequestException(
-        `Cannot transition report from ${report.status} to ${newStatus}.`
-      );
-    }
+    // AuthUser'dan User objesine dönüştür (sadece yetki kontrolü için gerekli alanlar)
+    const userForAbility: Partial<User> = {
+      id: authUser.sub,
+      roles: authUser.roles,
+      departmentId: authUser.departmentId,
+      // activeTeamId: undefined, // JwtPayload'da henüz activeTeamId yok
+    };
 
-    const updatePayload: Partial<Report> = { status: newStatus };
+    const ability = this.abilityFactory.defineAbility(userForAbility as User);
 
-    if (newStatus === ReportStatus.RESOLVED) {
-      updatePayload.closedByUserId = authUser.sub;
-      updatePayload.resolvedAt = new Date();
-      if (details?.resolutionNotes) {
-        updatePayload.resolutionNotes = details.resolutionNotes;
+    // Status'a göre farklı action'lar kontrol et
+    if (dto.newStatus === ReportStatus.CANCELLED) {
+      if (!ability.can(Action.Cancel, report)) {
+        throw new ForbiddenException('You do not have permission to cancel this report.');
+      }
+    } else if (
+      dto.newStatus === ReportStatus.DONE &&
+      authUser.roles.includes(UserRole.TEAM_MEMBER) &&
+      !authUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR)
+    ) {
+      if (!ability.can(Action.CompleteWork, report)) {
+        throw new ForbiddenException('You do not have permission to complete work on this report.');
+      }
+    } else if (
+      dto.newStatus === ReportStatus.DONE &&
+      authUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR) &&
+      report.subStatus === SUB_STATUS.PENDING_APPROVAL
+    ) {
+      if (!ability.can(Action.Approve, report)) {
+        throw new ForbiddenException('You do not have permission to approve this report.');
+      }
+    } else if (dto.newStatus === ReportStatus.REJECTED) {
+      if (!ability.can(Action.Reject, report)) {
+        throw new ForbiddenException('You do not have permission to reject this report.');
+      }
+    } else {
+      // Genel durum güncelleme yetkisi kontrolü
+      if (!ability.can(Action.Update, report)) {
+        throw new ForbiddenException('You do not have permission to update this report.');
       }
     }
-    if (newStatus === ReportStatus.REJECTED) {
-      if (!details?.rejectionReason) {
-        throw new BadRequestException('Rejection reason is required when rejecting a report.');
-      }
-      updatePayload.rejectionReason = details.rejectionReason;
-      updatePayload.closedByUserId = authUser.sub;
-    }
 
-    await this.reportRepository.update(id, updatePayload);
-    return this.findOne(id, authUser);
+    // Use transaction for data consistency
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Find report with pessimistic write lock
+      const lockedReport = await queryRunner.manager.findOne(Report, {
+        where: { id: reportId },
+        relations: ['currentDepartment'],
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!lockedReport) {
+        throw new NotFoundException(`Report with ID ${reportId} not found`);
+      }
+
+      // Authorization check (eski yöntem - artık ABAC kullanıyoruz ama fallback olarak kalsın)
+      if (!this.canUserPerformActionOnReport(lockedReport, authUser, 'change_status')) {
+        throw new UnauthorizedException('You do not have permission to update this report status.');
+      }
+
+      const nextStatus = dto.newStatus;
+
+      // Check if transition is allowed using central canTransition function
+      if (!canTransition(authUser.roles, lockedReport.status, nextStatus)) {
+        throw new ForbiddenException(
+          `Status transition from ${lockedReport.status} to ${nextStatus} is not allowed for your role.`
+        );
+      }
+
+      // Store previous values
+      const previousStatus = lockedReport.status;
+      const previousSubStatus = lockedReport.subStatus;
+
+      // Handle special status transition logic with subStatus management
+
+      // TEAM_MEMBER completing work (IN_PROGRESS -> DONE requires approval)
+      if (
+        authUser.roles.includes(UserRole.TEAM_MEMBER) &&
+        !authUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR) &&
+        lockedReport.status === ReportStatus.IN_PROGRESS &&
+        nextStatus === ReportStatus.DONE
+      ) {
+        // Keep status as IN_PROGRESS, set subStatus to PENDING_APPROVAL
+        lockedReport.status = ReportStatus.IN_PROGRESS;
+        lockedReport.subStatus = SUB_STATUS.PENDING_APPROVAL;
+
+        if (dto.resolutionNotes) {
+          lockedReport.resolutionNotes = dto.resolutionNotes;
+        }
+      }
+
+      // DEPARTMENT_SUPERVISOR approving/rejecting work
+      else if (
+        authUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR) &&
+        lockedReport.status === ReportStatus.IN_PROGRESS &&
+        lockedReport.subStatus === SUB_STATUS.PENDING_APPROVAL &&
+        (nextStatus === ReportStatus.DONE || nextStatus === ReportStatus.REJECTED)
+      ) {
+        lockedReport.status = nextStatus;
+        lockedReport.subStatus = SUB_STATUS.NONE;
+
+        if (nextStatus === ReportStatus.DONE) {
+          lockedReport.resolvedAt = new Date();
+          lockedReport.closedByUserId = authUser.sub;
+          if (dto.resolutionNotes) {
+            lockedReport.resolutionNotes = dto.resolutionNotes;
+          }
+        } else if (nextStatus === ReportStatus.REJECTED) {
+          if (!dto.rejectionReason) {
+            throw new BadRequestException('Rejection reason is required when rejecting a report.');
+          }
+          lockedReport.rejectionReason = dto.rejectionReason;
+          lockedReport.closedByUserId = authUser.sub;
+        }
+      }
+
+      // CITIZEN/SUPERVISOR/ADMIN cancelling (OPEN -> CANCELLED)
+      else if (
+        (authUser.roles.includes(UserRole.CITIZEN) ||
+          authUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR) ||
+          authUser.roles.includes(UserRole.SYSTEM_ADMIN)) &&
+        lockedReport.status === ReportStatus.OPEN &&
+        nextStatus === ReportStatus.CANCELLED
+      ) {
+        lockedReport.status = ReportStatus.CANCELLED;
+        lockedReport.subStatus = SUB_STATUS.NONE;
+        lockedReport.closedByUserId = authUser.sub;
+      }
+
+      // Other normal status transitions
+      else {
+        lockedReport.status = nextStatus;
+        lockedReport.subStatus = SUB_STATUS.NONE;
+
+        if (nextStatus === ReportStatus.DONE) {
+          lockedReport.resolvedAt = new Date();
+          lockedReport.closedByUserId = authUser.sub;
+          if (dto.resolutionNotes) {
+            lockedReport.resolutionNotes = dto.resolutionNotes;
+          }
+        } else if (nextStatus === ReportStatus.REJECTED) {
+          if (!dto.rejectionReason) {
+            throw new BadRequestException('Rejection reason is required when rejecting a report.');
+          }
+          lockedReport.rejectionReason = dto.rejectionReason;
+          lockedReport.closedByUserId = authUser.sub;
+        }
+      }
+
+      // Save updated report
+      await queryRunner.manager.save(Report, lockedReport);
+
+      // Create ReportStatusHistory record
+      const statusHistory = queryRunner.manager.create(ReportStatusHistory, {
+        reportId,
+        previousStatus,
+        newStatus: lockedReport.status,
+        previousSubStatus,
+        newSubStatus: lockedReport.subStatus,
+        changedByUserId: authUser.sub,
+        changedAt: new Date(),
+        notes: `Status changed from ${previousStatus} to ${lockedReport.status}`,
+      });
+      await queryRunner.manager.save(statusHistory);
+
+      // Commit transaction
+      await queryRunner.commitTransaction();
+
+      // Return updated report
+      return this.findOne(reportId, authUser);
+    } catch (error) {
+      // Rollback transaction on error
+      await queryRunner.rollbackTransaction();
+      throw error as Error;
+    } finally {
+      // Release query runner
+      await queryRunner.release();
+    }
   }
 
   async assignReportToEmployee(
@@ -380,26 +547,25 @@ export class ReportsService {
     }
 
     const employee = await this.usersService.findEmployeeInDepartment(employeeId, reportDeptId);
-    if (!employee || !employee.roles.includes(UserRole.DEPARTMENT_EMPLOYEE)) {
+    if (!employee || !employee.roles.includes(UserRole.TEAM_MEMBER)) {
       throw new NotFoundException(
         'Target employee not found, not an employee, or not in the correct department.'
       );
     }
 
     const assignableStatuses: ReportStatus[] = [
-      ReportStatus.SUBMITTED,
-      ReportStatus.UNDER_REVIEW,
-      ReportStatus.FORWARDED,
-      ReportStatus.ASSIGNED_TO_EMPLOYEE,
-      ReportStatus.AWAITING_INFORMATION,
+      ReportStatus.OPEN,
+      ReportStatus.IN_REVIEW,
+      ReportStatus.IN_PROGRESS,
+      ReportStatus.DONE,
+      ReportStatus.REJECTED,
     ];
     if (!assignableStatuses.includes(report.status)) {
       throw new BadRequestException(`Report in status ${report.status} cannot be assigned.`);
     }
 
     await this.reportRepository.update(reportId, {
-      assignedEmployeeId: employeeId,
-      status: ReportStatus.ASSIGNED_TO_EMPLOYEE,
+      status: ReportStatus.IN_PROGRESS,
     });
 
     return this.findOne(reportId, authUser);
@@ -410,44 +576,36 @@ export class ReportsService {
     newDepartmentCode: MunicipalityDepartment,
     reason: string | undefined,
     authUser: AuthUser
-  ): Promise<Report> {
-    const report = await this.findOne(id, authUser);
-
+  ): Promise<{
+    success: boolean;
+    message: string;
+    reportId: number;
+    newDepartmentCode: MunicipalityDepartment;
+  }> {
+    const report = await this.reportRepository.findById(id);
+    if (!report) {
+      throw new NotFoundException(`Report with ID ${id} not found.`);
+    }
     if (!this.canUserPerformActionOnReport(report, authUser, 'forward')) {
       throw new UnauthorizedException('You do not have permission to forward this report.');
     }
-
     if (report.currentDepartment?.code === newDepartmentCode) {
       throw new BadRequestException(`Report is already in the ${newDepartmentCode} department.`);
     }
-
-    await this.departmentService.findByCode(newDepartmentCode);
-
-    let finalReason = reason;
-    if (!reason) {
-      if (
-        authUser.roles.includes(UserRole.SYSTEM_ADMIN) ||
-        authUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR)
-      ) {
-        throw new BadRequestException('Reason is required for forwarding by Supervisor/Admin.');
-      } else {
-        finalReason = 'Department changed by system.';
-      }
+    if (!reason || typeof reason !== 'string' || reason.trim() === '') {
+      throw new BadRequestException('A valid reason is required for forwarding the report.');
     }
-
-    const forwardDto: ForwardReportDto = {
-      newDepartment: newDepartmentCode,
-      reason: finalReason as string,
+    // Departman değiştir, subStatus FORWARDED yap, status değişmez
+    report.currentDepartmentId = (await this.departmentService.findByCode(newDepartmentCode)).id;
+    report.subStatus = SUB_STATUS.FORWARDED;
+    // TODO: DepartmentHistory kaydı ekle
+    await this.reportRepository.update(id, report);
+    return {
+      success: true,
+      message: `Report ID ${id} successfully forwarded to department ${newDepartmentCode}.`,
+      reportId: id,
+      newDepartmentCode,
     };
-
-    await this.departmentService.forwardReport(id, forwardDto, authUser.sub);
-
-    const updatedReportAfterForward = await this.reportRepository.findById(id);
-    if (updatedReportAfterForward && updatedReportAfterForward.status !== ReportStatus.FORWARDED) {
-      await this.reportRepository.update(id, { status: ReportStatus.FORWARDED });
-    }
-
-    return this.findOne(id, authUser);
   }
 
   async getReportsByUser(
@@ -507,5 +665,438 @@ export class ReportsService {
   async suggestDepartmentForReportType(type: ReportType): Promise<MunicipalityDepartment> {
     const department = await this.departmentService.suggestDepartmentForReport(type);
     return department.code;
+  }
+
+  // Yeni team assignment metodları
+  async assignReportToTeam(reportId: number, teamId: number, authUser: AuthUser): Promise<Report> {
+    // İlk olarak raporu çek ve ABAC yetki kontrolü yap
+    const report = await this.findOneForAuthCheck(reportId);
+
+    // AuthUser'dan User objesine dönüştür
+    const userForAbility: Partial<User> = {
+      id: authUser.sub,
+      roles: authUser.roles,
+      departmentId: authUser.departmentId,
+      activeTeamId: undefined,
+    };
+
+    const ability = this.abilityFactory.defineAbility(userForAbility as User);
+
+    if (!ability.can(Action.Assign, report)) {
+      throw new ForbiddenException('You do not have permission to assign this report.');
+    }
+
+    // Use transaction for data consistency
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Find and validate team
+      const team = await queryRunner.manager.findOne(Team, {
+        where: { id: teamId },
+        relations: ['department'],
+      });
+
+      if (!team) {
+        throw new NotFoundException(`Team with ID ${teamId} not found`);
+      }
+
+      // Check team status
+      if (team.status !== TeamStatus.AVAILABLE) {
+        throw new BadRequestException(
+          `Team is not available for assignment (status: ${team.status})`
+        );
+      }
+
+      // Check department compatibility
+      if (team.departmentId !== report.currentDepartmentId) {
+        throw new BadRequestException('Team must be from the same department as the report');
+      }
+
+      // Authorization check for department supervisor
+      if (
+        authUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR) &&
+        !authUser.roles.includes(UserRole.SYSTEM_ADMIN)
+      ) {
+        if (!authUser.departmentId || team.departmentId !== authUser.departmentId) {
+          throw new ForbiddenException(
+            'Department supervisors can only assign reports to teams in their own department'
+          );
+        }
+      }
+
+      // End any existing active assignments
+      await queryRunner.manager.update(
+        Assignment,
+        {
+          reportId,
+          status: AssignmentStatus.ACTIVE,
+        },
+        {
+          status: AssignmentStatus.CANCELLED,
+          completedAt: new Date(),
+        }
+      );
+
+      // Create new team assignment
+      const newAssignment = queryRunner.manager.create(Assignment, {
+        reportId,
+        assigneeType: AssigneeType.TEAM,
+        assigneeId: teamId,
+        assignedById: authUser.sub,
+        status: AssignmentStatus.ACTIVE,
+        assignedAt: new Date(),
+      });
+      await queryRunner.manager.save(newAssignment);
+
+      // Update report status based on current status
+      let newStatus = report.status;
+      if (report.status === ReportStatus.OPEN) {
+        newStatus = ReportStatus.IN_REVIEW;
+      } else if (report.status === ReportStatus.IN_REVIEW) {
+        newStatus = ReportStatus.IN_PROGRESS;
+      }
+
+      // Update report
+      const previousStatus = report.status;
+      const previousSubStatus = report.subStatus;
+
+      report.status = newStatus;
+      report.subStatus = SUB_STATUS.NONE;
+
+      await queryRunner.manager.save(Report, report);
+
+      // Create status history record
+      const statusHistory = queryRunner.manager.create(ReportStatusHistory, {
+        reportId,
+        previousStatus,
+        newStatus,
+        previousSubStatus,
+        newSubStatus: SUB_STATUS.NONE,
+        changedByUserId: authUser.sub,
+        changedAt: new Date(),
+        notes: `Assigned to team: ${team.name}`,
+      });
+      await queryRunner.manager.save(statusHistory);
+
+      // Commit transaction
+      await queryRunner.commitTransaction();
+
+      // Return updated report
+      return this.findOne(reportId, authUser);
+    } catch (error) {
+      // Rollback transaction on error
+      await queryRunner.rollbackTransaction();
+      throw error as Error;
+    } finally {
+      // Release query runner
+      await queryRunner.release();
+    }
+  }
+
+  async assignReportToUser(reportId: number, userId: number, authUser: AuthUser): Promise<Report> {
+    if (!this.canUserPerformActionOnReport({ id: reportId } as Report, authUser, 'assign')) {
+      throw new UnauthorizedException('You do not have permission to assign this report.');
+    }
+
+    // Use transaction for data consistency
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Find report with relations
+      const report = await queryRunner.manager.findOne(Report, {
+        where: { id: reportId },
+        relations: ['currentDepartment', 'assignments'],
+      });
+
+      if (!report) {
+        throw new NotFoundException(`Report with ID ${reportId} not found`);
+      }
+
+      // Verify user can perform action on this specific report
+      if (!this.canUserPerformActionOnReport(report, authUser, 'assign')) {
+        throw new UnauthorizedException('You do not have permission to assign this report.');
+      }
+
+      // Find and validate assignee user
+      const assigneeUser = await this.usersService.findById(userId);
+      if (!assigneeUser) {
+        throw new NotFoundException(`User with ID ${userId} not found`);
+      }
+
+      // Check if user has appropriate role for assignment
+      if (
+        !assigneeUser.roles.includes(UserRole.TEAM_MEMBER) &&
+        !assigneeUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR)
+      ) {
+        throw new BadRequestException(
+          'User must have TEAM_MEMBER or DEPARTMENT_SUPERVISOR role to be assigned reports'
+        );
+      }
+
+      // Check department compatibility
+      if (assigneeUser.departmentId !== report.currentDepartmentId) {
+        throw new BadRequestException('User must be from the same department as the report');
+      }
+
+      // Authorization check for department supervisor
+      if (
+        authUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR) &&
+        !authUser.roles.includes(UserRole.SYSTEM_ADMIN)
+      ) {
+        if (!authUser.departmentId || assigneeUser.departmentId !== authUser.departmentId) {
+          throw new ForbiddenException(
+            'Department supervisors can only assign reports to users in their own department'
+          );
+        }
+      }
+
+      // End any existing active assignments
+      await queryRunner.manager.update(
+        Assignment,
+        {
+          reportId,
+          status: AssignmentStatus.ACTIVE,
+        },
+        {
+          status: AssignmentStatus.CANCELLED,
+          completedAt: new Date(),
+        }
+      );
+
+      // Create new user assignment
+      const newAssignment = queryRunner.manager.create(Assignment, {
+        reportId,
+        assigneeType: AssigneeType.USER,
+        assigneeId: userId,
+        assignedById: authUser.sub,
+        status: AssignmentStatus.ACTIVE,
+        assignedAt: new Date(),
+      });
+      await queryRunner.manager.save(newAssignment);
+
+      // Update report status based on current status
+      let newStatus = report.status;
+      if (report.status === ReportStatus.OPEN) {
+        newStatus = ReportStatus.IN_REVIEW;
+      } else if (report.status === ReportStatus.IN_REVIEW) {
+        newStatus = ReportStatus.IN_PROGRESS;
+      }
+
+      // Update report
+      const previousStatus = report.status;
+      const previousSubStatus = report.subStatus;
+
+      report.status = newStatus;
+      report.subStatus = SUB_STATUS.NONE;
+
+      await queryRunner.manager.save(Report, report);
+
+      // Create status history record
+      const statusHistory = queryRunner.manager.create(ReportStatusHistory, {
+        reportId,
+        previousStatus,
+        newStatus,
+        previousSubStatus,
+        newSubStatus: SUB_STATUS.NONE,
+        changedByUserId: authUser.sub,
+        changedAt: new Date(),
+        notes: `Assigned to user: ${assigneeUser.email}`,
+      });
+      await queryRunner.manager.save(statusHistory);
+
+      // Commit transaction
+      await queryRunner.commitTransaction();
+
+      // Return updated report
+      return this.findOne(reportId, authUser);
+    } catch (error) {
+      // Rollback transaction on error
+      await queryRunner.rollbackTransaction();
+      throw error as Error;
+    } finally {
+      // Release query runner
+      await queryRunner.release();
+    }
+  }
+
+  // Add new forwardReport method
+  async forwardReport(
+    reportId: number,
+    dto: ForwardReportDto,
+    authUser: AuthUser
+  ): Promise<Report> {
+    // Use transaction for data consistency
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Find report
+      const report = await queryRunner.manager.findOne(Report, {
+        where: { id: reportId },
+        relations: ['currentDepartment'],
+      });
+
+      if (!report) {
+        throw new NotFoundException(`Report with ID ${reportId} not found`);
+      }
+
+      // Authorization check
+      if (!this.canUserPerformActionOnReport(report, authUser, 'forward')) {
+        throw new UnauthorizedException('You do not have permission to forward this report.');
+      }
+
+      // Validate new department
+      const newDepartment = await this.departmentService.findByCode(dto.newDepartment);
+      if (!newDepartment) {
+        throw new NotFoundException(`Department with code ${dto.newDepartment} not found`);
+      }
+
+      // Check if report is already in the target department
+      if (report.currentDepartmentId === newDepartment.id) {
+        throw new BadRequestException(`Report is already in the ${newDepartment.name} department.`);
+      }
+
+      // Validate reason
+      if (!dto.reason || dto.reason.trim() === '') {
+        throw new BadRequestException('A valid reason is required for forwarding the report.');
+      }
+
+      // Store previous values
+      const previousDepartmentId = report.currentDepartmentId;
+      const previousStatus = report.status;
+      const previousSubStatus = report.subStatus;
+
+      // Update report department and subStatus
+      report.currentDepartmentId = newDepartment.id;
+      report.subStatus = SUB_STATUS.FORWARDED;
+      // Note: main status doesn't change during forwarding
+
+      // Save updated report
+      await queryRunner.manager.save(Report, report);
+
+      // Create DepartmentHistory record
+      const departmentHistory = queryRunner.manager.create(DepartmentHistory, {
+        reportId,
+        previousDepartmentId,
+        newDepartmentId: newDepartment.id,
+        reason: dto.reason,
+        changedByUserId: authUser.sub,
+        changedAt: new Date(),
+      });
+      await queryRunner.manager.save(departmentHistory);
+
+      // Create ReportStatusHistory record for subStatus change
+      const statusHistory = queryRunner.manager.create(ReportStatusHistory, {
+        reportId,
+        previousStatus,
+        newStatus: report.status, // Status doesn't change
+        previousSubStatus,
+        newSubStatus: SUB_STATUS.FORWARDED,
+        changedByUserId: authUser.sub,
+        changedAt: new Date(),
+        notes: `Report forwarded to ${newDepartment.name} department. Reason: ${dto.reason}`,
+      });
+      await queryRunner.manager.save(statusHistory);
+
+      // Cancel any active assignments (they belong to the previous department)
+      await queryRunner.manager.update(
+        Assignment,
+        {
+          reportId,
+          status: AssignmentStatus.ACTIVE,
+        },
+        {
+          status: AssignmentStatus.CANCELLED,
+          completedAt: new Date(),
+        }
+      );
+
+      // Commit transaction
+      await queryRunner.commitTransaction();
+
+      // Return updated report
+      return this.findOne(reportId, authUser);
+    } catch (error) {
+      // Rollback transaction on error
+      await queryRunner.rollbackTransaction();
+      throw error as Error;
+    } finally {
+      // Release query runner
+      await queryRunner.release();
+    }
+  }
+
+  /**
+   * Yetki kontrolü için rapor getirme metodu - Guard ve servis katmanında kullanılır
+   */
+  async findOneForAuthCheck(reportId: number): Promise<Report> {
+    const report = await this.reportRepository.findById(reportId);
+
+    if (!report) {
+      throw new NotFoundException(`Report with ID "${reportId}" not found`);
+    }
+
+    return report;
+  }
+
+  /**
+   * Rapor destekleme metodu - Vatandaşların başkalarının raporlarını desteklemesi için
+   */
+  async supportReport(reportId: number, authUser: AuthUser): Promise<Report> {
+    // İlk olarak raporu çek ve ABAC yetki kontrolü yap
+    const report = await this.findOneForAuthCheck(reportId);
+
+    // AuthUser'dan User objesine dönüştür (sadece yetki kontrolü için gerekli alanlar)
+    const userForAbility: Partial<User> = {
+      id: authUser.sub,
+      roles: authUser.roles,
+      departmentId: authUser.departmentId,
+      // activeTeamId: undefined, // JwtPayload'da henüz activeTeamId yok
+    };
+
+    const ability = this.abilityFactory.defineAbility(userForAbility as User);
+
+    if (!ability.can(Action.Support, report)) {
+      throw new ForbiddenException('You do not have permission to support this report.');
+    }
+
+    // Kendi raporunu destekleyemez
+    if (report.userId === authUser.sub) {
+      throw new ForbiddenException('Kendi raporunuzu destekleyemezsiniz.');
+    }
+
+    // Daha önce desteklemiş mi kontrolü
+    const existingSupport = await this.reportSupportRepository.findOne({
+      where: {
+        reportId: report.id,
+        userId: authUser.sub,
+      },
+    });
+
+    if (existingSupport) {
+      throw new ConflictException('Bu raporu zaten desteklediniz.');
+    }
+
+    // Transaction içinde hem support kaydı oluştur hem de supportCount'ı artır
+    return this.dataSource.transaction(async transactionalEntityManager => {
+      // Yeni support kaydı oluştur
+      const newSupport = transactionalEntityManager.create(ReportSupport, {
+        reportId: report.id,
+        userId: authUser.sub,
+      });
+      await transactionalEntityManager.save(ReportSupport, newSupport);
+
+      // Report'taki supportCount'ı artır
+      await transactionalEntityManager.increment(Report, { id: report.id }, 'supportCount', 1);
+
+      // Güncellenmiş raporu döndür (supportCount'ı manuel güncelle)
+      report.supportCount = (report.supportCount || 0) + 1;
+      return report;
+    });
   }
 }

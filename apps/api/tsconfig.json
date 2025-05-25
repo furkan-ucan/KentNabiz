@@ -5,7 +5,6 @@
     "moduleResolution": "node", // CORRECT
     "target": "ES2020", // Or suitable target
     "outDir": "./dist", // CORRECT
-    "rootDir": "./src", // CORRECT
     "emitDecoratorMetadata": true, // REQUIRED
     "experimentalDecorators": true, // REQUIRED
     "esModuleInterop": true, // Recommended
@@ -14,12 +13,10 @@
 
     "types": ["node", "jest", "@types/express", "@types/multer"] // Include node types for Jest
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "test/**/*"],
   "exclude": [
     "node_modules",
     "dist",
-    "**/*.spec.ts",
-    "**/*.test.ts",
     "**/*.js" // Exclude JS from TS compilation pass
   ],
   "references": [

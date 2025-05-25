@@ -5,5 +5,7 @@
 
 export * from './user.types';
 export * from './report.types';
+export * from './team.types';
+export * from './assignment.types';
 export * from './report-category.types';
 export * from './department.types';

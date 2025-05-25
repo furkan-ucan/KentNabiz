@@ -7,7 +7,7 @@ export class CreateUsers1680268800000 implements MigrationInterface {
     await queryRunner.query(`
       CREATE TYPE "public"."user_roles_enum" AS ENUM(
         'CITIZEN',
-        'DEPARTMENT_EMPLOYEE',
+        'TEAM_MEMBER',
         'DEPARTMENT_SUPERVISOR',
         'SYSTEM_ADMIN'
       );

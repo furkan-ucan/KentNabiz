@@ -46,6 +46,6 @@ const dataSourceOptions: DataSourceOptions = {
 // Create the DataSource instance
 const AppDataSource = new DataSource(dataSourceOptions);
 
-// Use `export =` for direct CommonJS compatibility (module.exports = AppDataSource)
+// Use `export default` for direct CommonJS compatibility (module.exports = AppDataSource)
 // This makes it easy to require/import in other TS/JS files compiled to CJS.
-export = AppDataSource;
+export default AppDataSource;

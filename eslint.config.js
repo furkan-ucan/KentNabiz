@@ -31,7 +31,8 @@ const config = [
     languageOptions: {
       parser: parser,
       parserOptions: {
-        project: ['./tsconfig.json', './packages/*/tsconfig.json', './apps/*/tsconfig.json'],
+        projectService: true,
+        allowDefaultProject: true,
         tsconfigRootDir: process.cwd(),
         ecmaVersion: 'latest',
         sourceType: 'module', // TS source uses ES Modules
@@ -144,7 +145,21 @@ const config = [
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-floating-promises': 'off', // Often okay in tests
+      '@typescript-eslint/unbound-method': 'off', // Jest expect methods cause this issue
+    },
+  },
+  {
+    // E2E test files have different requirements
+    files: ['**/*.e2e-spec.ts', '**/test/**/*.ts'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/require-await': 'off',
     },
   },
 ];

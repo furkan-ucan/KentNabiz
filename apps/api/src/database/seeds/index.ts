@@ -7,8 +7,8 @@ import { DepartmentsSeed } from './departments.seed';
 import { CategoriesSeed } from './categories.seed';
 import { ReportsSeed } from './reports.seed';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-import AppDataSource = require('../../config/data-source');
+// Fix: Use default import for AppDataSource
+import AppDataSource from '../../config/data-source';
 
 async function runSeeds(dataSource: DataSource): Promise<void> {
   if (!dataSource || !dataSource.isInitialized) {
