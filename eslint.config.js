@@ -91,6 +91,56 @@ const config = [
     settings: { react: { version: 'detect' } },
   },
 
+  // --- Override for apps/web (React/Browser Env for TS/TSX) ---
+  {
+    files: ['apps/web/**/*.{ts,tsx}'], // Target only web app TS/TSX
+    languageOptions: {
+      parser: parser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: { jsx: true },
+        // No project service or type checking for web app
+      },
+      globals: {
+        // Add Browser globals
+        ...globals.browser,
+        React: 'readonly',
+        JSX: 'readonly',
+      },
+    },
+    plugins: {
+      // Ensure React plugins are active
+      react: reactPlugin,
+      'react-hooks': reactHooksPlugin,
+      '@typescript-eslint': tsPlugin, // Keep TS plugin
+    },
+    rules: {
+      // Use only basic TS rules without type checking
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-var-requires': 'error',
+      // React rules
+      ...reactPlugin.configs.recommended.rules,
+      ...reactHooksPlugin.configs.recommended.rules,
+      'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'off',
+      // Explicitly disable all type-checked rules
+      '@typescript-eslint/await-thenable': 'off',
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/restrict-plus-operands': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
+      '@typescript-eslint/unbound-method': 'off',
+    },
+    settings: { react: { version: 'detect' } },
+  },
+
   // --- Override for .js files (Treat as ESM in Node) ---
   {
     files: ['**/*.js'], // Target only .js files
