@@ -2,7 +2,7 @@ import React from 'react';
 // Örnek paylaşılan enum importu (path alias testi için)
 import { UserRole } from '@KentNabiz/shared';
 // Örnek paylaşılan UI component importu (path alias ve workspace testi için)
-// import { Button } from '@KentNabiz/ui'; // Şimdilik bu yorumda kalsın, packages/ui/src/index.ts'de Button export edilince aktifleşir
+import { Button } from '@KentNabiz/ui';
 
 const HomePage: React.FC = () => {
   console.log('UserRole from shared:', UserRole.CITIZEN);
@@ -28,7 +28,11 @@ const HomePage: React.FC = () => {
           başarıyla import edildi!
         </p>
       </div>
-      {/* <Button onClick={() => alert('Paylaşılan Buton Çalışıyor!')}>Test Butonu</Button> */}
+      <div style={{ marginTop: '20px' }}>
+        <Button onClick={() => alert('Paylaşılan Buton Çalışıyor!')}>
+          Test Butonu (@KentNabiz/ui)
+        </Button>
+      </div>
     </div>
   );
 };
