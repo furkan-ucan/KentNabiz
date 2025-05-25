@@ -1,18 +1,26 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+import {
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ReportsService } from './reports.service';
+import { ReportRepository } from '../repositories/report.repository';
+import { LocationService } from './location.service';
+import { DepartmentService } from './department.service';
+import { UsersService } from '../../users/services/users.service';
+import { AbilityFactory } from '../../../core/authorization/ability.factory';
 import { Report } from '../entities/report.entity';
 import { Assignment } from '../entities/assignment.entity';
 import { ReportStatusHistory } from '../entities/report-status-history.entity';
 import { DepartmentHistory } from '../entities/department-history.entity';
 import { Team } from '../../teams/entities/team.entity';
+import { ReportSupport } from '../entities/report-support.entity';
+import { Department } from '../entities/department.entity';
 import { User } from '../../users/entities/user.entity';
-import { ReportRepository } from '../repositories/report.repository';
-import { LocationService } from './location.service';
-import { DepartmentService } from './department.service';
-import { UsersService } from '../../users/services/users.service';
 import {
   ReportStatus,
   ReportType,
@@ -22,47 +30,48 @@ import {
   AssignmentStatus,
   AssigneeType,
 } from '@KentNabiz/shared';
-import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
+import { JwtPayload as AuthUser } from '../../auth/interfaces/jwt-payload.interface';
+import { SUB_STATUS } from '../constants/report.constants';
 import { CreateReportDto } from '../dto/create-report.dto';
 import { UpdateReportStatusDto } from '../dto/update-report-status.dto';
 import { ForwardReportDto } from '../dto/forward-report.dto';
 
-// Mock canTransition utility
-import { canTransition as mockCanTransition } from '../utils/report-status.utils';
-jest.mock('../utils/report-status.utils', () => ({
-  canTransition: jest.fn(),
-}));
-
-describe('ReportsService', () => {
+describe('ReportsService - Core Methods', () => {
   let service: ReportsService;
-  let reportRepository: ReportRepository;
-  let assignmentRepository: Repository<Assignment>;
-  let teamRepository: Repository<Team>;
-  let locationService: LocationService;
-  let departmentService: DepartmentService;
-  let usersService: UsersService;
-  // Remove unused: reportStatusHistoryRepository, departmentHistoryRepository, dataSource
+  let reportRepository: jest.Mocked<ReportRepository>;
+  let locationService: jest.Mocked<LocationService>;
+  let departmentService: jest.Mocked<DepartmentService>;
+  let usersService: jest.Mocked<UsersService>;
+  let abilityFactory: jest.Mocked<AbilityFactory>;
+  let queryRunner: any;
+  let entityManager: any;
 
-  // Mock AuthUser fixtures
-  // Remove unused: mockSystemAdmin
-  const mockDepartmentSupervisor: JwtPayload = {
-    sub: 2,
+  // Mock users
+  const supervisorUser: AuthUser = {
+    sub: 1,
     email: 'supervisor@test.com',
     roles: [UserRole.DEPARTMENT_SUPERVISOR],
     departmentId: 1,
+    iat: Date.now(),
+    exp: Date.now() + 3600,
   };
 
-  const mockTeamMember: JwtPayload = {
-    sub: 3,
-    email: 'member@test.com',
+  const teamMemberUser: AuthUser = {
+    sub: 2,
+    email: 'teammember@test.com',
     roles: [UserRole.TEAM_MEMBER],
     departmentId: 1,
+    iat: Date.now(),
+    exp: Date.now() + 3600,
   };
 
-  const mockCitizen: JwtPayload = {
-    sub: 4,
+  const citizenUser: AuthUser = {
+    sub: 3,
     email: 'citizen@test.com',
     roles: [UserRole.CITIZEN],
+    departmentId: null,
+    iat: Date.now(),
+    exp: Date.now() + 3600,
   };
 
   // Mock entities
@@ -71,495 +80,794 @@ describe('ReportsService', () => {
     title: 'Test Report',
     description: 'Test description',
     status: ReportStatus.OPEN,
-    subStatus: null,
-    reportType: ReportType.POTHOLE,
-    location: { type: 'Point', coordinates: [29.0, 41.0] },
-    address: 'Test Address',
+    subStatus: SUB_STATUS.NONE,
+    userId: 3,
     currentDepartmentId: 1,
-    userId: 4,
+    supportCount: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
-    assignments: [],
-    statusHistory: [],
-    departmentHistory: [],
-    reportMedias: [],
-    user: {} as User,
-    currentDepartment: {} as any,
-  };
+  } as Report;
 
   const mockTeam: Team = {
     id: 1,
     name: 'Test Team',
     departmentId: 1,
-    teamLeaderId: 2,
     status: TeamStatus.AVAILABLE,
-    baseLocation: { type: 'Point', coordinates: [29.0, 41.0] },
-    currentLocation: { type: 'Point', coordinates: [29.0, 41.0] },
-    lastLocationUpdate: new Date(),
-    department: {} as any,
-    teamLeader: {} as any,
-    teamSpecializations: [],
-    membershipsHistory: [],
-  };
+    department: { id: 1, name: 'Test Department' } as Department,
+  } as Team;
 
   const mockUser: User = {
-    id: 5,
-    email: 'user@test.com',
+    id: 2,
+    email: 'teammember@test.com',
     roles: [UserRole.TEAM_MEMBER],
     departmentId: 1,
-    activeTeamId: 1,
     hashPassword: jest.fn(),
     validatePassword: jest.fn(),
   } as any;
 
-  const mockQueryRunner = {
-    connect: jest.fn(),
-    startTransaction: jest.fn(),
-    commitTransaction: jest.fn(),
-    rollbackTransaction: jest.fn(),
-    release: jest.fn(),
-    manager: {
+  beforeEach(async () => {
+    // Create mocks
+    const mockReportRepository = {
+      findById: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      findAll: jest.fn(),
+    };
+
+    const mockLocationService = {
+      createPointFromDto: jest.fn(),
+    };
+
+    const mockDepartmentService = {
+      findById: jest.fn(),
+      findByCode: jest.fn(),
+      suggestDepartmentForReport: jest.fn(),
+    };
+
+    const mockUsersService = {
+      findById: jest.fn(),
+      findEmployeeInDepartment: jest.fn(),
+    };
+
+    const mockAssignmentRepository = {
+      update: jest.fn(),
+      save: jest.fn(),
+      create: jest.fn(),
+    };
+
+    const mockReportStatusHistoryRepository = {
+      save: jest.fn(),
+      create: jest.fn(),
+    };
+
+    const mockDepartmentHistoryRepository = {
+      save: jest.fn(),
+      create: jest.fn(),
+    };
+
+    const mockTeamRepository = {
+      findOne: jest.fn(),
+    };
+
+    const mockReportSupportRepository = {
+      findOne: jest.fn(),
+      save: jest.fn(),
+      create: jest.fn(),
+    };
+
+    const mockEntityManager = {
+      findOne: jest.fn(),
       save: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
-    },
-  };
+      increment: jest.fn(),
+    };
 
-  beforeEach(async () => {
+    const mockQueryRunner = {
+      connect: jest.fn(),
+      startTransaction: jest.fn(),
+      commitTransaction: jest.fn(),
+      rollbackTransaction: jest.fn(),
+      release: jest.fn(),
+      manager: mockEntityManager,
+    };
+
+    const mockDataSource = {
+      createQueryRunner: jest.fn().mockReturnValue(mockQueryRunner),
+      transaction: jest.fn(),
+    };
+
+    const mockAbility = {
+      can: jest.fn(),
+      throwUnlessCan: jest.fn(),
+    };
+
+    const mockAbilityFactory = {
+      defineAbility: jest.fn().mockReturnValue(mockAbility),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ReportsService,
         {
           provide: ReportRepository,
-          useValue: {
-            findById: jest.fn(),
-            update: jest.fn(),
-            create: jest.fn(),
-            findAll: jest.fn(),
-            save: jest.fn(),
-          },
-        },
-        {
-          provide: getRepositoryToken(Assignment),
-          useValue: {
-            find: jest.fn(),
-            findOne: jest.fn(),
-            create: jest.fn(),
-            save: jest.fn(),
-            update: jest.fn(),
-          },
-        },
-        {
-          provide: getRepositoryToken(ReportStatusHistory),
-          useValue: {
-            create: jest.fn(),
-            save: jest.fn(),
-          },
-        },
-        {
-          provide: getRepositoryToken(DepartmentHistory),
-          useValue: {
-            create: jest.fn(),
-            save: jest.fn(),
-          },
-        },
-        {
-          provide: getRepositoryToken(Team),
-          useValue: {
-            findOne: jest.fn(),
-          },
+          useValue: mockReportRepository,
         },
         {
           provide: LocationService,
-          useValue: {
-            getLocationInfo: jest.fn(),
-          },
+          useValue: mockLocationService,
         },
         {
           provide: DepartmentService,
-          useValue: {
-            suggestDepartmentForLocation: jest.fn(),
-            findById: jest.fn(),
-          },
+          useValue: mockDepartmentService,
         },
         {
           provide: UsersService,
-          useValue: {
-            findById: jest.fn(),
-            updateUserActiveTeam: jest.fn(),
-          },
+          useValue: mockUsersService,
+        },
+        {
+          provide: getRepositoryToken(Assignment),
+          useValue: mockAssignmentRepository,
+        },
+        {
+          provide: getRepositoryToken(ReportStatusHistory),
+          useValue: mockReportStatusHistoryRepository,
+        },
+        {
+          provide: getRepositoryToken(DepartmentHistory),
+          useValue: mockDepartmentHistoryRepository,
+        },
+        {
+          provide: getRepositoryToken(Team),
+          useValue: mockTeamRepository,
+        },
+        {
+          provide: getRepositoryToken(ReportSupport),
+          useValue: mockReportSupportRepository,
         },
         {
           provide: DataSource,
-          useValue: {
-            createQueryRunner: jest.fn(() => mockQueryRunner),
-          },
+          useValue: mockDataSource,
+        },
+        {
+          provide: AbilityFactory,
+          useValue: mockAbilityFactory,
         },
       ],
     }).compile();
 
     service = module.get<ReportsService>(ReportsService);
-    reportRepository = module.get<ReportRepository>(ReportRepository);
-    assignmentRepository = module.get<Repository<Assignment>>(getRepositoryToken(Assignment));
-    // Remove unused: reportStatusHistoryRepository, departmentHistoryRepository
-    teamRepository = module.get<Repository<Team>>(getRepositoryToken(Team));
-    locationService = module.get<LocationService>(LocationService);
-    departmentService = module.get<DepartmentService>(DepartmentService);
-    usersService = module.get<UsersService>(UsersService);
-    // Remove unused: dataSource
+    reportRepository = module.get(ReportRepository);
+    locationService = module.get(LocationService);
+    departmentService = module.get(DepartmentService);
+    usersService = module.get(UsersService);
+    abilityFactory = module.get(AbilityFactory);
+    queryRunner = mockQueryRunner;
+    entityManager = mockEntityManager;
 
-    // Use imported mockCanTransition directly
-    // Reset all mocks
-    jest.clearAllMocks();
-  });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+    // Setup default mocks
+    reportRepository.findById.mockResolvedValue(mockReport);
+    abilityFactory.defineAbility.mockReturnValue({
+      can: jest.fn().mockReturnValue(true),
+      throwUnlessCan: jest.fn(),
+    } as any);
   });
 
   describe('assignReportToTeam', () => {
-    it('should assign report to team successfully', async () => {
-      const reportWithAssignment = {
-        ...mockReport,
-        assignments: [
-          {
-            id: 1,
-            assigneeType: AssigneeType.TEAM,
-            assigneeId: 1,
-            status: AssignmentStatus.ACTIVE,
-            assignedAt: new Date(),
-          },
-        ],
-      };
+    beforeEach(() => {
+      entityManager.findOne.mockResolvedValue(mockTeam);
+      entityManager.save.mockResolvedValue(mockReport);
+      entityManager.create.mockReturnValue({} as any);
+      entityManager.update.mockResolvedValue({ affected: 1 } as any);
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockReport);
+    });
 
-      jest.spyOn(reportRepository, 'findById').mockResolvedValue(mockReport);
-      jest.spyOn(teamRepository, 'findOne').mockResolvedValue(mockTeam);
-      jest.spyOn(assignmentRepository, 'find').mockResolvedValue([]);
-      jest.spyOn(assignmentRepository, 'update').mockResolvedValue({} as any);
-      jest.spyOn(assignmentRepository, 'create').mockReturnValue({} as Assignment);
-      jest.spyOn(assignmentRepository, 'save').mockResolvedValue({} as Assignment);
-
-      const result = await service.assignReportToTeam(1, 1, mockDepartmentSupervisor);
+    it('should successfully assign report to team', async () => {
+      const result = await service.assignReportToTeam(1, 1, supervisorUser);
 
       expect(reportRepository.findById).toHaveBeenCalledWith(1);
-      expect(teamRepository.findOne).toHaveBeenCalledWith({
+      expect(abilityFactory.defineAbility).toHaveBeenCalled();
+      expect(queryRunner.connect).toHaveBeenCalled();
+      expect(queryRunner.startTransaction).toHaveBeenCalled();
+      expect(entityManager.findOne).toHaveBeenCalledWith(Team, {
         where: { id: 1 },
         relations: ['department'],
       });
-      expect(assignmentRepository.update).toHaveBeenCalledWith(
+      expect(entityManager.update).toHaveBeenCalledWith(
+        Assignment,
         { reportId: 1, status: AssignmentStatus.ACTIVE },
-        { status: AssignmentStatus.CANCELLED }
+        { status: AssignmentStatus.CANCELLED, completedAt: expect.any(Date) }
       );
-      expect(assignmentRepository.create).toHaveBeenCalledWith({
+      expect(entityManager.create).toHaveBeenCalledWith(Assignment, {
         reportId: 1,
         assigneeType: AssigneeType.TEAM,
         assigneeId: 1,
+        assignedById: supervisorUser.sub,
         status: AssignmentStatus.ACTIVE,
         assignedAt: expect.any(Date),
-        assignedBy: 2,
       });
-      expect(result).toEqual(reportWithAssignment);
+      expect(queryRunner.commitTransaction).toHaveBeenCalled();
+      expect(result).toEqual(mockReport);
     });
 
     it('should throw NotFoundException when report not found', async () => {
-      jest.spyOn(reportRepository, 'findById').mockResolvedValue(null);
+      reportRepository.findById.mockResolvedValue(null);
 
-      await expect(service.assignReportToTeam(999, 1, mockDepartmentSupervisor)).rejects.toThrow(
+      await expect(service.assignReportToTeam(999, 1, supervisorUser)).rejects.toThrow(
         NotFoundException
+      );
+    });
+
+    it('should throw ForbiddenException when user lacks permission', async () => {
+      const mockAbility = { can: jest.fn().mockReturnValue(false) };
+      abilityFactory.defineAbility.mockReturnValue(mockAbility as any);
+
+      await expect(service.assignReportToTeam(1, 1, citizenUser)).rejects.toThrow(
+        ForbiddenException
       );
     });
 
     it('should throw NotFoundException when team not found', async () => {
-      jest.spyOn(reportRepository, 'findById').mockResolvedValue(mockReport);
-      jest.spyOn(teamRepository, 'findOne').mockResolvedValue(null);
+      entityManager.findOne.mockResolvedValue(null);
 
-      await expect(service.assignReportToTeam(1, 999, mockDepartmentSupervisor)).rejects.toThrow(
+      await expect(service.assignReportToTeam(1, 999, supervisorUser)).rejects.toThrow(
         NotFoundException
       );
     });
 
-    it('should throw ForbiddenException when user unauthorized', async () => {
-      jest.spyOn(reportRepository, 'findById').mockResolvedValue(mockReport);
+    it('should throw BadRequestException when team is not available', async () => {
+      const unavailableTeam = { ...mockTeam, status: TeamStatus.INACTIVE };
+      entityManager.findOne.mockResolvedValue(unavailableTeam);
 
-      await expect(service.assignReportToTeam(1, 1, mockCitizen)).rejects.toThrow(
-        ForbiddenException
+      await expect(service.assignReportToTeam(1, 1, supervisorUser)).rejects.toThrow(
+        BadRequestException
       );
     });
 
-    it('should throw BadRequestException when team is from different department', async () => {
+    it('should throw BadRequestException when team department mismatch', async () => {
       const differentDeptTeam = { ...mockTeam, departmentId: 2 };
-      jest.spyOn(reportRepository, 'findById').mockResolvedValue(mockReport);
-      jest.spyOn(teamRepository, 'findOne').mockResolvedValue(differentDeptTeam);
+      entityManager.findOne.mockResolvedValue(differentDeptTeam);
 
-      await expect(service.assignReportToTeam(1, 1, mockDepartmentSupervisor)).rejects.toThrow(
+      await expect(service.assignReportToTeam(1, 1, supervisorUser)).rejects.toThrow(
         BadRequestException
       );
+    });
+
+    it('should update report status from OPEN to IN_REVIEW', async () => {
+      const openReport = { ...mockReport, status: ReportStatus.OPEN };
+      reportRepository.findById.mockResolvedValue(openReport);
+
+      await service.assignReportToTeam(1, 1, supervisorUser);
+
+      expect(entityManager.save).toHaveBeenCalledWith(Report, {
+        ...openReport,
+        status: ReportStatus.IN_REVIEW,
+        subStatus: SUB_STATUS.NONE,
+      });
+    });
+
+    it('should update report status from IN_REVIEW to IN_PROGRESS', async () => {
+      const inReviewReport = { ...mockReport, status: ReportStatus.IN_REVIEW };
+      reportRepository.findById.mockResolvedValue(inReviewReport);
+
+      await service.assignReportToTeam(1, 1, supervisorUser);
+
+      expect(entityManager.save).toHaveBeenCalledWith(Report, {
+        ...inReviewReport,
+        status: ReportStatus.IN_PROGRESS,
+        subStatus: SUB_STATUS.NONE,
+      });
+    });
+
+    it('should create status history record', async () => {
+      await service.assignReportToTeam(1, 1, supervisorUser);
+
+      expect(entityManager.create).toHaveBeenCalledWith(ReportStatusHistory, {
+        reportId: 1,
+        previousStatus: ReportStatus.OPEN,
+        newStatus: ReportStatus.IN_REVIEW,
+        previousSubStatus: SUB_STATUS.NONE,
+        newSubStatus: SUB_STATUS.NONE,
+        changedByUserId: supervisorUser.sub,
+        changedAt: expect.any(Date),
+        notes: `Assigned to team: ${mockTeam.name}`,
+      });
+    });
+
+    it('should rollback transaction on error', async () => {
+      entityManager.save.mockRejectedValue(new Error('Database error'));
+
+      await expect(service.assignReportToTeam(1, 1, supervisorUser)).rejects.toThrow(
+        'Database error'
+      );
+      expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
+      expect(queryRunner.release).toHaveBeenCalled();
     });
   });
 
   describe('assignReportToUser', () => {
-    it('should assign report to user successfully', async () => {
-      const reportWithAssignment = {
-        ...mockReport,
-        assignments: [
-          {
-            id: 1,
-            assigneeType: AssigneeType.USER,
-            assigneeId: 5,
-            status: AssignmentStatus.ACTIVE,
-            assignedAt: new Date(),
-          },
-        ],
-      };
-
-      jest.spyOn(reportRepository, 'findById').mockResolvedValue(mockReport);
-      jest.spyOn(usersService, 'findById').mockResolvedValue(mockUser);
-      jest.spyOn(assignmentRepository, 'find').mockResolvedValue([]);
-      jest.spyOn(assignmentRepository, 'update').mockResolvedValue({} as any);
-      jest.spyOn(assignmentRepository, 'create').mockReturnValue({} as Assignment);
-      jest.spyOn(assignmentRepository, 'save').mockResolvedValue({} as Assignment);
-      jest.spyOn(reportRepository, 'save').mockResolvedValue(reportWithAssignment as Report);
-
-      const result = await service.assignReportToUser(1, 5, mockDepartmentSupervisor);
-
-      expect(usersService.findById).toHaveBeenCalledWith(5);
-      expect(assignmentRepository.create).toHaveBeenCalledWith({
-        reportId: 1,
-        assigneeType: AssigneeType.USER,
-        assigneeId: 5,
-        status: AssignmentStatus.ACTIVE,
-        assignedAt: expect.any(Date),
-        assignedBy: 2,
-      });
-      expect(result).toEqual(reportWithAssignment);
+    beforeEach(() => {
+      jest.spyOn(service as any, 'canUserPerformActionOnReport').mockReturnValue(true);
+      entityManager.findOne.mockResolvedValue(mockReport);
+      usersService.findById.mockResolvedValue(mockUser);
+      entityManager.save.mockResolvedValue(mockReport);
+      entityManager.create.mockReturnValue({} as any);
+      entityManager.update.mockResolvedValue({ affected: 1 } as any);
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockReport);
     });
 
-    it('should throw NotFoundException when user not found', async () => {
-      jest.spyOn(reportRepository, 'findById').mockResolvedValue(mockReport);
-      jest.spyOn(usersService, 'findById').mockResolvedValue(null);
+    it('should successfully assign report to user', async () => {
+      const result = await service.assignReportToUser(1, 2, supervisorUser);
 
-      await expect(service.assignReportToUser(1, 999, mockDepartmentSupervisor)).rejects.toThrow(
+      expect(entityManager.findOne).toHaveBeenCalledWith(Report, {
+        where: { id: 1 },
+        relations: ['currentDepartment', 'assignments'],
+      });
+      expect(usersService.findById).toHaveBeenCalledWith(2);
+      expect(entityManager.create).toHaveBeenCalledWith(Assignment, {
+        reportId: 1,
+        assigneeType: AssigneeType.USER,
+        assigneeId: 2,
+        assignedById: supervisorUser.sub,
+        status: AssignmentStatus.ACTIVE,
+        assignedAt: expect.any(Date),
+      });
+      expect(result).toEqual(mockReport);
+    });
+
+    it('should throw UnauthorizedException when user lacks permission', async () => {
+      jest.spyOn(service as any, 'canUserPerformActionOnReport').mockReturnValue(false);
+
+      await expect(service.assignReportToUser(1, 2, citizenUser)).rejects.toThrow(
+        UnauthorizedException
+      );
+    });
+
+    it('should throw NotFoundException when report not found', async () => {
+      entityManager.findOne.mockResolvedValue(null);
+
+      await expect(service.assignReportToUser(999, 2, supervisorUser)).rejects.toThrow(
         NotFoundException
       );
     });
 
-    it('should throw BadRequestException when user is from different department', async () => {
-      const differentDeptUser = { ...mockUser, departmentId: 2 };
-      jest.spyOn(reportRepository, 'findById').mockResolvedValue(mockReport);
-      jest.spyOn(usersService, 'findById').mockResolvedValue(differentDeptUser);
+    it('should throw NotFoundException when user not found', async () => {
+      usersService.findById.mockResolvedValue(null);
 
-      await expect(service.assignReportToUser(1, 5, mockDepartmentSupervisor)).rejects.toThrow(
+      await expect(service.assignReportToUser(1, 999, supervisorUser)).rejects.toThrow(
+        NotFoundException
+      );
+    });
+
+    it('should throw BadRequestException when user has wrong role', async () => {
+      const wrongRoleUser = { ...mockUser, roles: [UserRole.CITIZEN] } as any;
+      usersService.findById.mockResolvedValue(wrongRoleUser);
+
+      await expect(service.assignReportToUser(1, 2, supervisorUser)).rejects.toThrow(
         BadRequestException
       );
+    });
+
+    it('should throw BadRequestException when user department mismatch', async () => {
+      const differentDeptUser = { ...mockUser, departmentId: 2 } as any;
+      usersService.findById.mockResolvedValue(differentDeptUser);
+
+      await expect(service.assignReportToUser(1, 2, supervisorUser)).rejects.toThrow(
+        BadRequestException
+      );
+    });
+
+    it('should create status history record with user email', async () => {
+      await service.assignReportToUser(1, 2, supervisorUser);
+
+      expect(entityManager.create).toHaveBeenCalledWith(ReportStatusHistory, {
+        reportId: 1,
+        previousStatus: ReportStatus.OPEN,
+        newStatus: ReportStatus.IN_REVIEW,
+        previousSubStatus: SUB_STATUS.NONE,
+        newSubStatus: SUB_STATUS.NONE,
+        changedByUserId: supervisorUser.sub,
+        changedAt: expect.any(Date),
+        notes: `Assigned to user: ${mockUser.email}`,
+      });
     });
   });
 
   describe('updateStatus', () => {
-    const updateStatusDto = {
-      status: ReportStatus.IN_PROGRESS,
-      note: 'Work started',
-    } as UpdateReportStatusDto;
+    const updateStatusDto: UpdateReportStatusDto = {
+      newStatus: ReportStatus.IN_PROGRESS,
+    };
 
-    it('should update status successfully when transition is valid', async () => {
-      const updatedReport = { ...mockReport, status: ReportStatus.IN_PROGRESS };
+    beforeEach(() => {
+      jest.spyOn(service as any, 'canUserPerformActionOnReport').mockReturnValue(true);
+      entityManager.findOne.mockResolvedValue(mockReport);
+      entityManager.save.mockResolvedValue(mockReport);
+      entityManager.create.mockReturnValue({} as any);
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockReport);
 
-      (mockCanTransition as jest.Mock).mockReturnValue(true);
-      jest.spyOn(reportRepository, 'findById').mockResolvedValue(mockReport);
-      mockQueryRunner.manager.create.mockReturnValue({} as ReportStatusHistory);
-      mockQueryRunner.manager.save
-        .mockResolvedValueOnce({} as ReportStatusHistory) // First save for status history
-        .mockResolvedValueOnce(updatedReport); // Second save for report
-
-      const result = await service.updateStatus(1, updateStatusDto, mockDepartmentSupervisor);
-
-      expect(mockCanTransition).toHaveBeenCalledWith(ReportStatus.OPEN, ReportStatus.IN_PROGRESS, [
-        UserRole.DEPARTMENT_SUPERVISOR,
-      ]);
-      expect(mockQueryRunner.startTransaction).toHaveBeenCalled();
-      expect(mockQueryRunner.commitTransaction).toHaveBeenCalled();
-      expect(mockQueryRunner.manager.create).toHaveBeenCalledWith(ReportStatusHistory, {
-        reportId: 1,
-        oldStatus: ReportStatus.OPEN,
-        newStatus: ReportStatus.IN_PROGRESS,
-        changedBy: 2,
-        changedAt: expect.any(Date),
-        note: 'Work started',
-      });
-      expect(result).toEqual(updatedReport);
+      // Mock canTransition to return true by default
+      jest.doMock('../utils/report-status.utils', () => ({
+        canTransition: jest.fn().mockReturnValue(true),
+      }));
     });
 
-    it('should throw BadRequestException when transition is invalid', async () => {
-      (mockCanTransition as jest.Mock).mockReturnValue(false);
-      jest.spyOn(reportRepository, 'findById').mockResolvedValue(mockReport);
+    it('should successfully update report status', async () => {
+      const result = await service.updateStatus(1, updateStatusDto, supervisorUser);
 
-      await expect(service.updateStatus(1, updateStatusDto, mockTeamMember)).rejects.toThrow(
+      expect(reportRepository.findById).toHaveBeenCalledWith(1);
+      expect(abilityFactory.defineAbility).toHaveBeenCalled();
+      expect(entityManager.findOne).toHaveBeenCalledWith(Report, {
+        where: { id: 1 },
+        relations: ['currentDepartment'],
+        lock: { mode: 'pessimistic_write' },
+      });
+      expect(result).toEqual(mockReport);
+    });
+
+    it('should throw ForbiddenException when user lacks permission for cancel', async () => {
+      const mockAbility = { can: jest.fn().mockReturnValue(false) };
+      abilityFactory.defineAbility.mockReturnValue(mockAbility as any);
+
+      const cancelDto = { newStatus: ReportStatus.CANCELLED };
+
+      await expect(service.updateStatus(1, cancelDto, citizenUser)).rejects.toThrow(
+        ForbiddenException
+      );
+    });
+
+    it('should handle team member completing work (sets PENDING_APPROVAL)', async () => {
+      const inProgressReport = { ...mockReport, status: ReportStatus.IN_PROGRESS };
+      reportRepository.findById.mockResolvedValue(inProgressReport);
+      entityManager.findOne.mockResolvedValue(inProgressReport);
+
+      const completeDto = {
+        newStatus: ReportStatus.DONE,
+        resolutionNotes: 'Work completed',
+      };
+
+      await service.updateStatus(1, completeDto, teamMemberUser);
+
+      expect(entityManager.save).toHaveBeenCalledWith(Report, {
+        ...inProgressReport,
+        status: ReportStatus.IN_PROGRESS, // Status stays same
+        subStatus: SUB_STATUS.PENDING_APPROVAL, // SubStatus changes
+        resolutionNotes: 'Work completed',
+      });
+    });
+
+    it('should handle supervisor approving work', async () => {
+      const pendingReport = {
+        ...mockReport,
+        status: ReportStatus.IN_PROGRESS,
+        subStatus: SUB_STATUS.PENDING_APPROVAL,
+      };
+      reportRepository.findById.mockResolvedValue(pendingReport);
+      entityManager.findOne.mockResolvedValue(pendingReport);
+
+      const approveDto = {
+        newStatus: ReportStatus.DONE,
+        resolutionNotes: 'Approved',
+      };
+
+      await service.updateStatus(1, approveDto, supervisorUser);
+
+      expect(entityManager.save).toHaveBeenCalledWith(Report, {
+        ...pendingReport,
+        status: ReportStatus.DONE,
+        subStatus: SUB_STATUS.NONE,
+        resolvedAt: expect.any(Date),
+        closedByUserId: supervisorUser.sub,
+        resolutionNotes: 'Approved',
+      });
+    });
+
+    it('should handle supervisor rejecting work', async () => {
+      const pendingReport = {
+        ...mockReport,
+        status: ReportStatus.IN_PROGRESS,
+        subStatus: SUB_STATUS.PENDING_APPROVAL,
+      };
+      reportRepository.findById.mockResolvedValue(pendingReport);
+      entityManager.findOne.mockResolvedValue(pendingReport);
+
+      const rejectDto = {
+        newStatus: ReportStatus.REJECTED,
+        rejectionReason: 'Not satisfactory',
+      };
+
+      await service.updateStatus(1, rejectDto, supervisorUser);
+
+      expect(entityManager.save).toHaveBeenCalledWith(Report, {
+        ...pendingReport,
+        status: ReportStatus.REJECTED,
+        subStatus: SUB_STATUS.NONE,
+        rejectionReason: 'Not satisfactory',
+        closedByUserId: supervisorUser.sub,
+      });
+    });
+
+    it('should throw BadRequestException when rejecting without reason', async () => {
+      const rejectDto = { newStatus: ReportStatus.REJECTED };
+
+      await expect(service.updateStatus(1, rejectDto, supervisorUser)).rejects.toThrow(
         BadRequestException
       );
-
-      expect(mockCanTransition).toHaveBeenCalledWith(ReportStatus.OPEN, ReportStatus.IN_PROGRESS, [
-        UserRole.TEAM_MEMBER,
-      ]);
     });
 
-    it('should handle subStatus transitions correctly', async () => {
-      const reportInProgress = { ...mockReport, status: ReportStatus.IN_PROGRESS };
-      const doneWithSubStatusDto = {
-        status: ReportStatus.DONE,
-        subStatus: 'PENDING_APPROVAL',
-      } as UpdateReportStatusDto;
+    it('should handle cancellation', async () => {
+      const openReport = { ...mockReport, status: ReportStatus.OPEN };
+      reportRepository.findById.mockResolvedValue(openReport);
+      entityManager.findOne.mockResolvedValue(openReport);
 
-      (mockCanTransition as jest.Mock).mockReturnValue(true);
-      jest.spyOn(reportRepository, 'findById').mockResolvedValue(reportInProgress);
-      mockQueryRunner.manager.create.mockReturnValue({} as ReportStatusHistory);
-      mockQueryRunner.manager.save.mockResolvedValue({} as any);
+      const cancelDto = { newStatus: ReportStatus.CANCELLED };
 
-      await service.updateStatus(1, doneWithSubStatusDto, mockTeamMember);
+      await service.updateStatus(1, cancelDto, citizenUser);
 
-      expect(mockQueryRunner.manager.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          status: ReportStatus.DONE,
-          subStatus: 'PENDING_APPROVAL',
-        })
-      );
+      expect(entityManager.save).toHaveBeenCalledWith(Report, {
+        ...openReport,
+        status: ReportStatus.CANCELLED,
+        subStatus: SUB_STATUS.NONE,
+        closedByUserId: citizenUser.sub,
+      });
     });
 
-    it('should rollback transaction on error', async () => {
-      (mockCanTransition as jest.Mock).mockReturnValue(true);
-      jest.spyOn(reportRepository, 'findById').mockResolvedValue(mockReport);
-      mockQueryRunner.manager.save.mockRejectedValue(new Error('Database error'));
+    it('should create status history record', async () => {
+      await service.updateStatus(1, updateStatusDto, supervisorUser);
 
-      await expect(
-        service.updateStatus(1, updateStatusDto, mockDepartmentSupervisor)
-      ).rejects.toThrow();
-
-      expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
-      expect(mockQueryRunner.release).toHaveBeenCalled();
+      expect(entityManager.create).toHaveBeenCalledWith(ReportStatusHistory, {
+        reportId: 1,
+        previousStatus: ReportStatus.OPEN,
+        newStatus: ReportStatus.IN_PROGRESS,
+        previousSubStatus: SUB_STATUS.NONE,
+        newSubStatus: SUB_STATUS.NONE,
+        changedByUserId: supervisorUser.sub,
+        changedAt: expect.any(Date),
+        notes: `Status changed from ${ReportStatus.OPEN} to ${ReportStatus.IN_PROGRESS}`,
+      });
     });
   });
 
   describe('forwardReport', () => {
-    const forwardDto = {
-      targetDepartmentCode: MunicipalityDepartment.HEALTH,
-      reason: 'Outside our jurisdiction',
-    } as ForwardReportDto;
+    const forwardDto: ForwardReportDto = {
+      newDepartment: MunicipalityDepartment.ENVIRONMENTAL,
+      reason: 'Environmental issue',
+    };
 
-    it('should forward report successfully', async () => {
-      // Remove unused: forwardedReport
-      const targetDepartment = { id: 2, code: MunicipalityDepartment.HEALTH };
+    beforeEach(() => {
+      jest.spyOn(service as any, 'canUserPerformActionOnReport').mockReturnValue(true);
+      entityManager.findOne.mockResolvedValue(mockReport);
+      departmentService.findByCode.mockResolvedValue({
+        id: 2,
+        name: 'Environment Department',
+      } as Department);
+      entityManager.save.mockResolvedValue(mockReport);
+      entityManager.create.mockReturnValue({} as any);
+      entityManager.update.mockResolvedValue({ affected: 1 } as any);
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockReport);
+    });
 
-      jest.spyOn(reportRepository, 'findById').mockResolvedValue(mockReport);
-      jest.spyOn(departmentService, 'findById').mockResolvedValue(targetDepartment as any);
-      mockQueryRunner.manager.create
-        .mockReturnValueOnce({} as DepartmentHistory)
-        .mockReturnValueOnce({} as ReportStatusHistory);
-      mockQueryRunner.manager.save.mockResolvedValue({} as any);
+    it('should successfully forward report', async () => {
+      const result = await service.forwardReport(1, forwardDto, supervisorUser);
 
-      const result = await service.forwardReport(1, forwardDto, mockDepartmentSupervisor);
-
-      expect(mockQueryRunner.manager.create).toHaveBeenCalledWith(DepartmentHistory, {
-        reportId: 1,
-        oldDepartmentId: 1,
-        newDepartmentId: 2,
-        changedBy: 2,
-        changedAt: expect.any(Date),
-        reason: 'Outside our jurisdiction',
+      expect(entityManager.findOne).toHaveBeenCalledWith(Report, {
+        where: { id: 1 },
+        relations: ['currentDepartment'],
       });
-      expect(mockQueryRunner.manager.create).toHaveBeenCalledWith(ReportStatusHistory, {
-        reportId: 1,
-        oldStatus: ReportStatus.OPEN,
-        newStatus: ReportStatus.IN_REVIEW,
-        changedBy: 2,
-        changedAt: expect.any(Date),
-        note: 'Report forwarded to HEALTH department: Outside our jurisdiction',
+      expect(departmentService.findByCode).toHaveBeenCalledWith(
+        MunicipalityDepartment.ENVIRONMENTAL
+      );
+      expect(entityManager.save).toHaveBeenCalledWith(Report, {
+        ...mockReport,
+        currentDepartmentId: 2,
+        subStatus: SUB_STATUS.FORWARDED,
       });
-      expect(result.currentDepartmentId).toBe(2);
+      expect(result).toEqual(mockReport);
+    });
+
+    it('should throw NotFoundException when report not found', async () => {
+      entityManager.findOne.mockResolvedValue(null);
+
+      await expect(service.forwardReport(999, forwardDto, supervisorUser)).rejects.toThrow(
+        NotFoundException
+      );
+    });
+
+    it('should throw UnauthorizedException when user lacks permission', async () => {
+      jest.spyOn(service as any, 'canUserPerformActionOnReport').mockReturnValue(false);
+
+      await expect(service.forwardReport(1, forwardDto, citizenUser)).rejects.toThrow(
+        UnauthorizedException
+      );
+    });
+
+    it('should throw NotFoundException when department not found', async () => {
+      departmentService.findByCode.mockResolvedValue(null as any);
+
+      await expect(service.forwardReport(1, forwardDto, supervisorUser)).rejects.toThrow(
+        NotFoundException
+      );
     });
 
     it('should throw BadRequestException when forwarding to same department', async () => {
-      const forwardToSameDept = {
-        targetDepartmentCode: MunicipalityDepartment.ROADS, // Same as current
-        reason: 'Test',
-      } as ForwardReportDto;
+      departmentService.findByCode.mockResolvedValue({
+        id: 1,
+        name: 'Same Department',
+      } as Department);
 
-      jest.spyOn(reportRepository, 'findById').mockResolvedValue(mockReport);
-      jest.spyOn(departmentService, 'findById').mockResolvedValue({ id: 1 } as any);
-
-      await expect(
-        service.forwardReport(1, forwardToSameDept, mockDepartmentSupervisor)
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.forwardReport(1, forwardDto, supervisorUser)).rejects.toThrow(
+        BadRequestException
+      );
     });
 
-    it('should throw ForbiddenException when user unauthorized', async () => {
-      jest.spyOn(reportRepository, 'findById').mockResolvedValue(mockReport);
+    it('should throw BadRequestException when reason is empty', async () => {
+      const invalidDto = { ...forwardDto, reason: '' };
 
-      await expect(service.forwardReport(1, forwardDto, mockCitizen)).rejects.toThrow(
-        ForbiddenException
+      await expect(service.forwardReport(1, invalidDto, supervisorUser)).rejects.toThrow(
+        BadRequestException
+      );
+    });
+
+    it('should create department history record', async () => {
+      await service.forwardReport(1, forwardDto, supervisorUser);
+
+      expect(entityManager.create).toHaveBeenCalledWith(DepartmentHistory, {
+        reportId: 1,
+        previousDepartmentId: 1,
+        newDepartmentId: 2,
+        reason: 'Environmental issue',
+        changedByUserId: supervisorUser.sub,
+        changedAt: expect.any(Date),
+      });
+    });
+
+    it('should create status history record for forwarding', async () => {
+      await service.forwardReport(1, forwardDto, supervisorUser);
+
+      expect(entityManager.create).toHaveBeenCalledWith(ReportStatusHistory, {
+        reportId: 1,
+        previousStatus: ReportStatus.OPEN,
+        newStatus: ReportStatus.OPEN, // Status doesn't change
+        previousSubStatus: SUB_STATUS.NONE,
+        newSubStatus: SUB_STATUS.FORWARDED,
+        changedByUserId: supervisorUser.sub,
+        changedAt: expect.any(Date),
+        notes: 'Report forwarded to Environment Department department. Reason: Environmental issue',
+      });
+    });
+
+    it('should cancel active assignments when forwarding', async () => {
+      await service.forwardReport(1, forwardDto, supervisorUser);
+
+      expect(entityManager.update).toHaveBeenCalledWith(
+        Assignment,
+        { reportId: 1, status: AssignmentStatus.ACTIVE },
+        { status: AssignmentStatus.CANCELLED, completedAt: expect.any(Date) }
       );
     });
   });
 
   describe('create', () => {
-    const createReportDto: CreateReportDto = {
+    const createDto: CreateReportDto = {
       title: 'New Report',
-      description: 'New description',
+      description: 'New report description',
+      location: { latitude: 40.7128, longitude: -74.006 },
+      address: '123 Test St',
       reportType: ReportType.POTHOLE,
-      location: { type: 'Point', coordinates: [29.0, 41.0] } as any, // Cast to any to avoid type error
-      address: 'New Address',
+      categoryId: 1,
     };
 
-    it('should create report successfully for citizen', async () => {
-      const locationInfo = { address: 'Formatted Address', neighborhood: 'Test Neighborhood' };
-      const suggestedDepartment = { id: 1, code: MunicipalityDepartment.ROADS };
-      const createdReport = { ...mockReport, ...createReportDto };
-
-      jest.spyOn(locationService, 'getLocationInfo').mockResolvedValue(locationInfo);
-      jest
-        .spyOn(departmentService, 'suggestDepartmentForLocation')
-        .mockResolvedValue(suggestedDepartment as any);
-      jest.spyOn(reportRepository, 'create').mockResolvedValue(createdReport);
-
-      const result = await service.create(createReportDto, mockCitizen);
-
-      expect(locationService.getLocationInfo).toHaveBeenCalledWith(29.0, 41.0);
-      expect(departmentService.suggestDepartmentForLocation).toHaveBeenCalledWith(
-        ReportType.POTHOLE,
-        29.0,
-        41.0
-      );
-      expect(reportRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: 'New Report',
-          description: 'New description',
-          reportType: ReportType.POTHOLE,
-          userId: 4,
-          currentDepartmentId: 1,
-          status: ReportStatus.OPEN,
-          address: 'Formatted Address',
-          neighborhood: 'Test Neighborhood',
-        })
-      );
-      expect(result).toEqual(createdReport);
+    beforeEach(() => {
+      locationService.createPointFromDto.mockReturnValue({
+        type: 'Point',
+        coordinates: [-74.006, 40.7128],
+      } as any);
+      departmentService.suggestDepartmentForReport.mockResolvedValue({ id: 1 } as Department);
+      reportRepository.create.mockResolvedValue(mockReport);
+      entityManager.save.mockResolvedValue(mockReport);
+      entityManager.create.mockReturnValue({} as any);
     });
 
-    it('should handle location service errors gracefully', async () => {
-      jest
-        .spyOn(locationService, 'getLocationInfo')
-        .mockRejectedValue(new Error('Location service error'));
-      jest
-        .spyOn(departmentService, 'suggestDepartmentForLocation')
-        .mockResolvedValue({ id: 1 } as any);
-      jest
-        .spyOn(reportRepository, 'create')
-        .mockResolvedValue({ ...mockReport, ...createReportDto });
+    it('should successfully create report', async () => {
+      const result = await service.create(createDto, citizenUser);
 
-      const result = await service.create(createReportDto, mockCitizen);
+      expect(locationService.createPointFromDto).toHaveBeenCalledWith(createDto.location);
+      expect(departmentService.suggestDepartmentForReport).toHaveBeenCalledWith(ReportType.POTHOLE);
+      expect(reportRepository.create).toHaveBeenCalledWith(
+        {
+          title: 'New Report',
+          description: 'New report description',
+          location: { type: 'Point', coordinates: [-74.006, 40.7128] },
+          address: '123 Test St',
+          reportType: ReportType.POTHOLE,
+          status: ReportStatus.OPEN,
+          categoryId: 1,
+          currentDepartmentId: 1,
+          reportMedias: undefined,
+        },
+        citizenUser.sub
+      );
+      expect(result).toEqual(mockReport);
+    });
+
+    it('should use specified department when provided', async () => {
+      const dtoWithDept = { ...createDto, departmentCode: MunicipalityDepartment.ENVIRONMENTAL };
+      departmentService.findByCode.mockResolvedValue({ id: 2 } as Department);
+
+      await service.create(dtoWithDept, citizenUser);
+
+      expect(departmentService.findByCode).toHaveBeenCalledWith(
+        MunicipalityDepartment.ENVIRONMENTAL
+      );
+      expect(reportRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          currentDepartmentId: 2,
+        }),
+        citizenUser.sub
+      );
+    });
+
+    it('should use general department when no type or department specified', async () => {
+      const dtoWithoutType = { ...createDto } as any;
+      delete dtoWithoutType.reportType;
+      departmentService.findByCode.mockResolvedValue({ id: 3 } as Department);
+
+      await service.create(dtoWithoutType, citizenUser);
+
+      expect(departmentService.findByCode).toHaveBeenCalledWith(MunicipalityDepartment.GENERAL);
+      expect(reportRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          currentDepartmentId: 3,
+        }),
+        citizenUser.sub
+      );
+    });
+
+    it('should set initial status and subStatus', async () => {
+      await service.create(createDto, citizenUser);
+
+      expect(entityManager.save).toHaveBeenCalledWith(Report, {
+        ...mockReport,
+        subStatus: SUB_STATUS.NONE,
+      });
+    });
+
+    it('should create initial status history record', async () => {
+      await service.create(createDto, citizenUser);
+
+      expect(entityManager.create).toHaveBeenCalledWith(ReportStatusHistory, {
+        reportId: mockReport.id,
+        previousStatus: null,
+        newStatus: ReportStatus.OPEN,
+        previousSubStatus: null,
+        newSubStatus: SUB_STATUS.NONE,
+        changedByUserId: citizenUser.sub,
+        changedAt: expect.any(Date),
+        notes: 'Report created',
+      });
+    });
+
+    it('should handle report medias when provided', async () => {
+      const dtoWithMedia = {
+        ...createDto,
+        reportMedias: [{ url: 'test.jpg', type: 'image' }],
+      };
+
+      await service.create(dtoWithMedia, citizenUser);
 
       expect(reportRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          address: 'New Address', // Uses provided address when location service fails
-        })
+          reportMedias: [{ url: 'test.jpg', type: 'image' }],
+        }),
+        citizenUser.sub
       );
-      expect(result).toBeDefined();
+    });
+
+    it('should rollback transaction on error', async () => {
+      reportRepository.create.mockRejectedValue(new Error('Database error'));
+
+      await expect(service.create(createDto, citizenUser)).rejects.toThrow('Database error');
+      expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
+      expect(queryRunner.release).toHaveBeenCalled();
     });
   });
 });
