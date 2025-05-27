@@ -7,6 +7,8 @@ import { setupSwagger } from './config/swagger.config';
 import { ConfigService } from '@nestjs/config';
 import './modules/media/interfaces/multer-file.interface';
 import { HttpExceptionFilter } from './core/filters/http-exception.filter';
+import { TransformInterceptor } from './core/interceptors/transform.interceptor';
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
     // Keep this logger configuration
@@ -24,6 +26,9 @@ async function bootstrap(): Promise<void> {
       forbidNonWhitelisted: true,
     })
   );
+
+  // ✅  tüm cevapları standart formata sok
+  app.useGlobalInterceptors(new TransformInterceptor());
 
   app.enableCors();
   app.setGlobalPrefix('api');

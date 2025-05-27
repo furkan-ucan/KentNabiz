@@ -97,6 +97,13 @@ export class AbilityFactory {
       // Kendi departmanındaki raporları okuyabilir
       can(Action.Read, Report, { currentDepartmentId: user.departmentId });
 
+      // Atanmış raporların durumunu güncelleyebilir (IN_REVIEW -> IN_PROGRESS, IN_PROGRESS -> DONE)
+      can(Action.Update, Report, {
+        currentDepartmentId: user.departmentId,
+        status: { $in: [ReportStatus.IN_REVIEW, ReportStatus.IN_PROGRESS] },
+        // assignments.assigneeTeamId kontrolü guard/servis seviyesinde yapılacak
+      });
+
       can(Action.StartWork, Report, {
         status: ReportStatus.IN_REVIEW,
         currentDepartmentId: user.departmentId,

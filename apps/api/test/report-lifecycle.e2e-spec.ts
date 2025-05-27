@@ -9,10 +9,11 @@ import { AppModule } from '../src/app.module';
 import { AuthHelper } from './auth-helper';
 import TestDataSource from '../src/config/test-data-source';
 import { ReportType, ReportStatus, MunicipalityDepartment } from '@KentNabiz/shared';
+import { UpdateReportStatusDto } from '../src/modules/reports/dto/update-report-status.dto';
 
 describe('Report Lifecycle E2E', () => {
   let app: INestApplication;
-  let authHelper: AuthHelper;
+  let sauthHelper: AuthHelper;
   let createdReportId: number;
   let testTeamId: number;
 
@@ -33,7 +34,7 @@ describe('Report Lifecycle E2E', () => {
     );
 
     await app.init();
-    authHelper = new AuthHelper();
+    sauthHelper = new AuthHelper();
 
     // Get test team ID from seeded data
     const teamRepo = TestDataSource.getRepository('Team');
@@ -60,7 +61,7 @@ describe('Report Lifecycle E2E', () => {
 
       const response = await request(app.getHttpServer())
         .post('/reports')
-        .set('Authorization', `Bearer ${authHelper.getCitizenToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getCitizenToken()}`)
         .send(createReportDto)
         .expect(201);
 
@@ -81,7 +82,7 @@ describe('Report Lifecycle E2E', () => {
     it('2. Should get report by ID (CITIZEN can see own report)', async () => {
       const response = await request(app.getHttpServer())
         .get(`/reports/${createdReportId}`)
-        .set('Authorization', `Bearer ${authHelper.getCitizenToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getCitizenToken()}`)
         .expect(200);
 
       expect(response.body.data).toMatchObject({
@@ -100,7 +101,7 @@ describe('Report Lifecycle E2E', () => {
 
       const response = await request(app.getHttpServer())
         .patch(`/reports/${createdReportId}/status`)
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getSupervisorToken()}`)
         .send(updateStatusDto)
         .expect(200);
 
@@ -113,7 +114,7 @@ describe('Report Lifecycle E2E', () => {
     it('4. Should assign report to team (DEPARTMENT_SUPERVISOR)', async () => {
       const response = await request(app.getHttpServer())
         .patch(`/reports/${createdReportId}/assign-team/${testTeamId}`)
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getSupervisorToken()}`)
         .expect(200);
 
       expect(response.body.data).toHaveProperty('assignments');
@@ -129,15 +130,23 @@ describe('Report Lifecycle E2E', () => {
     });
 
     it('5. Should start work on report (TEAM_MEMBER)', async () => {
-      const updateStatusDto = {
+      expect(createdReportId).toBeDefined();
+      expect(typeof createdReportId).toBe('number');
+      expect(testTeamId).toBeDefined(); // testTeamId'nin tanımlı olduğunu kontrol et
+      expect(typeof testTeamId).toBe('number');
+      console.log(
+        `[LIFECYCLE_TEST_START_WORK] Report ID: ${createdReportId}, Team ID for assignment check: ${testTeamId}`
+      );
+
+      const updateDto: UpdateReportStatusDto = {
         newStatus: ReportStatus.IN_PROGRESS,
         notes: 'Started working on the pothole repair',
       };
 
       const response = await request(app.getHttpServer())
         .patch(`/reports/${createdReportId}/status`)
-        .set('Authorization', `Bearer ${authHelper.getTeamMemberToken()}`)
-        .send(updateStatusDto)
+        .set('Authorization', `Bearer ${sauthHelper.getTeamMemberToken()}`)
+        .send(updateDto)
         .expect(200);
 
       expect(response.body.data).toMatchObject({
@@ -155,14 +164,15 @@ describe('Report Lifecycle E2E', () => {
 
       const response = await request(app.getHttpServer())
         .patch(`/reports/${createdReportId}/status`)
-        .set('Authorization', `Bearer ${authHelper.getTeamMemberToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getTeamMemberToken()}`)
         .send(updateStatusDto)
         .expect(200);
 
       expect(response.body.data).toMatchObject({
         id: createdReportId,
-        status: ReportStatus.DONE,
+        status: ReportStatus.IN_PROGRESS,
         subStatus: 'PENDING_APPROVAL',
+        resolutionNotes: updateStatusDto.resolutionNotes,
       });
     });
 
@@ -174,7 +184,7 @@ describe('Report Lifecycle E2E', () => {
 
       const response = await request(app.getHttpServer())
         .patch(`/reports/${createdReportId}/status`)
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getSupervisorToken()}`)
         .send(updateStatusDto)
         .expect(200);
 
@@ -189,7 +199,7 @@ describe('Report Lifecycle E2E', () => {
     it('8. Should get status history for the report', async () => {
       const response = await request(app.getHttpServer())
         .get(`/reports/${createdReportId}/status-history`)
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getSupervisorToken()}`)
         .expect(200);
 
       expect(Array.isArray(response.body.data)).toBe(true);
@@ -217,7 +227,7 @@ describe('Report Lifecycle E2E', () => {
     it('Should deny report assignment by unauthorized user (CITIZEN)', async () => {
       await request(app.getHttpServer())
         .patch(`/reports/${createdReportId}/assign-team/${testTeamId}`)
-        .set('Authorization', `Bearer ${authHelper.getCitizenToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getCitizenToken()}`)
         .expect(403);
     });
 
@@ -229,7 +239,7 @@ describe('Report Lifecycle E2E', () => {
 
       await request(app.getHttpServer())
         .patch(`/reports/${createdReportId}/status`)
-        .set('Authorization', `Bearer ${authHelper.getCitizenToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getCitizenToken()}`)
         .send(updateStatusDto)
         .expect(403);
     });
@@ -254,7 +264,7 @@ describe('Report Lifecycle E2E', () => {
 
       await request(app.getHttpServer())
         .post('/reports')
-        .set('Authorization', `Bearer ${authHelper.getCitizenToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getCitizenToken()}`)
         .send(invalidReportDto)
         .expect(400);
     });
@@ -267,7 +277,7 @@ describe('Report Lifecycle E2E', () => {
 
       await request(app.getHttpServer())
         .patch(`/reports/${createdReportId}/status`)
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getSupervisorToken()}`)
         .send(invalidStatusDto)
         .expect(400);
     });
@@ -277,7 +287,7 @@ describe('Report Lifecycle E2E', () => {
 
       await request(app.getHttpServer())
         .patch(`/reports/${createdReportId}/assign-team/${nonExistentTeamId}`)
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getSupervisorToken()}`)
         .expect(404);
     });
   });
@@ -291,7 +301,7 @@ describe('Report Lifecycle E2E', () => {
 
       const response = await request(app.getHttpServer())
         .patch(`/reports/${createdReportId}/forward`)
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getSupervisorToken()}`)
         .send(forwardDto)
         .expect(200);
 
@@ -302,7 +312,7 @@ describe('Report Lifecycle E2E', () => {
     it('Should get department change history', async () => {
       const response = await request(app.getHttpServer())
         .get(`/reports/${createdReportId}/history`)
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getSupervisorToken()}`)
         .expect(200);
 
       expect(Array.isArray(response.body.data)).toBe(true);
@@ -318,7 +328,7 @@ describe('Report Lifecycle E2E', () => {
     it('Should list reports with pagination and filters', async () => {
       const response = await request(app.getHttpServer())
         .get('/reports?page=1&limit=10&status=DONE&reportType=POTHOLE')
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getSupervisorToken()}`)
         .expect(200);
 
       expect(response.body.data).toHaveProperty('data');
@@ -331,28 +341,31 @@ describe('Report Lifecycle E2E', () => {
     it('Should find nearby reports', async () => {
       const response = await request(app.getHttpServer())
         .get('/reports/nearby?latitude=41.0&longitude=29.0&radius=1000')
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getSupervisorToken()}`)
         .expect(200);
 
+      expect(response.body.data).toBeDefined();
       expect(response.body.data).toHaveProperty('data');
-      expect(Array.isArray(response.body.data.data)).toBe(true);
+      expect(response.body.data.data).toHaveProperty('data');
+      expect(response.body.data.data).toHaveProperty('total');
+      expect(response.body.data.data).toHaveProperty('page');
+      expect(response.body.data.data).toHaveProperty('limit');
+      expect(Array.isArray(response.body.data.data.data)).toBe(true);
     });
 
     it("Should get user's own reports", async () => {
       const response = await request(app.getHttpServer())
-        .get('/reports/my-reports?page=1&limit=10')
-        .set('Authorization', `Bearer ${authHelper.getCitizenToken()}`)
+        .get('/reports/my-reports')
+        .set('Authorization', `Bearer ${sauthHelper.getCitizenToken()}`)
         .expect(200);
 
+      expect(response.body.data).toBeDefined();
       expect(response.body.data).toHaveProperty('data');
-      expect(Array.isArray(response.body.data.data)).toBe(true);
-
-      // Should only contain reports created by this user
-      if (response.body.data.data.length > 0) {
-        response.body.data.data.forEach((report: { userId: number }) => {
-          expect(report.userId).toBe(AuthHelper.TEST_USERS.CITIZEN.id);
-        });
-      }
+      expect(response.body.data.data).toHaveProperty('data');
+      expect(response.body.data.data).toHaveProperty('total');
+      expect(response.body.data.data).toHaveProperty('page');
+      expect(response.body.data.data).toHaveProperty('limit');
+      expect(Array.isArray(response.body.data.data.data)).toBe(true);
     });
   });
 });

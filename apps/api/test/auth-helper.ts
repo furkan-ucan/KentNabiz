@@ -10,6 +10,7 @@ interface TestUser {
   email: string;
   roles: UserRole[];
   departmentId: number | null;
+  activeTeamId?: number;
 }
 
 export class AuthHelper {
@@ -27,6 +28,7 @@ export class AuthHelper {
       email: 'team.member@test.com',
       roles: [UserRole.TEAM_MEMBER],
       departmentId: 1,
+      activeTeamId: 1,
     } as TestUser,
     DEPARTMENT_SUPERVISOR: {
       id: 3,
@@ -48,8 +50,12 @@ export class AuthHelper {
       email: user.email,
       roles: user.roles,
       departmentId: user.departmentId,
+      activeTeamId: user.activeTeamId,
       jti: `test-${user.id}-${Date.now()}`,
     };
+
+    console.log(`[AuthHelper.generateToken] Creating token for user ${user.id} (${user.email})`);
+    console.log(`[AuthHelper.generateToken] Payload:`, JSON.stringify(payload, null, 2));
 
     return sign(payload, AuthHelper.JWT_SECRET, {
       expiresIn: '1h',

@@ -12,6 +12,7 @@ interface RawJwtPayload {
   email: string;
   roles: UserRole[] | string[]; // JWT'den string dizisi olarak da gelebilir
   departmentId?: number;
+  activeTeamId?: number;
   jti?: string;
   iat?: number;
   exp?: number;
@@ -66,12 +67,22 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Invalid token: departmentId is malformed.');
     }
 
+    // activeTeamId varsa ve null değilse number mı diye kontrol et
+    if (
+      payload.activeTeamId !== undefined &&
+      payload.activeTeamId !== null &&
+      typeof payload.activeTeamId !== 'number'
+    ) {
+      throw new UnauthorizedException('Invalid token: activeTeamId is malformed.');
+    }
+
     // req.user'a eklenecek olan ve JwtPayload arayüzüne uyan nesneyi döndür
     return {
       sub: payload.sub,
       email: payload.email,
       roles: rolesAsEnum, // Dönüştürülmüş ve doğrulanmış rolleri kullan
       departmentId: payload.departmentId, // Opsiyonel olarak
+      activeTeamId: payload.activeTeamId, // Added activeTeamId field
       jti: payload.jti, // jti de payload'ın bir parçası
     };
   }

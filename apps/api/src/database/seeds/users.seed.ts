@@ -79,6 +79,7 @@ export const UsersSeed = async (dataSource: DataSource): Promise<void> => {
     roles: [UserRole.TEAM_MEMBER],
     isEmailVerified: true,
     departmentId: 1,
+    activeTeamId: 1,
   });
   const testSupervisor = userRepository.create({
     id: 3,

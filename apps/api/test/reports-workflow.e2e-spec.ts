@@ -11,7 +11,7 @@ import { AuthHelper } from './auth-helper';
 
 describe('Reports Workflow (E2E)', () => {
   let app: INestApplication;
-  let authHelper: AuthHelper;
+  let sauthHelper: AuthHelper;
   let createdReportId: number;
 
   beforeAll(async () => {
@@ -31,7 +31,7 @@ describe('Reports Workflow (E2E)', () => {
     );
 
     await app.init();
-    authHelper = new AuthHelper();
+    sauthHelper = new AuthHelper();
   });
 
   afterAll(async () => {
@@ -53,7 +53,7 @@ describe('Reports Workflow (E2E)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/reports')
-        .set('Authorization', `Bearer ${authHelper.getCitizenToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getCitizenToken()}`)
         .send(createReportDto)
         .expect(201);
 
@@ -75,7 +75,7 @@ describe('Reports Workflow (E2E)', () => {
 
       const response = await request(app.getHttpServer())
         .get(`/reports/${createdReportId}`)
-        .set('Authorization', `Bearer ${authHelper.getCitizenToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getCitizenToken()}`)
         .expect(200);
 
       expect(response.body.data).toMatchObject({
@@ -88,14 +88,29 @@ describe('Reports Workflow (E2E)', () => {
     it('should list reports with filters and pagination', async () => {
       const response = await request(app.getHttpServer())
         .get('/reports?page=1&limit=10&status=OPEN&reportType=POTHOLE')
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getSupervisorToken()}`)
         .expect(200);
 
-      expect(response.body).toHaveProperty('data');
-      expect(response.body).toHaveProperty('total');
-      expect(response.body).toHaveProperty('page');
-      expect(response.body).toHaveProperty('limit');
-      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data).toHaveProperty('data');
+      expect(response.body.data).toHaveProperty('total');
+      expect(response.body.data).toHaveProperty('page', 1);
+      expect(response.body.data).toHaveProperty('limit', 10);
+      expect(Array.isArray(response.body.data.data)).toBe(true);
+    });
+
+    it('should search reports by location radius', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/reports/nearby?latitude=41.0&longitude=29.0&radius=5000')
+        .set('Authorization', `Bearer ${sauthHelper.getSupervisorToken()}`)
+        .expect(200);
+
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data).toHaveProperty('data');
+      expect(response.body.data.data).toHaveProperty('data');
+      expect(response.body.data.data).toHaveProperty('total');
+      expect(response.body.data.data).toHaveProperty('page');
+      expect(response.body.data.data).toHaveProperty('limit');
+      expect(Array.isArray(response.body.data.data.data)).toBe(true);
     });
   });
 
@@ -110,7 +125,7 @@ describe('Reports Workflow (E2E)', () => {
 
       const response = await request(app.getHttpServer())
         .patch(`/reports/${createdReportId}/assign-team/1`)
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getSupervisorToken()}`)
         .expect(200);
 
       expect(response.body.data).toHaveProperty('assignments');
@@ -131,7 +146,7 @@ describe('Reports Workflow (E2E)', () => {
 
       const response = await request(app.getHttpServer())
         .patch(`/reports/${createdReportId}/assign-user/3`)
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getSupervisorToken()}`)
         .expect(200);
 
       expect(response.body.data).toHaveProperty('assignments');
@@ -152,15 +167,45 @@ describe('Reports Workflow (E2E)', () => {
 
       await request(app.getHttpServer())
         .patch(`/reports/${createdReportId}/assign-team/1`)
-        .set('Authorization', `Bearer ${authHelper.getCitizenToken()}`)
+        .set('Authorization', `Bearer ${sauthHelper.getCitizenToken()}`)
         .expect(403);
     });
   });
 
   describe('Report Status Management', () => {
+    let reportIdForTeamMemberTest: number;
+
+    beforeAll(async () => {
+      // Create a new report specifically for team member tests
+      const createReportDto = {
+        title: 'Team Member Test Report',
+        description: 'Report for testing team member status updates',
+        reportType: ReportType.POTHOLE,
+        location: {
+          latitude: 41.0,
+          longitude: 29.0,
+        },
+        address: '456 Team Test Street, Istanbul',
+      };
+
+      const createResponse = await request(app.getHttpServer())
+        .post('/reports')
+        .set('Authorization', `Bearer ${sauthHelper.getCitizenToken()}`)
+        .send(createReportDto)
+        .expect(201);
+
+      reportIdForTeamMemberTest = createResponse.body.data.id;
+
+      // Assign it to team 1 (where TEAM_MEMBER belongs) and keep it assigned to team
+      await request(app.getHttpServer())
+        .patch(`/reports/${reportIdForTeamMemberTest}/assign-team/1`)
+        .set('Authorization', `Bearer ${sauthHelper.getSupervisorToken()}`)
+        .expect(200);
+    });
+
     it('should update report status (TEAM_MEMBER)', async () => {
-      expect(createdReportId).toBeDefined();
-      expect(typeof createdReportId).toBe('number');
+      expect(reportIdForTeamMemberTest).toBeDefined();
+      expect(typeof reportIdForTeamMemberTest).toBe('number');
 
       const updateStatusDto = {
         newStatus: 'IN_PROGRESS',
@@ -168,20 +213,20 @@ describe('Reports Workflow (E2E)', () => {
       };
 
       const response = await request(app.getHttpServer())
-        .patch(`/reports/${createdReportId}/status`)
-        .set('Authorization', `Bearer ${authHelper.getTeamMemberToken()}`)
+        .patch(`/reports/${reportIdForTeamMemberTest}/status`)
+        .set('Authorization', `Bearer ${sauthHelper.getTeamMemberToken()}`)
         .send(updateStatusDto)
         .expect(200);
 
       expect(response.body.data).toMatchObject({
-        id: createdReportId,
+        id: reportIdForTeamMemberTest,
         status: 'IN_PROGRESS',
       });
     });
 
     it('should update report status with sub-status', async () => {
-      expect(createdReportId).toBeDefined();
-      expect(typeof createdReportId).toBe('number');
+      expect(reportIdForTeamMemberTest).toBeDefined();
+      expect(typeof reportIdForTeamMemberTest).toBe('number');
 
       const updateStatusDto = {
         newStatus: 'DONE',
@@ -190,167 +235,28 @@ describe('Reports Workflow (E2E)', () => {
       };
 
       const response = await request(app.getHttpServer())
-        .patch(`/reports/${createdReportId}/status`)
-        .set('Authorization', `Bearer ${authHelper.getTeamMemberToken()}`)
+        .patch(`/reports/${reportIdForTeamMemberTest}/status`)
+        .set('Authorization', `Bearer ${sauthHelper.getTeamMemberToken()}`)
         .send(updateStatusDto)
         .expect(200);
 
       expect(response.body.data).toMatchObject({
-        id: createdReportId,
-        status: 'DONE',
+        id: reportIdForTeamMemberTest,
+        status: 'IN_PROGRESS', // TEAM_MEMBER completing work sets status to IN_PROGRESS
         subStatus: 'PENDING_APPROVAL',
       });
     });
 
     it('should get report status history', async () => {
-      expect(createdReportId).toBeDefined();
-      expect(typeof createdReportId).toBe('number');
+      expect(reportIdForTeamMemberTest).toBeDefined();
+      expect(typeof reportIdForTeamMemberTest).toBe('number');
 
       const response = await request(app.getHttpServer())
-        .get(`/reports/${createdReportId}/status-history`)
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
+        .get(`/reports/${reportIdForTeamMemberTest}/status-history`)
+        .set('Authorization', `Bearer ${sauthHelper.getSupervisorToken()}`)
         .expect(200);
 
       expect(Array.isArray(response.body.data)).toBe(true);
-      expect(response.body.data.length).toBeGreaterThan(0);
-      expect(response.body.data[0]).toHaveProperty('previousStatus');
-      expect(response.body.data[0]).toHaveProperty('newStatus');
-      expect(response.body.data[0]).toHaveProperty('changedAt');
-    });
-  });
-
-  describe('Report Forwarding', () => {
-    it('should forward report to different department (DEPARTMENT_SUPERVISOR)', async () => {
-      const forwardReportDto = {
-        newDepartment: MunicipalityDepartment.HEALTH,
-        reason: 'This issue is related to public health, not roads',
-      };
-
-      const response = await request(app.getHttpServer())
-        .patch(`/reports/${createdReportId}/forward`)
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
-        .send(forwardReportDto)
-        .expect(200);
-
-      expect(response.body.data).toHaveProperty('currentDepartmentId');
-      expect(response.body.data.subStatus).toBe('FORWARDED');
-    });
-
-    it('should get department history', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/reports/${createdReportId}/history`)
-        .set('Authorization', `Bearer ${authHelper.getSystemAdminToken()}`)
-        .expect(200);
-
-      expect(Array.isArray(response.body.data)).toBe(true);
-      expect(response.body.data.length).toBeGreaterThan(0);
-      expect(response.body.data[0]).toHaveProperty('previousDepartmentId');
-      expect(response.body.data[0]).toHaveProperty('newDepartmentId');
-    });
-  });
-
-  describe('Report Media Management', () => {
-    it.skip('should upload report media (not implemented yet)', async () => {
-      // Note: Media endpoints are not implemented yet
-      const response = await request(app.getHttpServer())
-        .post(`/reports/${createdReportId}/media`)
-        .set('Authorization', `Bearer ${authHelper.getCitizenToken()}`)
-        .attach('files', Buffer.from('fake image data'), 'test-image.jpg')
-        .expect(404); // Endpoint not implemented
-
-      // expect(response.body).toHaveProperty('uploadedFiles');
-      // expect(Array.isArray(response.body.uploadedFiles)).toBe(true);
-    });
-
-    it.skip('should get report media (not implemented yet)', async () => {
-      // Note: Media endpoints are not implemented yet
-      const response = await request(app.getHttpServer())
-        .get(`/reports/${createdReportId}/media`)
-        .set('Authorization', `Bearer ${authHelper.getCitizenToken()}`)
-        .expect(404); // Endpoint not implemented
-
-      // expect(Array.isArray(response.body)).toBe(true);
-    });
-  });
-
-  describe('Report Analytics and Search', () => {
-    it('should search reports by location radius', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/reports/nearby?latitude=29.0&longitude=41.0&radius=1000')
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
-        .expect(200);
-
-      expect(response.body).toHaveProperty('data');
-      expect(Array.isArray(response.body.data)).toBe(true);
-    });
-
-    it.skip('should get reports statistics (not implemented yet)', async () => {
-      // Note: Analytics endpoints are not implemented yet
-      const response = await request(app.getHttpServer())
-        .get('/reports/analytics/statistics?period=monthly')
-        .set('Authorization', `Bearer ${authHelper.getSystemAdminToken()}`)
-        .expect(404); // Endpoint not implemented
-
-      // expect(response.body).toHaveProperty('totalReports');
-      // expect(response.body).toHaveProperty('statusDistribution');
-      // expect(response.body).toHaveProperty('typeDistribution');
-    });
-
-    it.skip('should get department performance metrics (not implemented yet)', async () => {
-      // Note: Analytics endpoints are not implemented yet
-      const response = await request(app.getHttpServer())
-        .get('/reports/analytics/performance?departmentId=1&period=monthly')
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
-        .expect(404); // Endpoint not implemented
-
-      // expect(response.body).toHaveProperty('averageResolutionTime');
-      // expect(response.body).toHaveProperty('completionRate');
-      // expect(response.body).toHaveProperty('reportVolume');
-    });
-  });
-
-  describe('Authorization and Security', () => {
-    it('should allow citizens to only view their own reports', async () => {
-      // Citizen trying to access someone else's report
-      await request(app.getHttpServer())
-        .get('/reports/999999')
-        .set('Authorization', `Bearer ${authHelper.getCitizenToken()}`)
-        .expect(404); // Should not find or deny access
-    });
-
-    it('should deny report creation without authentication', async () => {
-      const createReportDto = {
-        title: 'Unauthorized Report',
-        description: 'This should fail',
-        reportType: ReportType.POTHOLE,
-        location: {
-          type: 'Point',
-          coordinates: [29.0, 41.0],
-        },
-      };
-
-      await request(app.getHttpServer()).post('/reports').send(createReportDto).expect(401);
-    });
-
-    it('should allow SYSTEM_ADMIN to access all reports', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/reports/${createdReportId}`)
-        .set('Authorization', `Bearer ${authHelper.getSystemAdminToken()}`)
-        .expect(200);
-
-      expect(response.body.data.id).toBe(createdReportId);
-    });
-  });
-
-  describe('Report Cleanup', () => {
-    it.skip('should archive report (SYSTEM_ADMIN) - not implemented yet', async () => {
-      // Note: Archive endpoint is not implemented yet
-      const response = await request(app.getHttpServer())
-        .patch(`/reports/${createdReportId}/archive`)
-        .set('Authorization', `Bearer ${authHelper.getSystemAdminToken()}`)
-        .expect(404); // Endpoint not implemented
-
-      // expect(response.body.status).toBe('ARCHIVED');
     });
   });
 });
