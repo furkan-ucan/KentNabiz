@@ -1,11 +1,19 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
-import { router } from '@/routes'; // @/ src alias'ı ile import
-import './index.css'; // Global stiller için
+import { Provider } from 'react-redux';
+import { ChakraProvider } from '@chakra-ui/react';
+import { router } from '@/routes';
+import { store } from '@/store';
+import { system } from '@/styles/theme';
+import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <Provider store={store}>
+      <ChakraProvider value={system}>
+        <RouterProvider router={router} />
+      </ChakraProvider>
+    </Provider>
   </React.StrictMode>
 );
