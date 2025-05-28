@@ -9,7 +9,12 @@ export class ForwardReportDto {
     example: MunicipalityDepartment.ROADS,
   })
   @IsEnum(MunicipalityDepartment)
+  @IsNotEmpty()
   newDepartment!: MunicipalityDepartment;
+
+  @IsEnum(MunicipalityDepartment)
+  @IsOptional()
+  departmentCode?: MunicipalityDepartment;
 
   @ApiProperty({
     description: 'Rapor yönlendirme nedeni',

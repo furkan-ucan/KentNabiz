@@ -12,6 +12,7 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,29 +23,35 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { ReportsService } from '../services/reports.service';
+import { TeamsService } from '../../teams/services/teams.service';
 import { CreateReportDto } from '../dto/create-report.dto';
 import { UpdateReportDto } from '../dto/update-report.dto';
 import { UpdateReportStatusDto } from '../dto/update-report-status.dto';
 import { ForwardReportDto } from '../dto/forward-report.dto';
 import { RadiusSearchDto } from '../dto/location.dto';
-import { QueryReportsDto } from '../dto/query-reports.dto';
 import { ReportStatus, ReportType, MunicipalityDepartment, UserRole } from '@KentNabiz/shared';
 import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { RequestWithUser } from '../../auth/interfaces/jwt-payload.interface';
 import { Report } from '../entities/report.entity';
+import { IReport } from '../interfaces/report.interface';
 import { DepartmentHistoryResponseDto } from '../dto/department-history.response.dto';
 import { CheckPolicies, PoliciesGuard } from '../../../core/guards/policies.guard';
 import { AppAbility, Action } from '../../../core/authorization/ability.factory';
 import { ReportStatusHistory } from '../entities/report-status-history.entity';
+import { PaginatedResponse } from '../../../common/dto/paginated-response.dto';
+// import { ResponseDto } from '../../../common/dto/response.dto'; // Removed - using TransformInterceptor instead
 
 @ApiTags('reports')
 @Controller('reports')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class ReportsController {
-  constructor(private readonly reportsService: ReportsService) {}
+  constructor(
+    private readonly reportsService: ReportsService,
+    private readonly teamsService: TeamsService
+  ) {}
 
   @Get()
   @ApiOperation({
@@ -56,8 +63,18 @@ export class ReportsController {
   @ApiResponse({ status: 400, description: 'Invalid query parameters' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  async findAll(@Req() req: RequestWithUser, @Query() queryDto: QueryReportsDto) {
-    return this.reportsService.findAll(req.user, queryDto);
+  async findAll(
+    @Req() req: RequestWithUser,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number
+  ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
+    const paginatedResult = await this.reportsService.findAll(req.user, { page, limit });
+    return {
+      data: paginatedResult.data,
+      total: paginatedResult.total,
+      page,
+      limit,
+    };
   }
 
   @Get('nearby')
@@ -70,13 +87,14 @@ export class ReportsController {
     UserRole.TEAM_MEMBER,
     UserRole.CITIZEN
   )
+  @ApiOperation({ summary: 'Find reports within a radius' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'reportType', required: false, enum: ReportType }) // type -> reportType
   @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
   @ApiQuery({ name: 'departmentCode', required: false, enum: MunicipalityDepartment }) // department -> departmentCode
   @ApiResponse({ status: 200, description: 'Paginated list of nearby reports' })
-  findNearby(
+  async findNearby(
     @Req() req: RequestWithUser,
     @Query() searchDto: RadiusSearchDto, // searchDto latitude, longitude, radius içerir
     @Query('page') page?: number,
@@ -84,21 +102,22 @@ export class ReportsController {
     @Query('reportType') reportType?: ReportType, // type -> reportType
     @Query('status') status?: ReportStatus,
     @Query('departmentCode') departmentCode?: MunicipalityDepartment // department -> departmentCode
-  ) {
-    // ReportsService.findNearby metodu ilk parametre olarak searchDto'yu, ikinci olarak diğer opsiyonları alır.
-    // searchDto içinde latitude, longitude, radius zaten var.
-    // Diğer opsiyonlar (page, limit, reportType, status, departmentCode) ayrıca Query ile alınıp service metoduna iletilmeli.
-    return this.reportsService.findNearby(
-      searchDto, // { latitude, longitude, radius } içeren DTO
-      {
-        // Opsiyonel filtreler
-        page: page ? +page : 1,
-        limit: limit ? +limit : 10,
-        reportType,
-        status,
-        departmentCode,
-      }
-    );
+  ): Promise<{ data: PaginatedResponse<IReport> }> {
+    const paginatedResult = await this.reportsService.findNearby(searchDto, {
+      page: page ? +page : 1,
+      limit: limit ? +limit : 10,
+      reportType,
+      status,
+      departmentCode,
+    });
+    return {
+      data: new PaginatedResponse(
+        paginatedResult.data,
+        paginatedResult.total,
+        page ? +page : 1,
+        limit ? +limit : 10
+      ),
+    };
   }
 
   @Get('my-reports')
@@ -120,13 +139,21 @@ export class ReportsController {
     @Query('limit') limit?: number,
     @Query('reportType') reportType?: ReportType, // type -> reportType
     @Query('status') status?: ReportStatus
-  ) {
-    return this.reportsService.getReportsByUser(req.user, {
+  ): Promise<{ data: PaginatedResponse<IReport> }> {
+    const paginatedResult = await this.reportsService.getReportsByUser(req.user, {
       page: page ? +page : 1,
       limit: limit ? +limit : 10,
-      reportType, // type -> reportType
+      reportType,
       status,
     });
+    return {
+      data: new PaginatedResponse(
+        paginatedResult.data,
+        paginatedResult.total,
+        page ? +page : 1,
+        limit ? +limit : 10
+      ),
+    };
   }
 
   @Get(':id')
@@ -316,7 +343,7 @@ export class ReportsController {
   // Yeni team assignment endpoint'leri
   @Patch(':id/assign-team/:teamId')
   @ApiOperation({ summary: 'Assign a report to a team (role-based)' })
-  @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
+  @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN, UserRole.TEAM_MEMBER) // UserRole.TEAM_MEMBER eklendi
   @ApiParam({ name: 'id', description: 'Report ID', type: Number })
   @ApiParam({ name: 'teamId', description: 'Team ID', type: Number })
   @ApiResponse({ status: 200, description: 'Report assigned to team successfully', type: Report })
@@ -329,6 +356,10 @@ export class ReportsController {
     @Param('teamId', ParseIntPipe) teamId: number,
     @Req() req: RequestWithUser
   ): Promise<Report> {
+    // Team existence check first - throws 404 if team doesn't exist
+    await this.teamsService.findOne(teamId, req.user);
+
+    // Then proceed with assignment - may throw 403 if unauthorized
     return this.reportsService.assignReportToTeam(id, teamId, req.user);
   }
 

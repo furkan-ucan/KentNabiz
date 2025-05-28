@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
 import { Department } from '../entities/department.entity';
 import { DepartmentRepository } from '../repositories/department.repository';
 import { DepartmentDto } from '../dto/department.dto';
@@ -34,19 +34,54 @@ export class DepartmentService {
     return department;
   }
 
-  async findByCode(code: MunicipalityDepartment): Promise<Department> {
-    const department = await this.departmentRepository.findByCode(code);
+  async findByCode(code: MunicipalityDepartment, manager?: EntityManager): Promise<Department> {
+    let department: Department | null;
+
+    if (manager) {
+      // Büyük/küçük harf duyarsız arama
+      department = await manager
+        .createQueryBuilder(Department, 'd')
+        .where('UPPER(d.code) = UPPER(:code)', { code })
+        .getOne();
+    } else {
+      // Use repository (case-insensitive)
+      department = await this.departmentRepository.findByCode(code);
+      // Eğer repository case-sensitive ise, burada da kontrol edelim
+      if (!department) {
+        // Fallback: tüm departmanları çekip kodu case-insensitive karşılaştır
+        const all = await this.departmentRepository.findAll();
+        department = all.find(d => d.code.toUpperCase() === String(code).toUpperCase()) || null;
+      }
+    }
+
     if (!department) {
       throw new NotFoundException(`Birim kodu ${code} bulunamadı`);
     }
     return department;
   }
 
-  async findDepartmentForReportType(reportType: ReportType): Promise<Department> {
-    const departments = await this.departmentRepository.findByReportType(reportType);
+  async findDepartmentForReportType(
+    reportType: ReportType,
+    manager?: EntityManager
+  ): Promise<Department> {
+    let departments: Department[];
+
+    if (manager) {
+      // Use transaction manager with query builder
+      departments = await manager
+        .createQueryBuilder(Department, 'department')
+        .where('department.responsible_report_types @> :reportTypeToSearch::jsonb', {
+          reportTypeToSearch: JSON.stringify([reportType]),
+        })
+        .andWhere('department.isActive = :isActive', { isActive: true })
+        .getMany();
+    } else {
+      // Use repository
+      departments = await this.departmentRepository.findByReportType(reportType);
+    }
 
     if (!departments || departments.length === 0) {
-      const generalDepartment = await this.findByCode(MunicipalityDepartment.GENERAL);
+      const generalDepartment = await this.findByCode(MunicipalityDepartment.GENERAL, manager);
       return generalDepartment;
     }
     return departments[0];
@@ -167,10 +202,21 @@ export class DepartmentService {
       where: { reportId },
       order: { changedAt: 'DESC' },
       relations: ['previousDepartment', 'newDepartment', 'changedByUser'],
+      select: [
+        'id',
+        'reportId',
+        'previousDepartmentId',
+        'newDepartmentId',
+        'reason',
+        'changedByUser',
+        'changedAt',
+        'previousDepartment',
+        'newDepartment',
+      ],
     });
   }
 
-  async suggestDepartmentForReport(type: ReportType): Promise<Department> {
-    return this.findDepartmentForReportType(type);
+  async suggestDepartmentForReport(type: ReportType, manager?: EntityManager): Promise<Department> {
+    return this.findDepartmentForReportType(type, manager);
   }
 }

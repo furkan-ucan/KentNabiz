@@ -18,9 +18,10 @@ export class CreateTeamDto {
   @ApiProperty({
     description: 'Department ID that the team belongs to',
     example: 1,
+    required: true,
   })
   @IsInt()
-  @IsNotEmpty()
+  @Type(() => Number)
   departmentId!: number;
 
   @ApiProperty({
@@ -28,8 +29,9 @@ export class CreateTeamDto {
     example: 5,
     required: false,
   })
-  @IsInt()
   @IsOptional()
+  @IsInt()
+  @Type(() => Number)
   teamLeaderId?: number;
 
   @ApiProperty({
@@ -40,8 +42,8 @@ export class CreateTeamDto {
     required: false,
     default: TeamStatus.AVAILABLE,
   })
-  @IsEnum(TeamStatus)
   @IsOptional()
+  @IsEnum(TeamStatus)
   status?: TeamStatus;
 
   @ApiProperty({

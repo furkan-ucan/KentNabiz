@@ -20,6 +20,7 @@ import { ReportCategory } from './entities/report-category.entity';
 import { ReportMedia } from './entities/report-media.entity';
 import { ReportSupport } from './entities/report-support.entity';
 import { Team } from '../teams/entities/team.entity';
+import { TeamsModule } from '../teams/teams.module';
 import { UsersModule } from '../users/users.module';
 import { AbilityModule } from '../../core/authorization/ability.module';
 
@@ -36,6 +37,7 @@ import { AbilityModule } from '../../core/authorization/ability.module';
       ReportSupport,
       Team,
     ]),
+    TeamsModule,
     forwardRef(() => UsersModule),
     AbilityModule,
   ],

@@ -101,7 +101,8 @@ export class User {
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword(): Promise<void> {
-    if (this.password && !(await bcrypt.compare('', this.password))) {
+    if (this.password) {
+      // Check if password is already hashed (bcrypt hash format)
       const isAlreadyHashed = /^\$2[abxy]?\$\d{1,2}\$/.test(this.password);
       if (!isAlreadyHashed) {
         const salt = await bcrypt.genSalt(10);

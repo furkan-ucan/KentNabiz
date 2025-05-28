@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, DeleteResult } from 'typeorm';
+import { Repository, DataSource, DeleteResult, EntityManager } from 'typeorm';
 import { Point } from 'geojson';
 import { Report } from '../entities/report.entity';
 import { ReportMedia } from '../entities/report-media.entity';
@@ -178,14 +178,47 @@ export class ReportRepository {
   /**
    * Creates a new report with transactions for media handling
    */
-  async create(data: CreateReportData, userId: number): Promise<Report> {
+  async create(data: CreateReportData, userId: number, manager?: EntityManager): Promise<Report> {
+    // If external manager is provided, use it (no transaction handling here)
+    if (manager) {
+      const newReport = manager.create(Report, {
+        title: data.title,
+        description: data.description,
+        location: data.location,
+        address: data.address,
+        reportType: data.reportType,
+        status: data.status || ReportStatus.OPEN,
+        userId,
+        currentDepartmentId: data.currentDepartmentId,
+        categoryId: data.categoryId,
+      });
+
+      const savedReport = await manager.save(newReport);
+
+      // Create report media if provided
+      if (data.reportMedias && data.reportMedias.length > 0) {
+        const reportMediaEntities = data.reportMedias.map(media =>
+          manager.create(ReportMedia, {
+            reportId: savedReport.id,
+            url: media.url,
+            type: media.type,
+          })
+        );
+
+        await manager.save(reportMediaEntities);
+      }
+
+      return savedReport;
+    }
+
     // TODO: add tests for transaction handling
-    // Start a transaction
+    // Start a transaction (only when no external manager)
     const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
 
     try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
       // Create a report - TypeORM handles GeoJSON properly at runtime
       const newReport = queryRunner.manager.create(Report, {
         title: data.title,
@@ -224,14 +257,18 @@ export class ReportRepository {
       }
       return report;
     } catch (error) {
-      // Rollback transaction on error
-      await queryRunner.rollbackTransaction();
+      // Only rollback if transaction was started
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
       throw new Error(
         error instanceof Error ? error.message : 'Unknown error during report creation'
       );
     } finally {
       // Release query runner
-      await queryRunner.release();
+      if (!queryRunner.isReleased) {
+        await queryRunner.release();
+      }
     }
   }
 
@@ -242,10 +279,11 @@ export class ReportRepository {
     // TODO: add tests for update with media handling
     // Start a transaction
     const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
 
     try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
       const report = await this.findById(id);
       if (!report) {
         return null;
@@ -280,12 +318,16 @@ export class ReportRepository {
       // Return the updated report
       return this.findById(id);
     } catch (error) {
-      // Rollback the transaction
-      await queryRunner.rollbackTransaction();
+      // Only rollback if transaction was started
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      if (!queryRunner.isReleased) {
+        await queryRunner.release();
+      }
     }
   }
 

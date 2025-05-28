@@ -54,7 +54,7 @@ const HomePage: React.FC = () => {
               <Text fontSize="sm" color="gray.600">
                 Ad Soyad
               </Text>
-              <Text fontWeight="medium">{user.fullName}</Text>
+              <Text fontWeight="medium">{user.email}</Text>
             </GridItem>
             <GridItem>
               <Text fontSize="sm" color="gray.600">

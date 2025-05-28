@@ -4,7 +4,7 @@ import { ReportAnalyticsService } from '../services/report-analytics.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
-import { ReportStatus, ReportType, MunicipalityDepartment } from '@KentNabiz/shared';
+import { ReportStatus, ReportType, MunicipalityDepartment, UserRole } from '@KentNabiz/shared';
 import {
   IAnalyticsFilter,
   IDashboardStats,
@@ -21,7 +21,7 @@ import {
 @ApiTags('report-analytics')
 @Controller('report-analytics')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin', 'staff')
+@Roles(UserRole.SYSTEM_ADMIN)
 @ApiBearerAuth()
 export class ReportAnalyticsController {
   constructor(private readonly reportAnalyticsService: ReportAnalyticsService) {}

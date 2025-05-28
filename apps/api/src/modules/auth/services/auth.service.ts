@@ -35,23 +35,25 @@ export class AuthService {
 
       if (!user) {
         console.log(`>>> [AuthService.validateUser] Kullanıcı bulunamadı: ${email}`);
-      } else {
-        // console.log(`>>> [AuthService.validateUser] Kullanıcı bulundu: ${email}, ID: ${user.id}`);
-        // console.log(`>>> [AuthService.validateUser] Kullanıcı nesnesi: ${JSON.stringify(user)}`);
-        // console.log(`>>> [AuthService.validateUser] user.password değeri: ${user.password}`);
+        return null;
       }
 
-      if (user && (await user.validatePassword(password))) {
-        // console.log(`>>> [AuthService.validateUser] Şifre doğrulama BAŞARILI: ${email}`);
+      console.log(`>>> [AuthService.validateUser] Kullanıcı bulundu: ${email}, ID: ${user.id}`);
+      console.log(`>>> [AuthService.validateUser] user.password hash: ${user.password}`);
+      console.log(`>>> [AuthService.validateUser] Gelen password: ${password}`);
+
+      const isPasswordValid = await user.validatePassword(password);
+      console.log(`>>> [AuthService.validateUser] Şifre doğrulama sonucu: ${isPasswordValid}`);
+
+      if (user && isPasswordValid) {
+        console.log(`>>> [AuthService.validateUser] Şifre doğrulama BAŞARILI: ${email}`);
         return user;
       }
 
-      // console.log(
-      //   `>>> [AuthService.validateUser] Şart (user && await user.validatePassword) başarısız oldu: ${email}`
-      // );
+      console.log(`>>> [AuthService.validateUser] Şifre doğrulama BAŞARISIZ: ${email}`);
       return null;
     } catch (error) {
-      console.error(`>>> [AuthService.validateUser] HATA oluştu: ${email}`, error); // 'error' is now used
+      console.error(`>>> [AuthService.validateUser] HATA oluştu: ${email}`, error);
       return null;
     }
   }
@@ -70,6 +72,7 @@ export class AuthService {
       email: user.email,
       roles: user.roles, // User entity'sinden gelen UserRole[] doğrudan kullanılabilir
       departmentId: user.departmentId, // User entity'sinden departmentId ekleniyor
+      activeTeamId: user.activeTeamId, // Added activeTeamId from User entity
     };
 
     return this.tokenService.generateTokens(payload);
@@ -110,6 +113,7 @@ export class AuthService {
       email: newUser.email,
       roles: newUser.roles, // newUser.roles UserRole[] tipinde olmalı
       departmentId: newUser.departmentId, // Yeni kullanıcıda bu genellikle undefined/null olur
+      activeTeamId: newUser.activeTeamId, // Added activeTeamId from User entity for register
     };
 
     return this.tokenService.generateTokens(payload);
@@ -132,6 +136,7 @@ export class AuthService {
       email: user.email,
       roles: user.roles, // Güncel roller
       departmentId: user.departmentId, // Güncel departmentId
+      activeTeamId: user.activeTeamId, // Added activeTeamId from User entity for refresh token
     };
 
     return this.tokenService.refreshTokens(refreshToken, newPayload);

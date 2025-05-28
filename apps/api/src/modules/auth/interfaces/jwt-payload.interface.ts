@@ -8,6 +8,7 @@ export interface JwtPayload {
   email: string;
   roles: UserRole[]; // Kept as array of UserRole
   departmentId?: number | null; // MODIFIED: Added | null
+  activeTeamId?: number | null;
   jti?: string;
   iat?: number;
   exp?: number;

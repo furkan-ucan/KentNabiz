@@ -28,6 +28,7 @@ import {
   CategoryResponseDto,
   CategoryTreeDto,
 } from '../dto/category.dto';
+import { UserRole } from '@KentNabiz/shared';
 
 @ApiTags('report-categories')
 @Controller('report-categories')
@@ -108,7 +109,7 @@ export class CategoryController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(UserRole.SYSTEM_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Yeni kategori oluştur' })
   @ApiResponse({
@@ -123,7 +124,7 @@ export class CategoryController {
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(UserRole.SYSTEM_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Kategori güncelle' })
   @ApiParam({ name: 'id', description: 'Kategori ID', type: Number })
@@ -143,7 +144,7 @@ export class CategoryController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(UserRole.SYSTEM_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Kategori sil' })
   @ApiParam({ name: 'id', description: 'Kategori ID', type: Number })

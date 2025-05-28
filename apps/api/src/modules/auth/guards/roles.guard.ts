@@ -1,46 +1,66 @@
 // apps/api/src/modules/auth/guards/roles.guard.ts
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common'; // ForbiddenException eklendi
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Observable } from 'rxjs';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
-// UserRole enum'unu import ediyoruz. Doğru yolu belirttiğinizden emin olun.
-import { UserRole } from '@KentNabiz/shared';
-
-// RequestWithUser arayüzü burada da tanımlanabilir veya jwt-payload.interface.ts'den import edilebilir.
-// Eğer jwt-payload.interface.ts içinde RequestWithUser export ediliyorsa, onu kullanmak daha iyi.
-interface RequestWithUser {
-  user: JwtPayload; // JwtPayload artık UserRole[] tipinde roller içerecek
-}
+import { UserRole } from '../../../../../../packages/shared/src/types/user.types';
+// import { RequestWithUser } from '../interfaces/request-with-user.interface'; // Geçici olarak yorumlandı
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
-  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
-    // Controller metodundan beklenen rolleri alıyoruz (UserRole enum değerleri olmalı)
-    const requiredRoles = this.reflector.get<UserRole[]>('roles', context.getHandler());
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest<any>(); // Tip geçici olarak any yapıldı
+    const user = request.user;
+    const handler = context.getHandler().name; // Metod adı
+    const controller = context.getClass().name; // Controller adı
 
-    // Eğer endpoint için bir rol tanımlanmamışsa, erişime izin ver (public endpoint)
-    if (!requiredRoles || requiredRoles.length === 0) {
+    console.log(`[RolesGuard] Checking roles for ${controller}.${handler} on path ${request.url}`); // YENİ LOG
+
+    // a. Sistem admin her zaman geçsin
+    if (user?.roles?.includes(UserRole.SYSTEM_ADMIN)) {
+      console.log(
+        `[RolesGuard] SYSTEM_ADMIN access granted for ${request.url} to user ${user.sub}`
+      );
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<RequestWithUser>();
-    const user = request.user; // JWT'den gelen kullanıcı bilgileri (payload)
+    // b. Route & class seviyesindeki rollerin birleşimi
+    const requiredRoles =
+      this.reflector.getAllAndOverride<UserRole[]>('roles', [
+        context.getHandler(),
+        context.getClass(),
+      ]) ?? []; // <-- boşsa [] veriyoruz
+    console.log(
+      `[RolesGuard] Path: ${request.url}, Required Roles: ${requiredRoles.join(', ') || '[NONE]'}, User Roles: ${user?.roles?.join(', ') || '[NONE]'}`
+    ); // YENİ LOG
+
+    // c. Metadata yoksa endpoint public say
+    if (requiredRoles.length === 0) {
+      console.log(`[RolesGuard] No specific roles required for ${request.url}. Access granted.`);
+      return true;
+    }
 
     // Kullanıcı yoksa veya kullanıcının rolleri yoksa erişimi engelle
-    if (!user || !user.roles || user.roles.length === 0) {
-      // Normalde JwtAuthGuard bu durumu yakalamalı, ama ek bir güvenlik katmanı olarak burada da kontrol edilebilir.
+    if (!user?.roles?.length) {
+      console.warn(
+        `[RolesGuard] User not authenticated or has no roles for ${request.url}. Denying access.`
+      );
+      // Oturum açmamışsa 401 fırlatmak daha uygun olabilir, ancak mevcut yapı ForbiddenException kullanıyor.
       throw new ForbiddenException('User not authenticated or has no roles.');
     }
 
-    // Kullanıcının sahip olduğu rollerden herhangi biri, endpoint için gerekli rollerden biriyle eşleşiyor mu?
-    const hasRequiredRole = user.roles.some(userRole => requiredRoles.includes(userRole));
+    // d. En az bir eşleşme yeterli
+    const hasRequiredRole = requiredRoles.some(role => user.roles.includes(role));
 
     if (!hasRequiredRole) {
-      throw new ForbiddenException('Insufficient permissions.'); // Daha açıklayıcı bir hata
+      console.warn(
+        `[RolesGuard] User ${user.sub} with roles [${user.roles.join(', ')}] does NOT have required roles [${requiredRoles.join(', ')}] for ${request.url}. Denying access.`
+      );
+      throw new ForbiddenException('Insufficient permissions.');
     }
-
-    return true; // Eğer en az bir eşleşen rol varsa erişime izin ver
+    console.log(
+      `[RolesGuard] User ${user.sub} with roles [${user.roles.join(', ')}] has required role for ${request.url}. Access granted.`
+    );
+    return true;
   }
 }

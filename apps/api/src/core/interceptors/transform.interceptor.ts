@@ -1,27 +1,39 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+  StreamableFile,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Response } from 'express';
-
-export interface ApiResponse<T> {
-  data: T;
-  statusCode: number;
-  message: string;
-  timestamp: string;
-}
+import { ResponseDto } from '../../common/dto/response.dto';
+import { PaginatedResponse } from '../../common/dto/paginated-response.dto';
 
 @Injectable()
-export class TransformInterceptor<T> implements NestInterceptor<T, ApiResponse<T>> {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<ApiResponse<T>> {
+export class TransformInterceptor<T = any> implements NestInterceptor<T, ResponseDto<T> | T> {
+  intercept(context: ExecutionContext, next: CallHandler<T>): Observable<ResponseDto<T> | T> {
+    const res = context.switchToHttp().getResponse<Response>();
+
     return next.handle().pipe(
-      map((data: T) => {
-        const response = context.switchToHttp().getResponse<Response>();
-        return {
-          data,
-          statusCode: response.statusCode,
-          message: 'Success',
-          timestamp: new Date().toISOString(),
-        };
+      map((data: T): ResponseDto<T> | T => {
+        // 204 veya body yoksa dokunma
+        if (res.statusCode === 204 || data === null || data === undefined) {
+          return data;
+        }
+
+        // Zaten ResponseDto, PaginatedResponse ya da akış (dosya) ise dokunma
+        if (
+          data instanceof ResponseDto ||
+          data instanceof PaginatedResponse ||
+          data instanceof StreamableFile
+        ) {
+          return data;
+        }
+
+        // Buraya kadar geldiysek **dış** sarmala ihtiyaç var
+        return new ResponseDto(data);
       })
     );
   }

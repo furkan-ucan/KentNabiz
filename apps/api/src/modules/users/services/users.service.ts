@@ -44,6 +44,22 @@ export class UsersService {
     return users.map((user: User) => new UserProfileDto(user));
   }
 
+  async findAllPaginated(
+    page: number,
+    limit: number
+  ): Promise<{ data: UserProfileDto[]; total: number }> {
+    // Geçici implementation - ideal olarak UserRepository'de pagination metodları olmalı
+    const allUsers = await this.userRepository.findAllWithRelations(['department']);
+    const total = allUsers.length;
+    const start = (page - 1) * limit;
+    const paginatedUsers = allUsers.slice(start, start + limit);
+
+    return {
+      data: paginatedUsers.map((user: User) => new UserProfileDto(user)),
+      total,
+    };
+  }
+
   // Bu metod AuthService.findById tarafından kullanılacak.
   async findById(id: number, relations: string[] = []): Promise<User | null> {
     // Dönüş tipi User | null olmalı (AuthService'in beklediği)
@@ -252,13 +268,15 @@ export class UsersService {
     teamId: number | null,
     currentUser: JwtPayload
   ): Promise<User> {
-    // Authorization: Only SYSTEM_ADMIN or DEPARTMENT_SUPERVISOR can update team assignments
+    // Authorization: SYSTEM_ADMIN, DEPARTMENT_SUPERVISOR, or user updating their own team
+    const isSelfUpdate = currentUser.sub === userId;
     if (
       !currentUser.roles.includes(UserRole.SYSTEM_ADMIN) &&
-      !currentUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR)
+      !currentUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR) &&
+      !isSelfUpdate
     ) {
       throw new ForbiddenException(
-        'Only system administrators and department supervisors can update team assignments.'
+        'Only system administrators, department supervisors, or the user themselves can update team assignments.'
       );
     }
 

@@ -14,7 +14,6 @@ export const DepartmentsSeed = async (dataSource: DataSource): Promise<void> => 
 
   console.log('Belediye birimleri oluşturuluyor...');
 
-  // Örnek birimler
   const departments = [
     {
       id: 1,
@@ -102,6 +101,14 @@ export const DepartmentsSeed = async (dataSource: DataSource): Promise<void> => 
       description: 'Tanımlanmamış diğer birimler',
       isActive: true,
       responsibleReportTypes: [ReportType.OTHER],
+    },
+    {
+      id: 10,
+      code: MunicipalityDepartment.HEALTH,
+      name: 'Sağlık İşleri',
+      description: 'Sağlık ile ilgili hizmetler',
+      isActive: true,
+      responsibleReportTypes: [],
     },
   ];
 

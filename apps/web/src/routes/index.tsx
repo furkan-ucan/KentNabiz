@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom';
 import HomePage from '@/pages/HomePage';
+import { LandingPage } from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
 import ReportListPage from '@/pages/ReportListPage';
 import NewReportPage from '@/pages/NewReportPage';
@@ -8,6 +9,10 @@ import { RootLayout } from '@/layouts/RootLayout';
 export const router = createBrowserRouter([
   {
     path: '/',
+    element: <LandingPage />,
+  },
+  {
+    path: '/app',
     element: <RootLayout />,
     children: [
       {
@@ -27,5 +32,9 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/register',
+    element: <LoginPage />, // Geçici olarak LoginPage kullanıyoruz
   },
 ]);

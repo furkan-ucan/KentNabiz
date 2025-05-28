@@ -4,10 +4,10 @@ import { Box, Text, Flex } from '@chakra-ui/react';
 interface StatCardProps {
   label: string;
   value: string | number;
-  icon?: React.ReactNode; // Emoji veya React element
+  icon?: React.ReactNode;
   helpText?: string;
   arrowType?: 'increase' | 'decrease';
-  colorScheme?: string; // Örn: "green", "red", "blue" vb. Chakra tema renkleri
+  colorPalette?: string; // v3'ün colorPalette özelliği
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
@@ -16,21 +16,17 @@ export const StatCard: React.FC<StatCardProps> = ({
   icon,
   helpText,
   arrowType,
-  colorScheme = 'gray', // Varsayılan renk
+  colorPalette = 'gray',
 }) => {
-  const cardBg = 'white';
-  const borderColor = 'gray.200';
-  const textColor = `${colorScheme}.700`;
-  const iconBg = `${colorScheme}.100`;
-
   return (
     <Box
+      colorPalette={colorPalette}
       p={5}
       shadow="md"
       borderWidth="1px"
       borderRadius="lg"
-      bg={cardBg}
-      borderColor={borderColor}
+      bg="white"
+      borderColor="gray.200"
       _hover={{
         shadow: 'lg',
         transform: 'translateY(-2px)',
@@ -42,7 +38,7 @@ export const StatCard: React.FC<StatCardProps> = ({
           <Text fontWeight="medium" color="gray.500" fontSize="sm">
             {label}
           </Text>
-          <Text fontSize="2xl" fontWeight="bold" color={textColor}>
+          <Text fontSize="2xl" fontWeight="bold" color="colorPalette.fg">
             {value}
           </Text>
           {helpText && (
@@ -60,7 +56,7 @@ export const StatCard: React.FC<StatCardProps> = ({
             w={12}
             h={12}
             borderRadius="full"
-            bg={iconBg}
+            bg="colorPalette.subtle"
             fontSize="2xl"
           >
             {icon}

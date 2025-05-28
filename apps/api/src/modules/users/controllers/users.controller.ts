@@ -11,6 +11,8 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  Query,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -19,6 +21,7 @@ import {
   ApiTags,
   ApiParam,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { UsersService } from '../services/users.service';
 import { CreateUserDto } from '../dto/create-user.dto';
@@ -30,6 +33,7 @@ import { RolesGuard } from '../../auth/guards/roles.guard';
 import { UserRole } from '@KentNabiz/shared';
 import { RequestWithUser } from '../../auth/interfaces/jwt-payload.interface';
 import { TeamMembershipHistory } from '../entities/team-membership-history.entity';
+import { PaginatedResponse } from '../../../common/dto/paginated-response.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -51,9 +55,25 @@ export class UsersController {
   @Get()
   @Roles(UserRole.SYSTEM_ADMIN)
   @ApiOperation({ summary: 'Find all users' })
-  @ApiResponse({ status: 200, description: 'Return all users', type: [UserProfileDto] })
-  findAll(): Promise<UserProfileDto[]> {
-    return this.usersService.findAll();
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10)',
+  })
+  @ApiResponse({ status: 200, description: 'Return paginated users', type: PaginatedResponse })
+  async findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number
+  ): Promise<PaginatedResponse<UserProfileDto>> {
+    const { data, total } = await this.usersService.findAllPaginated(page, limit);
+    return new PaginatedResponse(data, total, page, limit);
   }
 
   @Get(':id')
@@ -142,11 +162,11 @@ export class UsersController {
   }
 
   @Patch(':id/active-team')
-  @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
+  @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN, UserRole.TEAM_MEMBER)
   @ApiOperation({
     summary: 'Update user active team assignment',
     description:
-      'Assigns or removes a user from a team. Only department supervisors and system admins can perform this action.',
+      'Assigns or removes a user from a team. Department supervisors and system admins can manage any user. Team members can only update their own team assignment.',
   })
   @ApiParam({
     name: 'id',

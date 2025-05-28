@@ -230,7 +230,7 @@ describe('Teams Workflow (E2E)', () => {
       await request(app.getHttpServer())
         .delete(`/teams/${createdTeamId}`)
         .set('Authorization', `Bearer ${systemAdminToken}`)
-        .expect(200);
+        .expect(204);
     });
 
     it('should confirm team is deleted', async () => {

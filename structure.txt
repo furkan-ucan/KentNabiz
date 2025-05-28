@@ -2,6 +2,8 @@
   |-- rules
     |-- apps-and-packages-structure.mdc
     |-- documentation-guide.mdc
+    |-- git-commit-rules.mdc
+    |-- implementation-reporting.mdc
     |-- project-overview.mdc
 |-- .github
   |-- workflows
@@ -17,19 +19,30 @@
 |-- apps
   |-- api
     |-- src
+      |-- common
+        |-- dto
+          |-- paginated-response.dto.ts
+          |-- response.dto.ts
       |-- config
         |-- data-source.ts
         |-- redis.config.ts
         |-- redis.service.ts
         |-- swagger.config.ts
+        |-- test-data-source.ts
+        |-- test-migration-data-source.ts
         |-- typeorm.config.ts
       |-- core
+        |-- authorization
+          |-- ability.factory.spec.ts
+          |-- ability.factory.ts
+          |-- ability.module.ts
         |-- decorators
           |-- public.decorator.ts
         |-- filters
           |-- http-exception.filter.ts
         |-- guards
           |-- jwt-auth.guard.ts
+          |-- policies.guard.ts
         |-- interceptors
           |-- transform.interceptor.ts
         |-- pipes
@@ -38,6 +51,7 @@
       |-- database
         |-- migrations
           |-- 1747835897674-20240601120000-FinalizeCoreSchemaAndConstraints.ts
+          |-- 1748148200000-AddSupportCountColumn.ts
         |-- migrations-backup
           |-- 1680268800000-CreateUsers.ts
           |-- 1680268900000-AddPostGISAndDepartments.ts
@@ -45,11 +59,14 @@
           |-- 1680269100000-CreateMediaTable.ts
           |-- 1680269200000-AddPerformanceIndexes.ts
         |-- seeds
+          |-- assignments.seed.ts
           |-- categories.seed.ts
           |-- departments.seed.ts
           |-- index.ts
           |-- report-supports.seed.ts
           |-- reports.seed.ts
+          |-- specializations.seed.ts
+          |-- teams.seed.ts
           |-- users.seed.ts
         |-- ormconfig.ts
       |-- modules
@@ -110,6 +127,8 @@
             |-- reports.controller.ts
           |-- dto
             |-- analytics.dto.ts
+            |-- assign-team-to-report.dto.ts
+            |-- assign-user-to-report.dto.ts
             |-- category.dto.ts
             |-- create-report.dto.ts
             |-- department-history.response.dto.ts
@@ -117,6 +136,7 @@
             |-- forward-report.dto.ts
             |-- location.dto.ts
             |-- point.dto.ts
+            |-- query-reports.dto.ts
             |-- report-support.dto.ts
             |-- update-report-status.dto.ts
             |-- update-report.dto.ts
@@ -145,17 +165,38 @@
             |-- report-analytics.service.ts
             |-- report-support.service.spec.ts
             |-- report-support.service.ts
+            |-- reports.service.spec.ts
+            |-- reports.service.support.spec.ts
             |-- reports.service.ts
           |-- utils
             |-- report-status.utils.ts
           |-- reports.module.ts
         |-- specializations
+          |-- controllers
+            |-- specializations.controller.ts
+          |-- dto
+            |-- create-specialization.dto.ts
+            |-- update-specialization.dto.ts
           |-- entities
             |-- specialization.entity.ts
+          |-- services
+            |-- specializations.service.spec.ts
+            |-- specializations.service.ts
+          |-- specializations.module.ts
         |-- teams
+          |-- controllers
+            |-- teams.controller.ts
+          |-- dto
+            |-- create-team.dto.ts
+            |-- query-teams.dto.ts
+            |-- update-team.dto.ts
           |-- entities
             |-- team-specialization.entity.ts
             |-- team.entity.ts
+          |-- services
+            |-- teams.service.spec.ts
+            |-- teams.service.ts
+          |-- teams.module.ts
         |-- users
           |-- controllers
             |-- users.controller.ts
@@ -171,6 +212,7 @@
           |-- repositories
             |-- user.repository.ts
           |-- services
+            |-- users.service.spec.ts
             |-- users.service.ts
           |-- users.module.ts
       |-- shared
@@ -182,15 +224,72 @@
       |-- app.module.ts
       |-- app.service.ts
       |-- main.ts
+    |-- test
+      |-- auth-helper.ts
+      |-- global-setup.ts
+      |-- global-teardown.ts
+      |-- jest-e2e.json
+      |-- report-lifecycle.e2e-spec.ts
+      |-- reports-workflow.e2e-spec.ts
+      |-- seed-test-data.ts
+      |-- setup-e2e.ts
+      |-- team-management.e2e-spec.ts
+      |-- teams-workflow.e2e-spec.ts
+      |-- users-team-assignment.e2e-spec.ts
     |-- .env
     |-- .env.example
     |-- jest.config.ts
     |-- nest-cli.json
     |-- package.json
     |-- README.md
+    |-- test-results.txt
     |-- tsconfig.build.json
     |-- tsconfig.build.tsbuildinfo
     |-- tsconfig.json
+  |-- web
+    |-- public
+      |-- vite.svg
+    |-- src
+      |-- assets
+        |-- react.svg
+      |-- components
+        |-- layout
+        |-- ui
+      |-- config
+      |-- features
+      |-- hooks
+      |-- layouts
+        |-- RootLayout.tsx
+      |-- lib
+        |-- api
+          |-- client.ts
+      |-- pages
+        |-- HomePage.tsx
+        |-- LoginPage.tsx
+      |-- routes
+        |-- index.tsx
+      |-- services
+      |-- store
+        |-- slices
+          |-- authSlice.ts
+        |-- index.ts
+      |-- styles
+      |-- types
+      |-- index.css
+      |-- main.tsx
+      |-- vite-env.d.ts
+    |-- .env
+    |-- .env.example
+    |-- .gitignore
+    |-- .prettierrc.json
+    |-- eslint.config.js
+    |-- index.html
+    |-- package.json
+    |-- README.md
+    |-- tsconfig.app.json
+    |-- tsconfig.json
+    |-- tsconfig.node.json
+    |-- vite.config.ts
 |-- docs
   |-- rfc
     |-- RFC-001-architecture.md
@@ -243,6 +342,7 @@
         |-- assignment.types.ts
         |-- department.types.ts
         |-- index.ts
+        |-- pagination.types.ts
         |-- report-category.types.ts
         |-- report.types.ts
         |-- team.types.ts
@@ -298,6 +398,7 @@
 |-- commitlint.config.js
 |-- docker-compose.yml
 |-- eslint.config.js
+|-- git-commit-rules.md
 |-- jest.config.ts
 |-- package.json
 |-- pnpm-lock.yaml
@@ -307,4 +408,5 @@
 |-- tree-filtered.ps1
 |-- tree.txt
 |-- tsconfig.json
+|-- tsconfig.tsbuildinfo
 |-- turbo.json

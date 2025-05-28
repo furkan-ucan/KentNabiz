@@ -21,10 +21,8 @@ import { TeamMembershipHistory } from '../modules/users/entities/team-membership
 // Load .env from project root
 dotenv.config({ path: path.join(process.cwd(), '.env') });
 
-// Determine if running under ts-node (development) or compiled JS (production)
-const isTsNode =
-  process.argv.some(arg => arg.includes('ts-node')) || process.env.TS_NODE_DEV !== undefined;
-const extension = isTsNode ? '.ts' : '.js';
+// For test environment, always use .ts files since we're running with ts-jest
+const extension = '.ts';
 
 // Paths to migrations
 const migrationsPath = path.join(__dirname, '..', 'database', 'migrations', `*${extension}`);

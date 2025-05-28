@@ -17,73 +17,147 @@ export class FinalizeCoreSchemaAndConstraints20240601120000 implements Migration
 
     // User role enum
     await queryRunner.query(`
-      CREATE TYPE "public"."user_roles_enum" AS ENUM(
-        'CITIZEN',
-        'TEAM_MEMBER', 
-        'DEPARTMENT_SUPERVISOR',
-        'SYSTEM_ADMIN'
-      )
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_type
+          WHERE typname = 'user_roles_enum'
+        ) THEN
+          CREATE TYPE "public"."user_roles_enum" AS ENUM(
+            'CITIZEN',
+            'TEAM_MEMBER',
+            'DEPARTMENT_SUPERVISOR',
+            'SYSTEM_ADMIN'
+          );
+        END IF;
+      END$$;
     `);
 
     // Department codes enum
     await queryRunner.query(`
-      CREATE TYPE "public"."municipality_department_enum" AS ENUM(
-        'GENERAL', 'ROADS', 'WATER', 'ELECTRICITY', 'PARKS','FIRE', 'HEALTH',
-        'BUILDING', 'MUNICIPALITY',
-        'ENVIRONMENTAL', 'INFRASTRUCTURE', 'TRANSPORTATION', 'TRAFFIC', 'OTHER'
-      )
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_type
+          WHERE typname = 'municipality_department_enum'
+        ) THEN
+          CREATE TYPE "public"."municipality_department_enum" AS ENUM(
+            'GENERAL', 'ROADS', 'WATER', 'ELECTRICITY', 'PARKS','FIRE', 'HEALTH',
+            'BUILDING', 'MUNICIPALITY',
+            'ENVIRONMENTAL', 'INFRASTRUCTURE', 'TRANSPORTATION', 'TRAFFIC', 'OTHER'
+          );
+        END IF;
+      END$$;
     `);
 
     // Report type enum
     await queryRunner.query(`
-      CREATE TYPE "public"."report_type_enum" AS ENUM (
-        'POTHOLE',
-        'ROAD_DAMAGE',
-        'ROAD_SIGN',
-        'ROAD_MARKING',
-        'ROAD_CONSTRUCTION',
-        'ROAD_MAINTENANCE',
-        'ROAD_CLEANING',
-        'ROAD_REPAIR',
-        'ROAD_BLOCK',
-        'TRAFFIC_LIGHT',
-        'STREET_LIGHT',
-        'ELECTRICITY_OUTAGE',
-        'WATER_LEAKAGE',
-        'LITTER',
-        'GRAFFITI',
-        'PARK_DAMAGE',
-        'TREE_ISSUE',
-        'PARKING_VIOLATION',
-        'PUBLIC_TRANSPORT',
-        'PUBLIC_TRANSPORT_VIOLATION',
-        'PUBLIC_TRANSPORT_STOP',
-        'PUBLIC_TRANSPORT_VEHICLE',
-        'GARBAGE_COLLECTION',
-        'OTHER'
-      )
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_type
+          WHERE typname = 'report_type_enum'
+        ) THEN
+          CREATE TYPE "public"."report_type_enum" AS ENUM (
+            'POTHOLE',
+            'ROAD_DAMAGE',
+            'ROAD_SIGN',
+            'ROAD_MARKING',
+            'ROAD_CONSTRUCTION',
+            'ROAD_MAINTENANCE',
+            'ROAD_CLEANING',
+            'ROAD_REPAIR',
+            'ROAD_BLOCK',
+            'TRAFFIC_LIGHT',
+            'STREET_LIGHT',
+            'ELECTRICITY_OUTAGE',
+            'WATER_LEAKAGE',
+            'LITTER',
+            'GRAFFITI',
+            'PARK_DAMAGE',
+            'TREE_ISSUE',
+            'PARKING_VIOLATION',
+            'PUBLIC_TRANSPORT',
+            'PUBLIC_TRANSPORT_VIOLATION',
+            'PUBLIC_TRANSPORT_STOP',
+            'PUBLIC_TRANSPORT_VEHICLE',
+            'GARBAGE_COLLECTION',
+            'OTHER'
+          );
+        END IF;
+      END$$;
     `);
 
     // Report status enum - YENİ değerlerle
-    await queryRunner.query(
-      `CREATE TYPE "public"."report_status_enum" AS ENUM('OPEN', 'IN_REVIEW', 'IN_PROGRESS', 'DONE', 'REJECTED', 'CANCELLED')`
-    );
+    await queryRunner.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_type
+          WHERE typname = 'report_status_enum'
+        ) THEN
+          CREATE TYPE "public"."report_status_enum" AS ENUM('OPEN', 'IN_REVIEW', 'IN_PROGRESS', 'DONE', 'REJECTED', 'CANCELLED');
+        END IF;
+      END$$;
+    `);
 
     // Media type enum
     await queryRunner.query(`
-      CREATE TYPE "public"."media_type_enum" AS ENUM(
-        'image', 'video', 'document', 'other'
-      )
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_type
+          WHERE typname = 'media_type_enum'
+        ) THEN
+          CREATE TYPE "public"."media_type_enum" AS ENUM(
+            'image', 'video', 'document', 'other'
+          );
+        END IF;
+      END$$;
     `);
 
     // YENİ team-based assignment enum'ları
-    await queryRunner.query(
-      `CREATE TYPE "public"."team_status_enum" AS ENUM('AVAILABLE', 'ON_DUTY', 'OFF_DUTY', 'INACTIVE')`
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."assignment_status_enum" AS ENUM('ACTIVE', 'COMPLETED', 'CANCELLED')`
-    );
-    await queryRunner.query(`CREATE TYPE "public"."assignee_type_enum" AS ENUM('USER', 'TEAM')`);
+    await queryRunner.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_type
+          WHERE typname = 'team_status_enum'
+        ) THEN
+          CREATE TYPE "public"."team_status_enum" AS ENUM('AVAILABLE', 'ON_DUTY', 'OFF_DUTY', 'INACTIVE');
+        END IF;
+      END$$;
+    `);
+    await queryRunner.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_type
+          WHERE typname = 'assignment_status_enum'
+        ) THEN
+          CREATE TYPE "public"."assignment_status_enum" AS ENUM('ACTIVE', 'COMPLETED', 'CANCELLED');
+        END IF;
+      END$$;
+    `);
+    await queryRunner.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_type
+          WHERE typname = 'assignee_type_enum'
+        ) THEN
+          CREATE TYPE "public"."assignee_type_enum" AS ENUM('USER', 'TEAM');
+        END IF;
+      END$$;
+    `);
 
     // ======================================================================
     // 3. CORE TABLES - Önce FK olmadan temel tabloları oluştur
@@ -274,7 +348,7 @@ export class FinalizeCoreSchemaAndConstraints20240601120000 implements Migration
       )
     `);
 
-    // Assignments table - Yeni atama sistemi
+    // Assignments table - Yeni atama sistemi (accepted_at sütunu ile tam uyumlu)
     await queryRunner.query(`
       CREATE TABLE "public"."assignments" (
         "id" SERIAL NOT NULL,
@@ -282,10 +356,13 @@ export class FinalizeCoreSchemaAndConstraints20240601120000 implements Migration
         "assignee_type" "public"."assignee_type_enum" NOT NULL,
         "assignee_user_id" integer,
         "assignee_team_id" integer,
+        "assigned_by_user_id" integer,
         "assignment_status" "public"."assignment_status_enum" NOT NULL DEFAULT 'ACTIVE',
         "assigned_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "accepted_at" TIMESTAMP WITH TIME ZONE,
         "completed_at" TIMESTAMP WITH TIME ZONE,
-        "assigned_by_user_id" integer,
+        "rejected_at" TIMESTAMP WITH TIME ZONE,
+        "cancelled_at" TIMESTAMP WITH TIME ZONE,
         CONSTRAINT "PK_assignments_id" PRIMARY KEY ("id"),
         CONSTRAINT "CHK_assignments_assignee_type_and_ids" CHECK (
           ("assignee_type" = 'USER' AND "assignee_user_id" IS NOT NULL AND "assignee_team_id" IS NULL) OR

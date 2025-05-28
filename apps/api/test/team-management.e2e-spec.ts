@@ -69,6 +69,9 @@ describe('Team Management E2E', () => {
         .send(createTeamDto)
         .expect(201);
 
+      console.log('[TEAM_CRUD_CREATE] Response status:', response.status);
+      console.log('[TEAM_CRUD_CREATE] Response body:', JSON.stringify(response.body));
+
       expect(response.body.data).toMatchObject({
         name: 'Emergency Response Team Alpha',
         departmentId: testDepartmentId,
@@ -165,7 +168,7 @@ describe('Team Management E2E', () => {
       const response = await request(app.getHttpServer())
         .post(`/teams/${createdTeamId}/members/${testUserId}`)
         .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
-        .expect(200);
+        .expect(201);
 
       // The response should be the updated team or confirmation
       expect(response.body.data).toBeDefined();
@@ -218,7 +221,7 @@ describe('Team Management E2E', () => {
       const response = await request(app.getHttpServer())
         .post(`/teams/${createdTeamId}/specializations/${testSpecializationId}`)
         .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
-        .expect(200);
+        .expect(201);
 
       expect(response.body.data).toBeDefined();
     });
@@ -316,9 +319,9 @@ describe('Team Management E2E', () => {
 
       expect(response.body.data).toMatchObject({
         id: createdTeamId,
-        name: 'Emergency Response Team Alpha',
+        name: 'Emergency Response Team Alpha - Updated',
         departmentId: testDepartmentId,
-        status: TeamStatus.AVAILABLE,
+        status: TeamStatus.ON_DUTY,
       });
     });
 
@@ -419,11 +422,12 @@ describe('Team Management E2E', () => {
     });
 
     it('Should handle concurrent team member additions gracefully', async () => {
-      // Create a new team for this test
       const createTeamDto = {
         name: 'Concurrent Test Team',
         departmentId: testDepartmentId,
         teamLeaderId: AuthHelper.TEST_USERS.DEPARTMENT_SUPERVISOR.id,
+        status: TeamStatus.AVAILABLE,
+        baseLocation: { type: 'Point', coordinates: [29.0, 41.0] },
       };
 
       const teamResponse = await request(app.getHttpServer())
@@ -432,33 +436,43 @@ describe('Team Management E2E', () => {
         .send(createTeamDto)
         .expect(201);
 
-      const newTeamId = teamResponse.body.id;
+      const newTeamId = teamResponse.body.data.id;
+      console.log(
+        '[CONCURRENT_TEST] Created newTeamId:',
+        newTeamId,
+        'from response body:',
+        JSON.stringify(teamResponse.body)
+      );
 
-      // Try to add the same user twice (should handle gracefully)
+      expect(newTeamId).toBeDefined();
+      expect(typeof newTeamId).toBe('number');
+
       const addMemberPromise1 = request(app.getHttpServer())
         .post(`/teams/${newTeamId}/members/${testUserId}`)
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`);
+        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
+        .send({});
 
       const addMemberPromise2 = request(app.getHttpServer())
         .post(`/teams/${newTeamId}/members/${testUserId}`)
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`);
+        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
+        .send({});
 
-      const [response1, response2] = await Promise.allSettled([
-        addMemberPromise1,
-        addMemberPromise2,
-      ]);
+      const results = await Promise.allSettled([addMemberPromise1, addMemberPromise2]);
 
-      // At least one should succeed, one might fail with conflict
-      const responses = [response1, response2].map(r =>
-        r.status === 'fulfilled' ? r.value.status : null
-      );
+      const statusCodes = results.map(result => {
+        if (result.status === 'fulfilled') {
+          return result.value.status;
+        }
+        if (result.status === 'rejected' && result.reason.response) {
+          return result.reason.response.status as number;
+        }
+        return null;
+      });
 
-      expect(responses).toContain(200); // At least one success
+      console.log('[CONCURRENT_TEST] Received status codes:', statusCodes);
 
-      // Clean up
-      await request(app.getHttpServer())
-        .delete(`/teams/${newTeamId}`)
-        .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`);
+      expect(statusCodes).not.toContain(400);
+      expect(statusCodes).toContain(201);
     });
   });
 });

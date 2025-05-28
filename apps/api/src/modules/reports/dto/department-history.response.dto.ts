@@ -23,4 +23,10 @@ export class DepartmentHistoryResponseDto {
 
   @ApiProperty()
   changedAt!: Date;
+
+  @ApiProperty()
+  previousDepartmentId?: number;
+
+  @ApiProperty()
+  newDepartmentId!: number;
 }

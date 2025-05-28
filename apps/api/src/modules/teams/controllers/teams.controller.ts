@@ -13,6 +13,7 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -32,6 +33,7 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 import { UserRole } from '@KentNabiz/shared';
 import { RequestWithUser } from '../../auth/interfaces/jwt-payload.interface';
 import { Team } from '../entities/team.entity';
+import { PaginatedResponse } from '../../../common/dto/paginated-response.dto';
 
 @ApiTags('Teams')
 @Controller('teams')
@@ -41,6 +43,7 @@ export class TeamsController {
   constructor(private readonly teamsService: TeamsService) {}
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
   @ApiOperation({
     summary: 'Create a new team',
@@ -70,27 +73,13 @@ export class TeamsController {
   }
 
   @Get()
-  @Roles(UserRole.TEAM_MEMBER, UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
-  @ApiOperation({
-    summary: 'Get all teams',
-    description:
-      "Retrieves all teams based on user role and permissions. Results are filtered by user's department if applicable.",
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Teams retrieved successfully',
-    type: [Team],
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - User not authenticated',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Insufficient permissions',
-  })
-  findAll(@Req() req: RequestWithUser): Promise<Team[]> {
-    return this.teamsService.findAll(req.user);
+  @Roles(UserRole.SYSTEM_ADMIN, UserRole.DEPARTMENT_SUPERVISOR)
+  async findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number
+  ): Promise<PaginatedResponse<Team>> {
+    const { data, total } = await this.teamsService.findAllPaginated(page, limit);
+    return new PaginatedResponse(data, total, page, limit);
   }
 
   @Get('nearby')
@@ -377,6 +366,7 @@ export class TeamsController {
   }
 
   @Post(':id/members/:userId')
+  @HttpCode(HttpStatus.CREATED)
   @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
   @ApiOperation({
     summary: 'Add member to team (alternative endpoint)',
@@ -393,13 +383,17 @@ export class TeamsController {
     type: Number,
   })
   @ApiResponse({
-    status: 200,
+    status: 201,
     description: 'Member added to team successfully',
     type: Team,
   })
   @ApiResponse({
     status: 400,
     description: 'Bad Request - User already in team or invalid data',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - User is already a member of this team',
   })
   @ApiResponse({
     status: 404,
