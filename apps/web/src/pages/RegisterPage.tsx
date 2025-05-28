@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Formik, Form, Field, FieldProps } from 'formik';
 import * as Yup from 'yup';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch } from '@/store';
 import {
@@ -16,29 +16,38 @@ import {
   Text,
 } from '@chakra-ui/react';
 import { Field as ChakraField } from '@/components/ui/field';
-import { loginUser } from '@/store/thunks/authThunks';
+import { registerUser } from '@/store/thunks/authThunks';
 import {
   clearAuthError,
   selectAuthStatus,
   selectAuthError,
   selectIsAuthenticated,
 } from '@/store/slices/authSlice';
-import { LoginRequest } from '@KentNabiz/shared';
+import { RegisterRequest } from '@KentNabiz/shared';
 
 // Validation schema
-const loginSchema = Yup.object().shape({
+const registerSchema = Yup.object().shape({
+  fullName: Yup.string()
+    .min(2, 'Ad Soyad en az 2 karakter olmalıdır')
+    .required('Ad Soyad zorunludur'),
   email: Yup.string()
     .email('Geçerli bir e-posta adresi giriniz')
     .required('E-posta adresi zorunludur'),
   password: Yup.string()
     .min(6, 'Şifre en az 6 karakter olmalıdır')
     .required('Şifre zorunludur'),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref('password')], 'Şifreler eşleşmiyor')
+    .required('Şifre tekrarı zorunludur'),
 });
 
-const LoginPage: React.FC = () => {
+interface RegisterFormValues extends Omit<RegisterRequest, 'phoneNumber'> {
+  confirmPassword: string;
+}
+
+const RegisterPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const status = useSelector(selectAuthStatus);
@@ -49,19 +58,20 @@ const LoginPage: React.FC = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      // Login sonrası kullanıcının geldiği sayfaya yönlendir, yoksa /app'e git
-      const from = location.state?.from?.pathname || '/app';
-      navigate(from, { replace: true });
+      navigate('/app');
     }
-  }, [isAuthenticated, navigate, location.state]);
+  }, [isAuthenticated, navigate]);
 
   // Clear errors when component mounts
   useEffect(() => {
     dispatch(clearAuthError());
   }, [dispatch]);
 
-  const handleSubmit = async (values: LoginRequest) => {
-    dispatch(loginUser(values));
+  const handleSubmit = async (values: RegisterFormValues) => {
+    // Remove confirmPassword before sending to API
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { confirmPassword, ...registerData } = values;
+    dispatch(registerUser(registerData));
   };
 
   return (
@@ -74,10 +84,10 @@ const LoginPage: React.FC = () => {
         <Stack gap="6">
           <Stack gap={{ base: '2', md: '3' }} textAlign="center">
             <Heading size={{ base: 'xs', md: 'sm' }}>
-              KentNabız&apos;a Giriş Yapın
+              KentNabız&apos;a Kayıt Olun
             </Heading>
             <Text color="fg.muted">
-              Hesabınızla giriş yaparak şehir sorunlarını raporlayabilirsiniz
+              Hesap oluşturarak şehir sorunlarını raporlamaya başlayın
             </Text>
           </Stack>
         </Stack>
@@ -88,16 +98,36 @@ const LoginPage: React.FC = () => {
               <Stack gap="6">
                 <Formik
                   initialValues={{
+                    fullName: '',
                     email: '',
                     password: '',
+                    confirmPassword: '',
                   }}
-                  validationSchema={loginSchema}
+                  validationSchema={registerSchema}
                   onSubmit={handleSubmit}
                 >
                   {({ errors, touched, isValid, dirty }) => (
                     <Form>
                       <Stack gap="5">
                         <Stack gap="4">
+                          <ChakraField
+                            label="Ad Soyad"
+                            invalid={!!(touched.fullName && errors.fullName)}
+                            errorText={
+                              touched.fullName ? errors.fullName : undefined
+                            }
+                          >
+                            <Field name="fullName">
+                              {({ field }: FieldProps) => (
+                                <Input
+                                  {...field}
+                                  type="text"
+                                  placeholder="Adınız ve Soyadınız"
+                                />
+                              )}
+                            </Field>
+                          </ChakraField>
+
                           <ChakraField
                             label="E-posta"
                             invalid={!!(touched.email && errors.email)}
@@ -126,7 +156,32 @@ const LoginPage: React.FC = () => {
                                 <Input
                                   {...field}
                                   type="password"
-                                  placeholder="Şifrenizi giriniz"
+                                  placeholder="En az 6 karakter"
+                                />
+                              )}
+                            </Field>
+                          </ChakraField>
+
+                          <ChakraField
+                            label="Şifre Tekrarı"
+                            invalid={
+                              !!(
+                                touched.confirmPassword &&
+                                errors.confirmPassword
+                              )
+                            }
+                            errorText={
+                              touched.confirmPassword
+                                ? errors.confirmPassword
+                                : undefined
+                            }
+                          >
+                            <Field name="confirmPassword">
+                              {({ field }: FieldProps) => (
+                                <Input
+                                  {...field}
+                                  type="password"
+                                  placeholder="Şifrenizi tekrar girin"
                                 />
                               )}
                             </Field>
@@ -155,7 +210,7 @@ const LoginPage: React.FC = () => {
                             disabled={!isValid || !dirty || isLoading}
                             width="full"
                           >
-                            Giriş Yap
+                            Kayıt Ol
                           </Button>
                         </Stack>
                       </Stack>
@@ -168,9 +223,9 @@ const LoginPage: React.FC = () => {
         </Box>
 
         <HStack gap="1" justify="center">
-          <Text color="fg.muted">Hesabınız yok mu?</Text>
+          <Text color="fg.muted">Zaten hesabınız var mı?</Text>
           <Button variant="plain" size="sm" asChild>
-            <Link to="/register">Kayıt Olun</Link>
+            <Link to="/login">Giriş Yapın</Link>
           </Button>
         </HStack>
       </Stack>
@@ -178,4 +233,4 @@ const LoginPage: React.FC = () => {
   );
 };
 
-export default LoginPage;
+export default RegisterPage;

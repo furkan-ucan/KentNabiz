@@ -1,40 +1,70 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import HomePage from '@/pages/HomePage';
 import { LandingPage } from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
 import ReportListPage from '@/pages/ReportListPage';
 import NewReportPage from '@/pages/NewReportPage';
 import { RootLayout } from '@/layouts/RootLayout';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { PublicOnlyRoute } from '@/components/auth/PublicOnlyRoute';
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <LandingPage />,
-  },
-  {
-    path: '/app',
-    element: <RootLayout />,
+    element: <PublicOnlyRoute />,
     children: [
       {
         index: true,
-        element: <HomePage />,
-      },
-      {
-        path: 'reports',
-        element: <ReportListPage />,
-      },
-      {
-        path: 'reports/new',
-        element: <NewReportPage />,
+        element: <LandingPage />,
       },
     ],
   },
   {
     path: '/login',
-    element: <LoginPage />,
+    element: <PublicOnlyRoute />,
+    children: [
+      {
+        index: true,
+        element: <LoginPage />,
+      },
+    ],
   },
   {
     path: '/register',
-    element: <LoginPage />, // Geçici olarak LoginPage kullanıyoruz
+    element: <PublicOnlyRoute />,
+    children: [
+      {
+        index: true,
+        element: <RegisterPage />,
+      },
+    ],
+  },
+  {
+    path: '/app',
+    element: <ProtectedRoute />,
+    children: [
+      {
+        element: <RootLayout />,
+        children: [
+          {
+            index: true,
+            element: <HomePage />,
+          },
+          {
+            path: 'reports',
+            element: <ReportListPage />,
+          },
+          {
+            path: 'reports/new',
+            element: <NewReportPage />,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    path: '*',
+    element: <Navigate to="/" replace />,
   },
 ]);

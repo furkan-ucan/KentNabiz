@@ -2,7 +2,7 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 
 // API Temel URL'ini environment değişkeninden al
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 // Temel Axios instance'ını oluştur
 const apiClient: AxiosInstance = axios.create({
@@ -35,7 +35,9 @@ apiClient.interceptors.request.use(
   error => {
     // İstek hatası durumunda bir şeyler yap
     console.error('[API Client] Request Interceptor Error:', error);
-    return Promise.reject(error);
+    return Promise.reject(
+      error instanceof Error ? error : new Error(String(error))
+    );
   }
 );
 
@@ -65,7 +67,9 @@ apiClient.interceptors.response.use(
       // localStorage.removeItem('kentNabizToken');
       // window.location.href = '/login'; // Doğrudan yönlendirme yerine Redux action'ı tercih edilir.
     }
-    return Promise.reject(error);
+    return Promise.reject(
+      error instanceof Error ? error : new Error(String(error))
+    );
   }
 );
 

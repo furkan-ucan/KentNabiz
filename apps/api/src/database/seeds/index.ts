@@ -23,8 +23,8 @@ async function runSeeds(dataSource: DataSource): Promise<void> {
     await DepartmentsSeed(dataSource);
     await CategoriesSeed(dataSource);
     await SpecializationsSeed(dataSource);
-    await UsersSeed(dataSource);
     await TeamsSeed(dataSource);
+    await UsersSeed(dataSource);
     await ReportsSeed(dataSource);
     await AssignmentsSeed(dataSource);
     console.log('✅ Tüm seed işlemleri başarıyla tamamlandı!');

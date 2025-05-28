@@ -8,6 +8,7 @@ import {
   Grid,
   Card,
 } from '@chakra-ui/react';
+import { FiBarChart, FiClock, FiCheckCircle, FiX } from 'react-icons/fi';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { StatCard } from '@/components/ui/StatCard';
@@ -50,7 +51,7 @@ export const ChakraV3Demo: React.FC = () => {
               <StatCard
                 label="Toplam Rapor"
                 value="1,234"
-                icon="📊"
+                icon={FiBarChart}
                 helpText="+12% bu ay"
                 arrowType="increase"
                 colorPalette="blue"
@@ -58,7 +59,7 @@ export const ChakraV3Demo: React.FC = () => {
               <StatCard
                 label="Bekleyen"
                 value="56"
-                icon="⏳"
+                icon={FiClock}
                 helpText="-5% bu ay"
                 arrowType="decrease"
                 colorPalette="orange"
@@ -66,7 +67,7 @@ export const ChakraV3Demo: React.FC = () => {
               <StatCard
                 label="Tamamlanan"
                 value="890"
-                icon="✅"
+                icon={FiCheckCircle}
                 helpText="+8% bu ay"
                 arrowType="increase"
                 colorPalette="green"
@@ -74,7 +75,7 @@ export const ChakraV3Demo: React.FC = () => {
               <StatCard
                 label="İptal Edilen"
                 value="23"
-                icon="❌"
+                icon={FiX}
                 helpText="+2% bu ay"
                 arrowType="increase"
                 colorPalette="red"

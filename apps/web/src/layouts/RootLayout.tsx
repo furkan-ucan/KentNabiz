@@ -8,8 +8,23 @@ import {
   Spacer,
 } from '@chakra-ui/react';
 import { Outlet, Link as RouterLink } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  selectIsAuthenticated,
+  selectCurrentUser,
+} from '../store/slices/authSlice';
+import { logoutUser } from '../store/thunks/authThunks';
+import type { AppDispatch } from '../store';
 
 export const RootLayout = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const currentUser = useSelector(selectCurrentUser);
+
+  const handleLogout = () => {
+    dispatch(logoutUser());
+  };
+
   return (
     <Flex direction="column" minH="100vh">
       {/* Header */}
@@ -17,48 +32,82 @@ export const RootLayout = () => {
         <Container maxW="container.xl">
           <HStack gap={8}>
             <Text fontSize="2xl" fontWeight="bold" asChild>
-              <RouterLink to="/">KentNabız</RouterLink>
+              <RouterLink to={isAuthenticated ? '/app' : '/'}>
+                KentNabız
+              </RouterLink>
             </Text>
-            <HStack gap={4}>
-              <Button
-                asChild
-                variant="ghost"
-                color="white"
-                _hover={{ bg: 'brand.600' }}
-              >
-                <RouterLink to="/reports">Raporlar</RouterLink>
-              </Button>
-              <Button
-                asChild
-                variant="ghost"
-                color="white"
-                _hover={{ bg: 'brand.600' }}
-              >
-                <RouterLink to="/map">Harita</RouterLink>
-              </Button>
-            </HStack>
+            {isAuthenticated && (
+              <HStack gap={4}>
+                <Button
+                  asChild
+                  variant="ghost"
+                  color="white"
+                  _hover={{ bg: 'brand.600' }}
+                >
+                  <RouterLink to="/app">Ana Panel</RouterLink>
+                </Button>
+                <Button
+                  asChild
+                  variant="ghost"
+                  color="white"
+                  _hover={{ bg: 'brand.600' }}
+                >
+                  <RouterLink to="/app/reports">Raporlarım</RouterLink>
+                </Button>
+                <Button
+                  asChild
+                  variant="ghost"
+                  color="white"
+                  _hover={{ bg: 'brand.600' }}
+                >
+                  <RouterLink to="/app/reports/new">Yeni Rapor</RouterLink>
+                </Button>
+              </HStack>
+            )}
             <Spacer />
             <HStack gap={2}>
-              <Button
-                asChild
-                variant="outline"
-                color="white"
-                borderColor="white"
-                _hover={{ bg: 'white', color: 'brand.500' }}
-                size="sm"
-              >
-                <RouterLink to="/login">Giriş Yap</RouterLink>
-              </Button>
-              <Button
-                asChild
-                variant="solid"
-                bg="white"
-                color="brand.500"
-                _hover={{ bg: 'gray.100' }}
-                size="sm"
-              >
-                <RouterLink to="/register">Kayıt Ol</RouterLink>
-              </Button>
+              {isAuthenticated ? (
+                <>
+                  {currentUser && (
+                    <Text fontSize="sm" color="white" opacity={0.9}>
+                      Hoş geldin, {currentUser.email}
+                    </Text>
+                  )}
+                  <Button
+                    variant="outline"
+                    color="white"
+                    borderColor="white"
+                    _hover={{ bg: 'white', color: 'brand.500' }}
+                    size="sm"
+                    onClick={handleLogout}
+                  >
+                    Çıkış Yap
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    asChild
+                    variant="outline"
+                    color="white"
+                    borderColor="white"
+                    _hover={{ bg: 'white', color: 'brand.500' }}
+                    size="sm"
+                  >
+                    <RouterLink to="/login">Giriş Yap</RouterLink>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="solid"
+                    bg="white"
+                    color="brand.500"
+                    _hover={{ bg: 'gray.100' }}
+                    size="sm"
+                  >
+                    <RouterLink to="/register">Kayıt Ol</RouterLink>
+                  </Button>
+                </>
+              )}
             </HStack>
           </HStack>
         </Container>
