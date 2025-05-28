@@ -1,4 +1,3 @@
-
 import { DataSource } from 'typeorm';
 import { Assignment } from '../../modules/reports/entities/assignment.entity';
 import { AssignmentStatus, AssigneeType } from '@KentNabiz/shared';
