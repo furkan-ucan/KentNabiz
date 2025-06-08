@@ -1,4 +1,4 @@
-import { randomBytes } from 'crypto';
+﻿import { randomBytes } from 'crypto';
 import { AuthHelper } from './auth-helper';
 
 // Set test environment variables for JWT BEFORE any imports
@@ -9,7 +9,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { UserRole } from '@KentNabiz/shared';
+import { UserRole } from '@kentnabiz/shared';
 
 describe('Teams Workflow (E2E)', () => {
   let app: INestApplication;

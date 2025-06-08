@@ -1,6 +1,7 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, Min, Max } from 'class-validator';
-import { Type } from 'class-transformer';
+﻿import { ApiProperty } from '@nestjs/swagger';
+import { IsNumber, Min, Max, IsOptional, IsEnum } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
+import { ReportStatus } from '@kentnabiz/shared';
 
 // TODO: basic validation tests for DTOs (optional)
 
@@ -42,4 +43,23 @@ export class RadiusSearchDto extends LocationDto {
   @Max(50000)
   @Type(() => Number)
   radius!: number;
+
+  @ApiProperty({
+    description: 'Filter by report status (array)',
+    enum: ReportStatus,
+    isArray: true,
+    required: false,
+    example: [ReportStatus.OPEN, ReportStatus.IN_REVIEW],
+  })
+  @IsOptional()
+  @IsEnum(ReportStatus, { each: true })
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) return value.map((v: unknown) => String(v).trim());
+    if (typeof value === 'string') {
+      if (value.includes(',')) return value.split(',').map(v => v.trim());
+      return [value];
+    }
+    return undefined;
+  })
+  status?: ReportStatus[];
 }

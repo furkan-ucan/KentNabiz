@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { AssignmentStatus, AssigneeType } from '@KentNabiz/shared';
+﻿import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { AssignmentStatus, AssigneeType } from '@kentnabiz/shared';
 import { Report } from './report.entity';
 import { User } from '../../users/entities/user.entity';
 import { Team } from '../../teams/entities/team.entity';

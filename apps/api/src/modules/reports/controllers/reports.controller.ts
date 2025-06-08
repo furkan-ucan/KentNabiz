@@ -1,4 +1,4 @@
-import {
+﻿import {
   Controller,
   Get,
   Post,
@@ -23,18 +23,20 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { ReportsService } from '../services/reports.service';
+import { DepartmentService } from '../services/department.service';
 import { TeamsService } from '../../teams/services/teams.service';
 import { CreateReportDto } from '../dto/create-report.dto';
 import { UpdateReportDto } from '../dto/update-report.dto';
 import { UpdateReportStatusDto } from '../dto/update-report-status.dto';
 import { ForwardReportDto } from '../dto/forward-report.dto';
 import { RadiusSearchDto } from '../dto/location.dto';
-import { ReportStatus, ReportType, MunicipalityDepartment, UserRole } from '@KentNabiz/shared';
+import { ReportStatus, ReportType, MunicipalityDepartment, UserRole } from '@kentnabiz/shared';
 import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { RequestWithUser } from '../../auth/interfaces/jwt-payload.interface';
 import { Report } from '../entities/report.entity';
+import { Department } from '../entities/department.entity';
 import { IReport } from '../interfaces/report.interface';
 import { DepartmentHistoryResponseDto } from '../dto/department-history.response.dto';
 import { CheckPolicies, PoliciesGuard } from '../../../core/guards/policies.guard';
@@ -50,6 +52,7 @@ import { PaginatedResponse } from '../../../common/dto/paginated-response.dto';
 export class ReportsController {
   constructor(
     private readonly reportsService: ReportsService,
+    private readonly departmentService: DepartmentService,
     private readonly teamsService: TeamsService
   ) {}
 
@@ -96,19 +99,18 @@ export class ReportsController {
   @ApiResponse({ status: 200, description: 'Paginated list of nearby reports' })
   async findNearby(
     @Req() req: RequestWithUser,
-    @Query() searchDto: RadiusSearchDto, // searchDto latitude, longitude, radius içerir
+    @Query() searchDto: RadiusSearchDto, // searchDto latitude, longitude, radius ve status içerir
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('reportType') reportType?: ReportType, // type -> reportType
-    @Query('status') status?: ReportStatus,
     @Query('departmentCode') departmentCode?: MunicipalityDepartment // department -> departmentCode
   ): Promise<{ data: PaginatedResponse<IReport> }> {
     const paginatedResult = await this.reportsService.findNearby(searchDto, {
       page: page ? +page : 1,
       limit: limit ? +limit : 10,
       reportType,
-      status,
       departmentCode,
+      currentUserId: req.user.sub, // Mevcut kullanıcının ID'sini ekle
     });
     return {
       data: new PaginatedResponse(
@@ -154,6 +156,22 @@ export class ReportsController {
         limit ? +limit : 10
       ),
     };
+  }
+
+  @Get('departments')
+  @ApiOperation({
+    summary: 'Get all active departments',
+    description: 'Returns list of all active departments for report creation',
+  })
+  @Roles(
+    UserRole.CITIZEN,
+    UserRole.TEAM_MEMBER,
+    UserRole.DEPARTMENT_SUPERVISOR,
+    UserRole.SYSTEM_ADMIN
+  )
+  @ApiResponse({ status: 200, description: 'List of active departments', type: [Department] })
+  async getDepartments(): Promise<Department[]> {
+    return this.departmentService.findAll();
   }
 
   @Get(':id')
@@ -254,13 +272,13 @@ export class ReportsController {
         success: { type: 'boolean', example: true },
         message: {
           type: 'string',
-          example: 'Report ID 1 successfully forwarded to department PARKS.',
+          example: 'Report ID 1 successfully forwarded to department PARKS_AND_GARDENS.',
         },
         reportId: { type: 'number', example: 1 },
         newDepartmentCode: {
           type: 'string',
           enum: Object.values(MunicipalityDepartment), // Enum değerlerini kullan
-          example: MunicipalityDepartment.PARKS,
+          example: MunicipalityDepartment.PARKS_AND_GARDENS,
         },
       },
       required: ['success', 'message', 'reportId', 'newDepartmentCode'], // Gerekli alanlar
@@ -458,5 +476,20 @@ export class ReportsController {
   ): Promise<Report> {
     // Gerçek service metodunu çağır
     return this.reportsService.supportReport(id, req.user);
+  }
+
+  @Delete(':id/support')
+  @ApiOperation({ summary: 'Destek çek (CITIZEN - ABAC POC)' })
+  @UseGuards(JwtAuthGuard, PoliciesGuard)
+  @CheckPolicies((ability: AppAbility, subject) => {
+    return ability.can(Action.Unsupport, subject as Report);
+  })
+  @ApiParam({ name: 'id', description: 'Report ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Destek başarıyla geri çekildi', type: Report })
+  async unsupportReport(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: RequestWithUser
+  ): Promise<Report> {
+    return this.reportsService.unsupportReport(id, req.user);
   }
 }

@@ -44,7 +44,9 @@ describe('Team Management E2E', () => {
 
     const userRepo = TestDataSource.getRepository('User');
     const users = await userRepo.find();
-    testUserId = users.find((u: any) => u.email === 'teammember@test.com')?.id || 3;
+    testUserId =
+      (users as Array<{ email: string; id: number }>).find(u => u.email === 'teammember@test.com')
+        ?.id || 3;
   });
 
   afterAll(async () => {

@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+﻿import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsNotEmpty,
@@ -8,9 +8,10 @@ import {
   IsOptional,
   IsArray,
   IsNumber,
+  IsPositive,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { MunicipalityDepartment, ReportType } from '@KentNabiz/shared';
+import { MunicipalityDepartment, ReportType } from '@kentnabiz/shared';
 import { LocationDto } from './location.dto';
 
 export class CreateReportMediaDto {
@@ -69,27 +70,31 @@ export class CreateReportDto {
   address!: string;
 
   @ApiProperty({
-    description: 'Type of the report (eski kategori sistemi)',
+    description: 'Ana departman/konu seçimi (ZORUNLU)',
+    enum: MunicipalityDepartment,
+    example: MunicipalityDepartment.ROADS_AND_INFRASTRUCTURE,
+  })
+  @IsNotEmpty()
+  @IsEnum(MunicipalityDepartment)
+  departmentCode!: MunicipalityDepartment;
+
+  @ApiProperty({
+    description: 'Seçilen departmana ait kategori ID (ZORUNLU)',
+    example: 12,
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  @IsPositive()
+  categoryId!: number;
+
+  @ApiPropertyOptional({
+    description: 'Rapor tipi (opsiyonel - backend kategori bazında otomatik atayacak)',
     enum: ReportType,
     example: ReportType.POTHOLE,
   })
+  @IsOptional()
   @IsEnum(ReportType)
-  @IsNotEmpty()
-  reportType!: ReportType;
-
-  @ApiProperty({
-    description: 'Kategori ID (yeni kategori sistemi)',
-    example: 12,
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  categoryId?: number;
-
-  @ApiPropertyOptional({ enum: MunicipalityDepartment, example: MunicipalityDepartment.ROADS })
-  @IsOptional()
-  @IsEnum(MunicipalityDepartment)
-  departmentCode?: MunicipalityDepartment;
+  reportType?: ReportType;
 
   @ApiProperty({
     description: 'Media files related to the report',

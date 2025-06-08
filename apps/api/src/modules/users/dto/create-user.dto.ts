@@ -1,4 +1,4 @@
-// apps/api/src/modules/users/dto/create-user.dto.ts
+﻿// apps/api/src/modules/users/dto/create-user.dto.ts
 import {
   IsString,
   IsEmail,
@@ -11,7 +11,7 @@ import {
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserRole } from '@KentNabiz/shared';
+import { UserRole } from '@kentnabiz/shared';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'john.doe@example.com', description: 'Email address of the user' })

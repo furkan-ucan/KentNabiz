@@ -1,4 +1,4 @@
-import { DataSource } from 'typeorm';
+﻿import { DataSource } from 'typeorm';
 import TestDataSource from '../src/config/test-data-source';
 import { User } from '../src/modules/users/entities/user.entity';
 import { Department } from '../src/modules/reports/entities/department.entity';
@@ -11,8 +11,8 @@ import {
   AssigneeType,
   AssignmentStatus,
   ReportStatus,
-} from '@KentNabiz/shared';
-import { ReportType } from '@KentNabiz/shared';
+} from '@kentnabiz/shared';
+import { ReportType } from '@kentnabiz/shared';
 import * as bcrypt from 'bcryptjs';
 
 export const clearDatabase = async (dataSource: DataSource): Promise<void> => {

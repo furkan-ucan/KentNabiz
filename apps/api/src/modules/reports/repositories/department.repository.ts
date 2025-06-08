@@ -1,9 +1,9 @@
-// apps/api/src/modules/reports/repositories/department.repository.ts
+﻿// apps/api/src/modules/reports/repositories/department.repository.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Department } from '../entities/department.entity';
-import { MunicipalityDepartment, ReportType } from '@KentNabiz/shared';
+import { MunicipalityDepartment, ReportType } from '@kentnabiz/shared';
 
 // TODO: add unit tests for department repository methods - coverage: 27.77%
 

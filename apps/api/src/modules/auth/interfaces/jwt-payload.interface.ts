@@ -1,6 +1,6 @@
-// apps/api/src/modules/auth/interfaces/jwt-payload.interface.ts
+﻿// apps/api/src/modules/auth/interfaces/jwt-payload.interface.ts
 // CORRECTED IMPORT PATH: Ensure this path is valid for your monorepo setup.
-import { UserRole } from '@KentNabiz/shared'; // Adjust path if necessary
+import { UserRole } from '@kentnabiz/shared'; // Adjust path if necessary
 import { Request } from 'express';
 
 export interface JwtPayload {

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file report.interface.ts
  * @author [Your Name]
  * @date [Date]
@@ -11,7 +11,7 @@
 
 import { Point } from 'geojson';
 // --- Import Enums from Shared Package ---
-import { ReportStatus, ReportType, MunicipalityDepartment } from '@KentNabiz/shared'; // Adjust import path if necessary
+import { ReportStatus, ReportType, MunicipalityDepartment } from '@kentnabiz/shared'; // Adjust import path if necessary
 // --- End Import ---
 
 // --- REMOVED Enum Definitions ---
@@ -53,6 +53,8 @@ export interface IReport {
   updatedAt: Date;
   reportMedias?: IReportMedia[];
   departmentHistory?: IDepartmentChange[];
+  supportCount?: number;
+  isSupportedByCurrentUser?: boolean;
 }
 
 // API-Internal Media Interface

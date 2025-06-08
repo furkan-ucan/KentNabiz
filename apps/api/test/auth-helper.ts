@@ -1,9 +1,9 @@
-// Set JWT_SECRET before any imports
+﻿// Set JWT_SECRET before any imports
 process.env.JWT_SECRET = 'test-jwt-secret-for-e2e-tests-fixed';
 process.env.JWT_REFRESH_SECRET = 'test-jwt-refresh-secret-for-e2e-tests-fixed';
 
 import { sign } from 'jsonwebtoken';
-import { UserRole } from '@KentNabiz/shared';
+import { UserRole } from '@kentnabiz/shared';
 
 interface TestUser {
   id: number;

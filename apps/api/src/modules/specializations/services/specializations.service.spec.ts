@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
+﻿import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { SpecializationsService } from './specializations.service';
 import { Specialization } from '../entities/specialization.entity';
-import { UserRole } from '@KentNabiz/shared';
+import { UserRole } from '@kentnabiz/shared';
 import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
 import { CreateSpecializationDto } from '../dto/create-specialization.dto';
 import { UpdateSpecializationDto } from '../dto/update-specialization.dto';

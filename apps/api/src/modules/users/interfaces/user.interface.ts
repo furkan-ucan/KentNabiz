@@ -1,4 +1,4 @@
-import { UserRole } from '@KentNabiz/shared';
+﻿import { UserRole } from '@kentnabiz/shared';
 
 export interface IUser {
   id: number;

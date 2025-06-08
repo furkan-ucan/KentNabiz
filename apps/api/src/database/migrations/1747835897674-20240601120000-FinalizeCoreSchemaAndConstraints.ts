@@ -34,7 +34,7 @@ export class FinalizeCoreSchemaAndConstraints20240601120000 implements Migration
       END$$;
     `);
 
-    // Department codes enum
+    // Department codes enum - Updated to match Turkish municipal departments
     await queryRunner.query(`
       DO $$
       BEGIN
@@ -44,15 +44,28 @@ export class FinalizeCoreSchemaAndConstraints20240601120000 implements Migration
           WHERE typname = 'municipality_department_enum'
         ) THEN
           CREATE TYPE "public"."municipality_department_enum" AS ENUM(
-            'GENERAL', 'ROADS', 'WATER', 'ELECTRICITY', 'PARKS','FIRE', 'HEALTH',
-            'BUILDING', 'MUNICIPALITY',
-            'ENVIRONMENTAL', 'INFRASTRUCTURE', 'TRANSPORTATION', 'TRAFFIC', 'OTHER'
+            'ROADS_AND_INFRASTRUCTURE',
+            'PLANNING_URBANIZATION',
+            'PARKS_AND_GARDENS',
+            'ENVIRONMENTAL_PROTECTION',
+            'TRANSPORTATION_SERVICES',
+            'TRAFFIC_SERVICES',
+            'WATER_AND_SEWERAGE',
+            'STREET_LIGHTING',
+            'CLEANING_SERVICES',
+            'MUNICIPAL_POLICE',
+            'FIRE_DEPARTMENT',
+            'HEALTH_AFFAIRS',
+            'VETERINARY_SERVICES',
+            'SOCIAL_ASSISTANCE',
+            'CULTURE_AND_SOCIAL_AFFAIRS',
+            'GENERAL_AFFAIRS'
           );
         END IF;
       END$$;
     `);
 
-    // Report type enum
+    // Report type enum - Updated to match Turkish municipal report types
     await queryRunner.query(`
       DO $$
       BEGIN
@@ -63,28 +76,30 @@ export class FinalizeCoreSchemaAndConstraints20240601120000 implements Migration
         ) THEN
           CREATE TYPE "public"."report_type_enum" AS ENUM (
             'POTHOLE',
+            'SIDEWALK_DAMAGE',
             'ROAD_DAMAGE',
             'ROAD_SIGN',
             'ROAD_MARKING',
-            'ROAD_CONSTRUCTION',
-            'ROAD_MAINTENANCE',
-            'ROAD_CLEANING',
-            'ROAD_REPAIR',
-            'ROAD_BLOCK',
             'TRAFFIC_LIGHT',
+            'ROAD_BLOCK',
             'STREET_LIGHT',
             'ELECTRICITY_OUTAGE',
             'WATER_LEAKAGE',
+            'DRAINAGE_BLOCKAGE',
+            'SEWER_LEAKAGE',
+            'GARBAGE_COLLECTION',
             'LITTER',
+            'DUMPING',
             'GRAFFITI',
+            'AIR_POLLUTION',
             'PARK_DAMAGE',
             'TREE_ISSUE',
-            'PARKING_VIOLATION',
             'PUBLIC_TRANSPORT',
-            'PUBLIC_TRANSPORT_VIOLATION',
             'PUBLIC_TRANSPORT_STOP',
-            'PUBLIC_TRANSPORT_VEHICLE',
-            'GARBAGE_COLLECTION',
+            'PARKING_VIOLATION',
+            'TRAFFIC_CONGESTION',
+            'ANIMAL_CONTROL',
+            'NOISE_COMPLAINT',
             'OTHER'
           );
         END IF;
@@ -212,6 +227,8 @@ export class FinalizeCoreSchemaAndConstraints20240601120000 implements Migration
         "description" text,
         "icon" character varying(50),
         "parent_id" integer,
+        "department_id" integer NOT NULL,
+        "default_report_type" "public"."report_type_enum" NOT NULL DEFAULT 'OTHER',
         "is_active" boolean NOT NULL DEFAULT true,
         "sort_order" integer NOT NULL DEFAULT 0,
         "created_at" TIMESTAMP NOT NULL DEFAULT now(),
@@ -230,9 +247,11 @@ export class FinalizeCoreSchemaAndConstraints20240601120000 implements Migration
         "location" geometry(Point,4326) NOT NULL,
         "address" character varying(255) NOT NULL,
         "report_type" "public"."report_type_enum",
-        "category_id" integer,
+        "department_code" "public"."municipality_department_enum" NOT NULL,
+        "category_id" integer NOT NULL,
         "status" "public"."report_status_enum" NOT NULL DEFAULT 'OPEN',
         "sub_status" character varying(40),
+        "support_count" integer NOT NULL DEFAULT 0,
         "current_department_id" integer NOT NULL,
         "user_id" integer NOT NULL,
         "closed_by_user_id" integer,
@@ -387,6 +406,17 @@ export class FinalizeCoreSchemaAndConstraints20240601120000 implements Migration
       )
     `);
 
+    // Report supports table (Kullanıcıların rapor destekleri için)
+    await queryRunner.query(`
+      CREATE TABLE "public"."report_supports" (
+        "id" SERIAL PRIMARY KEY,
+        "report_id" integer NOT NULL REFERENCES "public"."reports"("id") ON DELETE CASCADE,
+        "user_id" integer NOT NULL REFERENCES "public"."users"("id") ON DELETE CASCADE,
+        "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+        CONSTRAINT "UQ_report_supports_report_user" UNIQUE ("report_id", "user_id")
+      )
+    `);
+
     // ======================================================================
     // 5. FOREIGN KEY CONSTRAINTS
     // ======================================================================
@@ -403,10 +433,13 @@ export class FinalizeCoreSchemaAndConstraints20240601120000 implements Migration
     await queryRunner.query(
       `ALTER TABLE "public"."report_categories" ADD CONSTRAINT "FK_report_categories_parent" FOREIGN KEY ("parent_id") REFERENCES "public"."report_categories"("id") ON DELETE SET NULL`
     );
+    await queryRunner.query(
+      `ALTER TABLE "public"."report_categories" ADD CONSTRAINT "FK_report_categories_department" FOREIGN KEY ("department_id") REFERENCES "public"."departments"("id") ON DELETE CASCADE`
+    );
 
     // Reports foreign keys
     await queryRunner.query(
-      `ALTER TABLE "public"."reports" ADD CONSTRAINT "FK_reports_category" FOREIGN KEY ("category_id") REFERENCES "public"."report_categories"("id") ON DELETE SET NULL`
+      `ALTER TABLE "public"."reports" ADD CONSTRAINT "FK_reports_category" FOREIGN KEY ("category_id") REFERENCES "public"."report_categories"("id") ON DELETE RESTRICT`
     );
     await queryRunner.query(
       `ALTER TABLE "public"."reports" ADD CONSTRAINT "FK_reports_current_department" FOREIGN KEY ("current_department_id") REFERENCES "public"."departments"("id") ON DELETE RESTRICT`
@@ -506,12 +539,21 @@ export class FinalizeCoreSchemaAndConstraints20240601120000 implements Migration
       `CREATE INDEX "IDX_report_categories_parent_id" ON "public"."report_categories" ("parent_id")`
     );
     await queryRunner.query(
+      `CREATE INDEX "IDX_report_categories_department_id" ON "public"."report_categories" ("department_id")`
+    );
+    await queryRunner.query(
       `CREATE INDEX "IDX_report_categories_is_active" ON "public"."report_categories" ("is_active")`
     );
 
     // Reports indexes
     await queryRunner.query(
       `CREATE INDEX "IDX_reports_report_type" ON "public"."reports" ("report_type")`
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_reports_department_code" ON "public"."reports" ("department_code")`
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_reports_category_id" ON "public"."reports" ("category_id")`
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_reports_current_department_id" ON "public"."reports" ("current_department_id")`
@@ -580,6 +622,7 @@ export class FinalizeCoreSchemaAndConstraints20240601120000 implements Migration
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_reports_report_type"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_report_categories_is_active"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_report_categories_parent_id"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_report_categories_department_id"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_report_categories_code"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_users_email"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_departments_active"`);
@@ -651,6 +694,9 @@ export class FinalizeCoreSchemaAndConstraints20240601120000 implements Migration
     );
     await queryRunner.query(
       `ALTER TABLE "public"."report_categories" DROP CONSTRAINT IF EXISTS "FK_report_categories_parent"`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "public"."report_categories" DROP CONSTRAINT IF EXISTS "FK_report_categories_department"`
     );
     await queryRunner.query(
       `ALTER TABLE "public"."users" DROP CONSTRAINT IF EXISTS "FK_users_active_team_id"`

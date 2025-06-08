@@ -4,9 +4,91 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React + TS</title>
+    <title>KentNabiz - Şehir Raporlama</title>
+    <!-- Leaflet CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
   </head>
   <body>
+    <script>
+      // Production-ready ColorMode Script - Prevents FOUC (Flash of Unstyled Content)
+      (function () {
+        'use strict';
+
+        try {
+          // Configuration
+          const STORAGE_KEY = 'theme';
+          const DARK_CLASS = 'dark';
+          const DATA_THEME_ATTR = 'data-theme';
+
+          // Get stored theme preference
+          let theme = localStorage.getItem(STORAGE_KEY);
+
+          // Fallback to system preference if no stored theme or theme is 'system'
+          if (!theme || theme === 'system') {
+            const mediaQuery = window.matchMedia(
+              '(prefers-color-scheme: dark)'
+            );
+            theme = mediaQuery.matches ? 'dark' : 'light';
+          }
+
+          // Apply theme immediately
+          const root = document.documentElement;
+
+          if (theme === 'dark') {
+            root.classList.add(DARK_CLASS);
+            root.setAttribute(DATA_THEME_ATTR, 'dark');
+            root.style.colorScheme = 'dark';
+          } else {
+            root.classList.remove(DARK_CLASS);
+            root.setAttribute(DATA_THEME_ATTR, 'light');
+            root.style.colorScheme = 'light';
+          }
+
+          // Add a class to prevent transitions during initial load
+          root.classList.add('theme-loading');
+
+          // Remove the loading class after DOM is ready
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function () {
+              requestAnimationFrame(() => {
+                root.classList.remove('theme-loading');
+              });
+            });
+          } else {
+            requestAnimationFrame(() => {
+              root.classList.remove('theme-loading');
+            });
+          }
+        } catch (error) {
+          // Fallback: Apply system preference
+          console.warn('ColorModeScript error:', error);
+
+          try {
+            const isDark = window.matchMedia(
+              '(prefers-color-scheme: dark)'
+            ).matches;
+            const root = document.documentElement;
+
+            if (isDark) {
+              root.classList.add('dark');
+              root.setAttribute('data-theme', 'dark');
+              root.style.colorScheme = 'dark';
+            } else {
+              root.classList.remove('dark');
+              root.setAttribute('data-theme', 'light');
+              root.style.colorScheme = 'light';
+            }
+          } catch (fallbackError) {
+            console.error('ColorModeScript fallback failed:', fallbackError);
+          }
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

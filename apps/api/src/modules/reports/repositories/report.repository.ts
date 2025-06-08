@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, DeleteResult, EntityManager } from 'typeorm';
 import { Point } from 'geojson';
 import { Report } from '../entities/report.entity';
 import { ReportMedia } from '../entities/report-media.entity';
+import { ReportSupport } from '../entities/report-support.entity';
 import { IReportFindOptions, ISpatialQueryResult } from '../interfaces/report.interface';
-import { ReportStatus, ReportType, MunicipalityDepartment } from '@KentNabiz/shared';
+import { ReportStatus, ReportType, MunicipalityDepartment } from '@kentnabiz/shared';
 // TODO: add unit tests for custom repository methods - coverage: 9.67%
 
 // Type-safe interfaces for report data operations
@@ -18,6 +19,7 @@ export interface CreateReportData {
   status?: ReportStatus;
   categoryId?: number;
   currentDepartmentId: number;
+  departmentCode?: MunicipalityDepartment;
   reportMedias?: Array<{ url: string; type: string }>;
 }
 
@@ -33,9 +35,10 @@ export class ReportRepository {
     limit?: number;
     page?: number;
     userId?: number;
-    reportType?: ReportType; // type -> reportType olarak güncellendi
-    status?: ReportStatus;
-    departmentCode?: MunicipalityDepartment; // department -> departmentCode olarak güncellendi (enum kodu)
+    reportType?: ReportType;
+    status?: ReportStatus | ReportStatus[];
+    departmentCode?: MunicipalityDepartment;
+    currentUserId?: number;
   }): Promise<ISpatialQueryResult> {
     const limit = options?.limit || 10;
     const page = options?.page || 1;
@@ -44,64 +47,104 @@ export class ReportRepository {
     const queryBuilder = this.reportRepository
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.reportMedias', 'media')
-      .leftJoinAndSelect('report.currentDepartment', 'departmentEntity') // Departman bilgisini join et
-      .leftJoinAndSelect('report.user', 'userEntity') // Kullanıcı bilgisini join et
-      .leftJoinAndSelect('report.assignments', 'assignments') // Atama bilgilerini join et
-      .leftJoinAndSelect('assignments.assigneeUser', 'assigneeUser') // Atanan kullanıcıyı join et
-      .leftJoinAndSelect('assignments.assigneeTeam', 'assigneeTeam') // Atanan takımı join et
-      .leftJoinAndSelect('report.category', 'categoryEntity') // Kategoriyi join et
-      .skip(skip)
-      .take(limit)
+      .leftJoinAndSelect('report.currentDepartment', 'departmentEntity')
+      .leftJoinAndSelect('report.user', 'userEntity')
+      .leftJoinAndSelect('report.assignments', 'assignments')
+      .leftJoinAndSelect('assignments.assigneeUser', 'assigneeUser')
+      .leftJoinAndSelect('assignments.assigneeTeam', 'assigneeTeam')
+      .leftJoinAndSelect('report.category', 'categoryEntity')
       .orderBy('report.createdAt', 'DESC');
+
+    if (options?.currentUserId) {
+      queryBuilder.addSelect(subQuery => {
+        return subQuery
+          .select('CASE WHEN COUNT(rs.id) > 0 THEN TRUE ELSE FALSE END')
+          .from(ReportSupport, 'rs')
+          .where('rs.reportId = report.id')
+          .andWhere('rs.userId = :currentUserId', { currentUserId: options.currentUserId });
+      }, 'isSupportedByCurrentUser');
+    } else {
+      queryBuilder.addSelect('false', 'isSupportedByCurrentUser');
+    }
 
     if (options?.userId) {
       queryBuilder.andWhere('report.userId = :userId', { userId: options.userId });
     }
-
     if (options?.reportType) {
-      // type -> reportType
-      // Entity'deki property adı 'reportType', veritabanı sütunu 'report_type'
       queryBuilder.andWhere('report.reportType = :reportType', { reportType: options.reportType });
     }
-
     if (options?.status) {
-      queryBuilder.andWhere('report.status = :status', { status: options.status });
+      if (Array.isArray(options.status) && options.status.length > 0) {
+        queryBuilder.andWhere('report.status IN (:...statuses)', { statuses: options.status });
+      } else if (typeof options.status === 'string') {
+        queryBuilder.andWhere('report.status = :status', { status: options.status });
+      }
     }
-
-    // YENİ EKLENEN DEPARTMAN FİLTRESİ
     if (options?.departmentCode) {
-      // 'departmentEntity' join ettiğimiz Department entity'sinin alias'ı
-      // Department entity'sindeki 'code' alanı üzerinden filtreleme yapıyoruz.
       queryBuilder.andWhere('departmentEntity.code = :departmentCode', {
         departmentCode: options.departmentCode,
       });
     }
 
-    const [reports, total] = await queryBuilder.getManyAndCount();
+    queryBuilder.skip(skip).take(limit);
 
+    const [reports, total] = await queryBuilder.getManyAndCount();
+    const processedReports = reports.map(r => {
+      // TypeORM'dan dönen ek alanlar için güvenli erişim
+      const raw = r as Report & { isSupportedByCurrentUser?: boolean | string };
+      let isSupported = false;
+      if (typeof raw.isSupportedByCurrentUser === 'boolean') {
+        isSupported = raw.isSupportedByCurrentUser;
+      } else if (typeof raw.isSupportedByCurrentUser === 'string') {
+        isSupported = String(raw.isSupportedByCurrentUser).toLowerCase() === 'true';
+      }
+      return {
+        ...r,
+        isSupportedByCurrentUser: isSupported,
+      };
+    });
     return {
-      data: reports,
+      data: processedReports,
       total,
       page,
       limit,
     };
   }
 
-  // findById metodunu da ilişkileri çekecek şekilde güncelleyelim (findOne gibi)
-  async findById(id: number): Promise<Report | null> {
-    return this.reportRepository.findOne({
-      where: { id },
-      relations: [
-        'reportMedias',
-        'currentDepartment',
-        'user',
-        'assignments',
-        'assignments.assigneeUser',
-        'assignments.assigneeTeam',
-        'category',
-        // 'departmentHistory' gerekirse eklenebilir ama genellikle ayrı bir endpoint ile alınır.
-      ],
-    });
+  async findById(id: number, currentUserId?: number): Promise<Report | null> {
+    const queryBuilder = this.reportRepository
+      .createQueryBuilder('report')
+      .leftJoinAndSelect('report.reportMedias', 'media')
+      .leftJoinAndSelect('report.currentDepartment', 'departmentEntity')
+      .leftJoinAndSelect('report.user', 'userEntity')
+      .leftJoinAndSelect('report.assignments', 'assignments')
+      .leftJoinAndSelect('assignments.assigneeUser', 'assigneeUser')
+      .leftJoinAndSelect('assignments.assigneeTeam', 'assigneeTeam')
+      .leftJoinAndSelect('report.category', 'categoryEntity')
+      .where('report.id = :id', { id });
+
+    if (currentUserId) {
+      queryBuilder.addSelect(subQuery => {
+        return subQuery
+          .select('CASE WHEN COUNT(rs.id) > 0 THEN TRUE ELSE FALSE END')
+          .from(ReportSupport, 'rs')
+          .where('rs.reportId = report.id')
+          .andWhere('rs.userId = :currentUserId', { currentUserId });
+      }, 'isSupportedByCurrentUser');
+    } else {
+      queryBuilder.addSelect('false', 'isSupportedByCurrentUser');
+    }
+
+    const report = await queryBuilder.getOne();
+    if (report) {
+      const raw = report as unknown as Record<string, unknown>;
+      report.isSupportedByCurrentUser =
+        raw && typeof raw === 'object' && 'isSupportedByCurrentUser' in raw
+          ? raw['isSupportedByCurrentUser'] === true ||
+            String(raw['isSupportedByCurrentUser']).toLowerCase() === 'true'
+          : false;
+    }
+    return report;
   }
 
   async findNearby(
@@ -111,9 +154,10 @@ export class ReportRepository {
     options?: {
       limit?: number;
       page?: number;
-      reportType?: ReportType; // type -> reportType
-      status?: ReportStatus;
-      departmentCode?: MunicipalityDepartment; // department -> departmentCode
+      reportType?: ReportType;
+      status?: ReportStatus | ReportStatus[];
+      departmentCode?: MunicipalityDepartment;
+      currentUserId?: number;
     }
   ): Promise<ISpatialQueryResult> {
     const limit = options?.limit || 10;
@@ -149,15 +193,29 @@ export class ReportRepository {
         )`,
         { point: JSON.stringify(point), radius: radiusInMeters }
       )
-      .orderBy('distance', 'ASC')
-      .skip(skip)
-      .take(limit);
+      .orderBy('distance', 'ASC');
+
+    if (options?.currentUserId) {
+      queryBuilder.addSelect(subQuery => {
+        return subQuery
+          .select('CASE WHEN COUNT(rs.id) > 0 THEN TRUE ELSE FALSE END')
+          .from(ReportSupport, 'rs')
+          .where('rs.reportId = report.id')
+          .andWhere('rs.userId = :currentUserId', { currentUserId: options.currentUserId });
+      }, 'isSupportedByCurrentUser');
+    } else {
+      queryBuilder.addSelect('false', 'isSupportedByCurrentUser');
+    }
 
     if (options?.reportType) {
       queryBuilder.andWhere('report.reportType = :reportType', { reportType: options.reportType });
     }
     if (options?.status) {
-      queryBuilder.andWhere('report.status = :status', { status: options.status });
+      if (Array.isArray(options.status) && options.status.length > 0) {
+        queryBuilder.andWhere('report.status IN (:...statuses)', { statuses: options.status });
+      } else if (typeof options.status === 'string') {
+        queryBuilder.andWhere('report.status = :status', { status: options.status });
+      }
     }
     if (options?.departmentCode) {
       queryBuilder.andWhere('departmentEntity.code = :departmentCode', {
@@ -165,10 +223,24 @@ export class ReportRepository {
       });
     }
 
+    queryBuilder.skip(skip).take(limit);
     const [reports, total] = await queryBuilder.getManyAndCount();
-
+    const processedReports = reports.map(r => {
+      // TypeORM'dan dönen ek alanlar için güvenli erişim
+      const raw = r as Report & { isSupportedByCurrentUser?: boolean | string };
+      let isSupported = false;
+      if (typeof raw.isSupportedByCurrentUser === 'boolean') {
+        isSupported = raw.isSupportedByCurrentUser;
+      } else if (typeof raw.isSupportedByCurrentUser === 'string') {
+        isSupported = String(raw.isSupportedByCurrentUser).toLowerCase() === 'true';
+      }
+      return {
+        ...r,
+        isSupportedByCurrentUser: isSupported,
+      };
+    });
     return {
-      data: reports,
+      data: processedReports,
       total,
       page,
       limit,
@@ -191,6 +263,7 @@ export class ReportRepository {
         userId,
         currentDepartmentId: data.currentDepartmentId,
         categoryId: data.categoryId,
+        departmentCode: data.departmentCode,
       });
 
       const savedReport = await manager.save(newReport);
@@ -230,6 +303,7 @@ export class ReportRepository {
         userId,
         currentDepartmentId: data.currentDepartmentId,
         categoryId: data.categoryId,
+        departmentCode: data.departmentCode,
       });
 
       const savedReport = await queryRunner.manager.save(newReport);

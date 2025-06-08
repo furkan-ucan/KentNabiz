@@ -1,4 +1,4 @@
-// apps/api/src/modules/specializations/controllers/specializations.controller.ts
+﻿// apps/api/src/modules/specializations/controllers/specializations.controller.ts
 import {
   Controller,
   Get,
@@ -27,7 +27,7 @@ import { UpdateSpecializationDto } from '../dto/update-specialization.dto';
 import { JwtAuthGuard } from '../../../core/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
-import { UserRole } from '@KentNabiz/shared';
+import { UserRole } from '@kentnabiz/shared';
 import { RequestWithUser } from '../../auth/interfaces/jwt-payload.interface';
 import { Specialization } from '../entities/specialization.entity';
 

@@ -1,7 +1,7 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+﻿import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsNumber, IsEnum, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
-import { TeamStatus } from '@KentNabiz/shared';
+import { TeamStatus } from '@kentnabiz/shared';
 
 export class QueryTeamsDto {
   @ApiPropertyOptional({

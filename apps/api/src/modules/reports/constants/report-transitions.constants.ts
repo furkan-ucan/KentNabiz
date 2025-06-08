@@ -1,4 +1,4 @@
-import { ReportStatus, UserRole } from '@KentNabiz/shared';
+﻿import { ReportStatus, UserRole } from '@kentnabiz/shared';
 
 export const allowedTransitions: Record<UserRole, Partial<Record<ReportStatus, ReportStatus[]>>> = {
   /* VATANDAŞ */

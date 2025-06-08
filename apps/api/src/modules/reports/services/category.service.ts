@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+﻿import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CategoryRepository } from '../repositories/category.repository';
 import { CategoryDto, UpdateCategoryDto } from '../dto/category.dto';
 import { ReportCategory } from '../entities/report-category.entity';
 import { ICategoryTree } from '../interfaces/report.interface';
+import { MunicipalityDepartment } from '@kentnabiz/shared';
 
 @Injectable()
 export class CategoryService {
@@ -17,6 +18,13 @@ export class CategoryService {
     } else {
       return await this.categoryRepository.findAllActive();
     }
+  }
+
+  /**
+   * Departman koduna göre kategorileri getirir
+   */
+  async findAllByDepartmentCode(departmentCode: MunicipalityDepartment): Promise<ReportCategory[]> {
+    return await this.categoryRepository.findByDepartmentCode(departmentCode);
   }
 
   /**

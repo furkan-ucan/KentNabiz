@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { ReportCategory } from '../entities/report-category.entity';
+import { MunicipalityDepartment } from '@kentnabiz/shared';
 
 // TODO: add unit tests for category repository methods - coverage: 22.72%
 
@@ -18,6 +19,17 @@ export class CategoryRepository {
 
   async findAllActive(): Promise<ReportCategory[]> {
     return this.repository.find({ where: { isActive: true } });
+  }
+
+  async findByDepartmentCode(departmentCode: MunicipalityDepartment): Promise<ReportCategory[]> {
+    return this.repository.find({
+      where: {
+        department: { code: departmentCode },
+        isActive: true,
+      },
+      relations: ['department'],
+      order: { sortOrder: 'ASC', name: 'ASC' },
+    });
   }
 
   async findById(id: number): Promise<ReportCategory | null> {

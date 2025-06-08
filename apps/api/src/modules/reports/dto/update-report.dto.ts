@@ -1,4 +1,4 @@
-// apps/api/src/modules/reports/dto/update-report.dto.ts
+﻿// apps/api/src/modules/reports/dto/update-report.dto.ts
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
@@ -12,7 +12,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 // Doğru import yolu
-import { ReportType } from '@KentNabiz/shared';
+import { ReportType } from '@kentnabiz/shared';
 import { LocationDto } from './location.dto';
 import { CreateReportMediaDto } from './create-report.dto'; // Bu DTO'nun da var olduğundan emin olun
 // import { PointDto } from './point.dto'; // Removed unused import

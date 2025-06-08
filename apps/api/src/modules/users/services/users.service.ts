@@ -1,4 +1,4 @@
-// apps/api/src/modules/users/services/users.service.ts
+﻿// apps/api/src/modules/users/services/users.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -11,7 +11,7 @@ import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { User } from '../entities/user.entity'; // Bu User entity'si güncellenmiş olmalı
 import { UserProfileDto } from '../dto/user-profile.dto';
-import { UserRole } from '@KentNabiz/shared'; // UserRole import eklendi
+import { UserRole } from '@kentnabiz/shared'; // UserRole import eklendi
 import { DepartmentService } from '../../reports/services/department.service'; // DepartmentService importu
 import { forwardRef, Inject } from '@nestjs/common'; // forwardRef ve Inject eklendi
 import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface'; // JwtPayload import eklendi

@@ -12,7 +12,7 @@ import { ResponseDto } from '../../common/dto/response.dto';
 import { PaginatedResponse } from '../../common/dto/paginated-response.dto';
 
 @Injectable()
-export class TransformInterceptor<T = any> implements NestInterceptor<T, ResponseDto<T> | T> {
+export class TransformInterceptor<T = unknown> implements NestInterceptor<T, ResponseDto<T> | T> {
   intercept(context: ExecutionContext, next: CallHandler<T>): Observable<ResponseDto<T> | T> {
     const res = context.switchToHttp().getResponse<Response>();
 

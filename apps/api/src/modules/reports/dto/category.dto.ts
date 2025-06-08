@@ -1,4 +1,4 @@
-import {
+﻿import {
   IsString,
   IsNumber,
   IsOptional,
@@ -14,7 +14,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
-import { MunicipalityDepartment } from '@KentNabiz/shared';
+import { MunicipalityDepartment } from '@kentnabiz/shared';
 
 export class CategoryDto {
   @ApiProperty({ description: 'Kategori adı', example: 'Ulaşım İhbar' })
@@ -114,7 +114,7 @@ export class DepartmentChangeDto {
   @ApiProperty({
     description: 'Yeni atanan birim',
     enum: MunicipalityDepartment,
-    example: MunicipalityDepartment.ROADS,
+    example: MunicipalityDepartment.ROADS_AND_INFRASTRUCTURE,
   })
   @IsEnum(MunicipalityDepartment)
   @IsNotEmpty()
@@ -140,14 +140,14 @@ export class DepartmentHistoryResponseDto {
   @ApiProperty({
     description: 'Eski birim',
     enum: MunicipalityDepartment,
-    example: MunicipalityDepartment.INFRASTRUCTURE,
+    example: MunicipalityDepartment.PLANNING_URBANIZATION,
   })
   oldDepartment!: MunicipalityDepartment;
 
   @ApiProperty({
     description: 'Yeni birim',
     enum: MunicipalityDepartment,
-    example: MunicipalityDepartment.ROADS,
+    example: MunicipalityDepartment.ROADS_AND_INFRASTRUCTURE,
   })
   newDepartment!: MunicipalityDepartment;
 

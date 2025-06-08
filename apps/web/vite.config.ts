@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+﻿import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import path from 'path';
@@ -6,11 +6,15 @@ import path from 'path';
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
+  css: {
+    postcss: './postcss.config.mjs',
+  },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@KentNabiz/shared': path.resolve(__dirname, '../../packages/shared/src'),
-      '@KentNabiz/ui': path.resolve(__dirname, '../../packages/ui/src'),
+      '@kentnabiz/shared': path.resolve(
+        __dirname,
+        '../../packages/shared/dist/index.mjs'
+      ),
     },
   },
 });

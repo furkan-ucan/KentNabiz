@@ -11,7 +11,11 @@
     "noEmit": false, // REQUIRED: Must generate output
     "disableSourceOfProjectReferenceRedirect": true, // REQUIRED: To avoid issues with project references
 
-    "types": ["node", "jest", "@types/express", "@types/multer"] // Include node types for Jest
+    "types": ["node", "jest", "@types/express", "@types/multer"], // Include node types for Jest
+
+    "paths": {
+      "@kentnabiz/shared": ["../../packages/shared/dist/index.d.ts"]
+    }
   },
   "include": ["src/**/*", "test/**/*"],
   "exclude": [

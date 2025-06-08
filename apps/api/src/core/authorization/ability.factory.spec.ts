@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
+﻿import { Test, TestingModule } from '@nestjs/testing';
 import { AbilityFactory, Action } from './ability.factory';
 import { User } from '../../modules/users/entities/user.entity';
 import { Report } from '../../modules/reports/entities/report.entity';
 import { Team } from '../../modules/teams/entities/team.entity';
 import { SUB_STATUS } from '../../modules/reports/constants/report.constants';
-import { UserRole, ReportStatus } from '@KentNabiz/shared';
+import { UserRole, ReportStatus } from '@kentnabiz/shared';
 
 describe('AbilityFactory', () => {
   let abilityFactory: AbilityFactory;

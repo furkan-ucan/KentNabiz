@@ -1,4 +1,4 @@
-// apps/api/src/modules/users/entities/user.entity.ts
+﻿// apps/api/src/modules/users/entities/user.entity.ts
 import {
   Entity,
   Column,
@@ -15,7 +15,7 @@ import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcryptjs';
 // CORRECTED IMPORT PATH: Ensure this path is valid for your monorepo setup.
 // Using a direct relative path or a configured path alias is safer for TypeORM entities.
-import { UserRole } from '@KentNabiz/shared'; // Adjust path if necessary
+import { UserRole } from '@kentnabiz/shared'; // Adjust path if necessary
 import { Department } from '../../reports/entities/department.entity';
 import { Report } from '../../reports/entities/report.entity';
 import { TeamMembershipHistory } from './team-membership-history.entity';

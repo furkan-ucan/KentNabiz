@@ -1,4 +1,4 @@
-// apps/api/src/modules/teams/controllers/teams.controller.ts
+﻿// apps/api/src/modules/teams/controllers/teams.controller.ts
 import {
   Controller,
   Get,
@@ -30,7 +30,7 @@ import { FindNearbyTeamsDto } from '../dto/query-teams.dto';
 import { JwtAuthGuard } from '../../../core/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
-import { UserRole } from '@KentNabiz/shared';
+import { UserRole } from '@kentnabiz/shared';
 import { RequestWithUser } from '../../auth/interfaces/jwt-payload.interface';
 import { Team } from '../entities/team.entity';
 import { PaginatedResponse } from '../../../common/dto/paginated-response.dto';

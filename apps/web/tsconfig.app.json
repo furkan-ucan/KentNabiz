@@ -24,10 +24,10 @@
     /* Path Mapping */
     "baseUrl": ".",
     "paths": {
-      "@KentNabiz/shared": ["../../packages/shared/src/index.ts"],
-      "@KentNabiz/shared/*": ["../../packages/shared/src/*"],
-      "@KentNabiz/ui": ["../../packages/ui/src/index.ts"],
-      "@KentNabiz/ui/*": ["../../packages/ui/src/*"],
+      "@kentnabiz/shared": ["../../packages/shared/dist/index.d.ts"],
+      "@kentnabiz/shared/*": ["../../packages/shared/dist/*"],
+      "@kentnabiz/ui": ["../../packages/ui/src/index.ts"],
+      "@kentnabiz/ui/*": ["../../packages/ui/src/*"],
       "@/*": ["./src/*"]
     }
   },

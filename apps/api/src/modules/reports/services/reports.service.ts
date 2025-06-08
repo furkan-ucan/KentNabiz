@@ -1,4 +1,4 @@
-import {
+﻿import {
   Injectable,
   NotFoundException,
   BadRequestException,
@@ -6,7 +6,6 @@ import {
   Inject,
   forwardRef,
   ForbiddenException,
-  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -22,6 +21,7 @@ import { DepartmentHistory } from '../entities/department-history.entity';
 import { Team } from '../../teams/entities/team.entity';
 import { LocationService } from './location.service';
 import { DepartmentService } from './department.service';
+import { CategoryService } from './category.service';
 import {
   ReportStatus,
   ReportType,
@@ -30,7 +30,7 @@ import {
   AssignmentStatus,
   AssigneeType,
   TeamStatus,
-} from '@KentNabiz/shared';
+} from '@kentnabiz/shared';
 import { ISpatialQueryResult } from '../interfaces/report.interface';
 import { JwtPayload as AuthUser } from '../../auth/interfaces/jwt-payload.interface';
 import { UsersService } from '../../users/services/users.service';
@@ -50,6 +50,7 @@ interface IReportFindAllOptions {
   reportType?: ReportType; // type -> reportType olarak güncellendi
   status?: ReportStatus;
   departmentCode?: MunicipalityDepartment; // department -> departmentCode olarak güncellendi
+  currentUserId?: number; // isSupportedByCurrentUser için gerekli
 }
 
 @Injectable()
@@ -58,6 +59,7 @@ export class ReportsService {
     private readonly reportRepository: ReportRepository,
     private readonly locationService: LocationService,
     private readonly departmentService: DepartmentService,
+    private readonly categoryService: CategoryService,
     @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
     @InjectRepository(Assignment)
@@ -164,7 +166,10 @@ export class ReportsService {
   }
 
   async findAll(authUser: AuthUser, options?: IReportFindAllOptions): Promise<ISpatialQueryResult> {
-    const queryOptions: IReportFindAllOptions = { ...options };
+    const queryOptions: IReportFindAllOptions = {
+      ...options,
+      currentUserId: authUser.sub, // Her zaman mevcut kullanıcının ID'sini ekle
+    };
 
     if (authUser.roles.includes(UserRole.CITIZEN)) {
       queryOptions.userId = authUser.sub;
@@ -210,7 +215,7 @@ export class ReportsService {
 
   async findOne(id: number, authUser: AuthUser): Promise<Report> {
     console.log('[findOne] AuthUser:', JSON.stringify(authUser));
-    const report = await this.reportRepository.findById(id);
+    const report = await this.reportRepository.findById(id, authUser.sub);
     console.log('[findOne] Report fetched:', JSON.stringify(report));
     if (!report) {
       throw new NotFoundException(`Report with ID ${id} not found`);
@@ -229,29 +234,30 @@ export class ReportsService {
       const point = this.locationService.createPointFromDto(location);
       const userId = authUser.sub;
 
-      let targetDepartmentId: number;
+      // 1. Departman kodunun varlığını kontrol et
+      const departmentEntity = await this.departmentService.findByCode(departmentCode);
 
-      if (departmentCode) {
-        // Eğer client explicitly departmentCode verdiyse onu kullan
-        const departmentEntity = await this.departmentService.findByCode(departmentCode);
-        targetDepartmentId = departmentEntity.id;
-      } else {
-        // Aksi halde her zaman GENERAL departmanına ata
-        const generalDepartment = await this.departmentService.findByCode(
-          MunicipalityDepartment.GENERAL
+      // 2. Kategori ID'sinin varlığını ve departmana ait olduğunu kontrol et
+      const categoryEntity = await this.categoryService.findById(categoryId);
+      if (categoryEntity.departmentId !== departmentEntity.id) {
+        throw new BadRequestException(
+          `Kategori ID ${categoryId} seçilen departman ${departmentCode} için geçerli değil`
         );
-        targetDepartmentId = generalDepartment.id;
       }
+
+      // 3. reportType'ı kategoriden türet (eğer verilmemişse)
+      const finalReportType: ReportType = reportType || categoryEntity.defaultReportType;
 
       const dataForRepoCreate: CreateReportData = {
         title: reportData.title,
         description: reportData.description,
         location: point,
         address: reportData.address,
-        reportType: reportType,
+        reportType: finalReportType,
         status: ReportStatus.OPEN,
         categoryId: categoryId,
-        currentDepartmentId: targetDepartmentId,
+        currentDepartmentId: departmentEntity.id,
+        departmentCode: departmentCode,
         reportMedias: reportMedias
           ? reportMedias.map(m => ({ url: m.url, type: m.type }))
           : undefined,
@@ -260,6 +266,9 @@ export class ReportsService {
       // manager argümanı kaldırıldı. ReportRepository.create'in refaktör edilmesi gerekebilir
       // ve orijinal imzasının (data, userId) olduğu varsayılıyor.
       const createdReport = await this.reportRepository.create(dataForRepoCreate, userId);
+
+      // departmentCode'u da set et
+      createdReport.departmentCode = departmentCode;
 
       // Set initial subStatus after creation
       createdReport.subStatus = SUB_STATUS.NONE;
@@ -734,6 +743,7 @@ export class ReportsService {
     const queryOptions: IReportFindAllOptions = {
       ...options,
       userId: authUser.sub,
+      currentUserId: authUser.sub, // Kullanıcının kendi raporları için currentUserId'yi de ekle
       // options.type varsa queryOptions.reportType'a ata, yoksa undefined kalsın.
       reportType: options?.reportType, // Eğer options.type geliyorsa, bunu reportType olarak ata.
       // departmentCode burada yönetilmiyor, çünkü bu sadece kullanıcının kendi raporları.
@@ -742,20 +752,27 @@ export class ReportsService {
   }
 
   async findNearby(
-    searchDto: { latitude: number; longitude: number; radius: number },
+    searchDto: {
+      latitude: number;
+      longitude: number;
+      radius: number;
+      status?: ReportStatus | ReportStatus[];
+    },
     options?: {
       limit?: number;
       page?: number;
       reportType?: ReportType; // type -> reportType
-      status?: ReportStatus;
+      status?: ReportStatus | ReportStatus[];
       departmentCode?: MunicipalityDepartment; // department -> departmentCode
+      currentUserId?: number; // isSupportedByCurrentUser için gerekli
     }
   ): Promise<ISpatialQueryResult> {
-    const { latitude, longitude, radius } = searchDto;
-    // reportRepository.findNearby çağrısında options doğrudan geçiliyor.
-    // ReportRepository.findNearby'ın da bu güncellenmiş alan adlarını (reportType, departmentCode) beklemesi gerekir.
-    // Bir önceki adımda ReportRepository güncellenmişti.
-    return this.reportRepository.findNearby(latitude, longitude, radius, options);
+    const { latitude, longitude, radius, status } = searchDto;
+    // status parametresi dizi veya tekil olabilir, doğrudan repository'ye ilet
+    return this.reportRepository.findNearby(latitude, longitude, radius, {
+      ...options,
+      status,
+    });
   }
 
   async getDepartmentHistory(
@@ -1141,6 +1158,7 @@ export class ReportsService {
 
   /**
    * Rapor destekleme metodu - Vatandaşların başkalarının raporlarını desteklemesi için
+   * Eğer kullanıcı zaten desteklemişse, idempotent davranır: hata fırlatmaz, mevcut durumu döner.
    */
   async supportReport(reportId: number, authUser: AuthUser): Promise<Report> {
     // İlk olarak raporu çek ve ABAC yetki kontrolü yap
@@ -1151,20 +1169,15 @@ export class ReportsService {
       id: authUser.sub,
       roles: authUser.roles,
       departmentId: authUser.departmentId,
-      // activeTeamId: undefined, // JwtPayload'da henüz activeTeamId yok
     };
-
     const ability = this.abilityFactory.defineAbility(userForAbility as User);
-
     if (!ability.can(Action.Support, report)) {
-      throw new ForbiddenException('You do not have permission to support this report.');
+      throw new ForbiddenException('Bu raporu destekleme yetkiniz yok.');
     }
-
     // Kendi raporunu destekleyemez
     if (report.userId === authUser.sub) {
       throw new ForbiddenException('Kendi raporunuzu destekleyemezsiniz.');
     }
-
     // Daha önce desteklemiş mi kontrolü
     const existingSupport = await this.reportSupportRepository.findOne({
       where: {
@@ -1172,25 +1185,67 @@ export class ReportsService {
         userId: authUser.sub,
       },
     });
-
     if (existingSupport) {
-      throw new ConflictException('Bu raporu zaten desteklediniz.');
+      // Idempotent davran: hata fırlatma, mevcut durumu döndür
+      report.isSupportedByCurrentUser = true;
+      // supportCount güncel olmayabilir, tekrar saydırmak gerekirse burada güncellenebilir
+      return report;
     }
-
     // Transaction içinde hem support kaydı oluştur hem de supportCount'ı artır
     return this.dataSource.transaction(async transactionalEntityManager => {
-      // Yeni support kaydı oluştur
       const newSupport = transactionalEntityManager.create(ReportSupport, {
         reportId: report.id,
         userId: authUser.sub,
       });
       await transactionalEntityManager.save(ReportSupport, newSupport);
-
-      // Report'taki supportCount'ı artır
       await transactionalEntityManager.increment(Report, { id: report.id }, 'supportCount', 1);
-
-      // Güncellenmiş raporu döndür (supportCount'ı
       report.supportCount = (report.supportCount || 0) + 1;
+      report.isSupportedByCurrentUser = true;
+      return report;
+    });
+  }
+
+  async unsupportReport(reportId: number, authUser: AuthUser): Promise<Report> {
+    const report = await this.findOneForAuthCheck(reportId);
+    const userForAbility: Partial<User> = {
+      id: authUser.sub,
+      roles: authUser.roles,
+      departmentId: authUser.departmentId,
+    };
+    const ability = this.abilityFactory.defineAbility(userForAbility as User);
+    if (!ability.can(Action.Unsupport, report)) {
+      throw new ForbiddenException('Bu raporun desteğini geri çekme yetkiniz yok.');
+    }
+    // Kendi raporunu destekten çekemez (isteğe bağlı, istenirse kaldırılabilir)
+    if (report.userId === authUser.sub) {
+      throw new ForbiddenException('Kendi oluşturduğunuz raporun desteğini geri çekemezsiniz.');
+    }
+    const existingSupport = await this.reportSupportRepository.findOne({
+      where: { reportId: report.id, userId: authUser.sub },
+    });
+    if (!existingSupport) {
+      throw new NotFoundException('Bu raporu zaten desteklemiyorsunuz.');
+    }
+    return this.dataSource.transaction(async transactionalEntityManager => {
+      await transactionalEntityManager.delete(ReportSupport, {
+        reportId: report.id,
+        userId: authUser.sub,
+      });
+      // supportCount'ı azalt (0'ın altına düşmesin)
+      await transactionalEntityManager
+        .createQueryBuilder()
+        .update(Report)
+        .set({ supportCount: () => 'GREATEST(support_count - 1, 0)' })
+        .where('id = :id', { id: report.id })
+        .execute();
+
+      // Güncellenmiş veriyi al
+      const updatedReport = await transactionalEntityManager.findOne(Report, {
+        where: { id: report.id },
+      });
+
+      report.supportCount = updatedReport?.supportCount || 0;
+      report.isSupportedByCurrentUser = false;
       return report;
     });
   }

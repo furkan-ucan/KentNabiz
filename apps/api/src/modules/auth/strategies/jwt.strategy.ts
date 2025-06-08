@@ -1,10 +1,10 @@
-// apps/api/src/modules/auth/strategies/jwt.strategy.ts
+﻿// apps/api/src/modules/auth/strategies/jwt.strategy.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtPayload } from '../interfaces/jwt-payload.interface'; // Bu JwtPayload UserRole[] ve departmentId? içerecek
-import { UserRole } from '@KentNabiz/shared'; // UserRole enum import edildi
+import { UserRole } from '@kentnabiz/shared'; // UserRole enum import edildi
 
 // Gelen payload'ın temel yapısını tanımlayan bir arayüz
 interface RawJwtPayload {

@@ -1,4 +1,4 @@
-// apps/api/src/modules/teams/services/teams.service.ts
+﻿// apps/api/src/modules/teams/services/teams.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -15,7 +15,7 @@ import { User } from '../../users/entities/user.entity';
 import { Specialization } from '../../specializations/entities/specialization.entity';
 import { TeamMembershipHistory } from '../../users/entities/team-membership-history.entity';
 import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
-import { UserRole, TeamStatus } from '@KentNabiz/shared';
+import { UserRole, TeamStatus } from '@kentnabiz/shared';
 
 @Injectable()
 export class TeamsService {

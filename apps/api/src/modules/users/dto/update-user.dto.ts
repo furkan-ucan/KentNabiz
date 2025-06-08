@@ -1,4 +1,4 @@
-import {
+﻿import {
   IsString,
   IsEmail,
   IsOptional,
@@ -11,7 +11,7 @@ import {
   Min,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { UserRole } from '@KentNabiz/shared';
+import { UserRole } from '@kentnabiz/shared';
 import { Type } from 'class-transformer';
 
 export class UpdateUserDto {

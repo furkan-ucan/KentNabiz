@@ -1,4 +1,4 @@
-import {
+﻿import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
@@ -8,7 +8,8 @@ import {
 } from 'typeorm';
 // Keep import for type hints
 import { Report } from './report.entity';
-import { MunicipalityDepartment, ReportType } from '@KentNabiz/shared';
+import { ReportCategory } from './report-category.entity';
+import { MunicipalityDepartment, ReportType } from '@kentnabiz/shared';
 import { Team } from '../../teams/entities/team.entity';
 
 @Entity('departments')
@@ -37,6 +38,9 @@ export class Department {
 
   @OneToMany(() => Report, (report: Report) => report.currentDepartment)
   reports!: Report[];
+
+  @OneToMany(() => ReportCategory, (category: ReportCategory) => category.department)
+  categories!: ReportCategory[];
 
   @OneToMany(() => Team, team => team.department)
   teams!: Team[];

@@ -1,4 +1,4 @@
-import {
+﻿import {
   Controller,
   Get,
   Post,
@@ -9,6 +9,7 @@ import {
   UseGuards,
   Query,
   ParseIntPipe,
+  ParseEnumPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -28,7 +29,7 @@ import {
   CategoryResponseDto,
   CategoryTreeDto,
 } from '../dto/category.dto';
-import { UserRole } from '@KentNabiz/shared';
+import { UserRole, MunicipalityDepartment } from '@kentnabiz/shared';
 
 @ApiTags('report-categories')
 @Controller('report-categories')
@@ -36,19 +37,40 @@ export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Tüm kategorileri listele' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(
+    UserRole.CITIZEN,
+    UserRole.TEAM_MEMBER,
+    UserRole.DEPARTMENT_SUPERVISOR,
+    UserRole.SYSTEM_ADMIN
+  )
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Tüm kategorileri listele veya departmana göre filtrele' })
   @ApiQuery({
     name: 'includeInactive',
     required: false,
     type: Boolean,
     description: 'Pasif kategorileri de listele',
   })
+  @ApiQuery({
+    name: 'departmentCode',
+    required: false,
+    enum: MunicipalityDepartment,
+    description: 'Departman koduna göre filtrele',
+  })
   @ApiResponse({
     status: 200,
     description: 'Kategoriler başarıyla getirildi',
     type: [CategoryResponseDto],
   })
-  async findAll(@Query('includeInactive') includeInactive = false): Promise<CategoryResponseDto[]> {
+  async findAll(
+    @Query('includeInactive') includeInactive = false,
+    @Query('departmentCode', new ParseEnumPipe(MunicipalityDepartment, { optional: true }))
+    departmentCode?: MunicipalityDepartment
+  ): Promise<CategoryResponseDto[]> {
+    if (departmentCode) {
+      return this.categoryService.findAllByDepartmentCode(departmentCode);
+    }
     return this.categoryService.findAll(includeInactive);
   }
 

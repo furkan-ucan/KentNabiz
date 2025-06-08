@@ -7,6 +7,7 @@ import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { ReportAnalyticsModule } from './modules/report-analytics/report-analytics.module';
 import { MediaModule } from './modules/media/media.module';
 import { TeamsModule } from './modules/teams/teams.module';
 import { SpecializationsModule } from './modules/specializations/specializations.module';
@@ -37,6 +38,7 @@ import { getTypeOrmConfig } from './config/typeorm.config'; // yapılandırma fo
     AuthModule,
     UsersModule,
     ReportsModule,
+    ReportAnalyticsModule,
     MediaModule,
     TeamsModule,
     SpecializationsModule,

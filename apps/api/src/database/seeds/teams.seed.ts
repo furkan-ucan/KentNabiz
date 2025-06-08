@@ -1,6 +1,6 @@
-import { DataSource } from 'typeorm';
+﻿import { DataSource } from 'typeorm';
 import { Team } from '../../modules/teams/entities/team.entity';
-import { TeamStatus } from '@KentNabiz/shared';
+import { TeamStatus } from '@kentnabiz/shared';
 
 export const TeamsSeed = async (dataSource: DataSource): Promise<void> => {
   const teamRepository = dataSource.getRepository(Team);

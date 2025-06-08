@@ -1,3 +1,4 @@
+// apps/api/src/modules/users/entities/team-membership-history.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from './user.entity';
 import { Team } from '../../teams/entities/team.entity';

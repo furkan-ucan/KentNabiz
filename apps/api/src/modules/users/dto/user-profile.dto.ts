@@ -1,8 +1,8 @@
-// apps/api/src/modules/users/dto/user-profile.dto.ts
+﻿// apps/api/src/modules/users/dto/user-profile.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { User } from '../entities/user.entity'; // User entity'si import ediliyor
-// Doğru import yolu. Eğer @KentNabiz/shared çalışıyorsa bu kalabilir.
-import { UserRole } from '@KentNabiz/shared';
+// Doğru import yolu. Eğer @kentnabiz/shared çalışıyorsa bu kalabilir.
+import { UserRole } from '@kentnabiz/shared';
 import { Department } from '../../reports/entities/department.entity'; // Department entity'si için import eklendi
 
 export class UserProfileDto {

@@ -1,7 +1,7 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+﻿import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsNumber, IsEnum, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ReportStatus, ReportType, MunicipalityDepartment } from '@KentNabiz/shared';
+import { ReportStatus, ReportType, MunicipalityDepartment } from '@kentnabiz/shared';
 
 export class QueryReportsDto {
   @ApiPropertyOptional({
@@ -51,7 +51,7 @@ export class QueryReportsDto {
   @ApiPropertyOptional({
     description: 'Filter by department code',
     enum: MunicipalityDepartment,
-    example: MunicipalityDepartment.ROADS,
+    example: MunicipalityDepartment.ROADS_AND_INFRASTRUCTURE,
   })
   @IsOptional()
   @IsEnum(MunicipalityDepartment)

@@ -1,10 +1,10 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+﻿import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { ReportAnalyticsService } from '../services/report-analytics.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
-import { ReportStatus, ReportType, MunicipalityDepartment, UserRole } from '@KentNabiz/shared';
+import { ReportStatus, ReportType, MunicipalityDepartment, UserRole } from '@kentnabiz/shared';
 import {
   IAnalyticsFilter,
   IDashboardStats,
@@ -21,7 +21,6 @@ import {
 @ApiTags('report-analytics')
 @Controller('report-analytics')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.SYSTEM_ADMIN)
 @ApiBearerAuth()
 export class ReportAnalyticsController {
   constructor(private readonly reportAnalyticsService: ReportAnalyticsService) {}
@@ -31,6 +30,7 @@ export class ReportAnalyticsController {
     summary: 'Yönetsel panel için dashboard istatistiklerini getir',
     description: 'Kapsamlı rapor istatistiklerini tek bir istek ile getiren dashboard verisi',
   })
+  @Roles(UserRole.SYSTEM_ADMIN)
   @ApiQuery({ name: 'startDate', required: false, type: Date })
   @ApiQuery({ name: 'endDate', required: false, type: Date })
   @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })

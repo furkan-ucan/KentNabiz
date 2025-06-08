@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import {
   Ability,
   AbilityBuilder,
@@ -6,7 +6,7 @@ import {
   ExtractSubjectType,
   InferSubjects,
 } from '@casl/ability';
-import { UserRole, ReportStatus } from '@KentNabiz/shared';
+import { UserRole, ReportStatus } from '@kentnabiz/shared';
 import { User } from '../../modules/users/entities/user.entity';
 import { Report } from '../../modules/reports/entities/report.entity';
 import { Assignment } from '../../modules/reports/entities/assignment.entity';
@@ -29,6 +29,7 @@ export enum Action {
   Reopen = 'reopen',
   Assign = 'assign', // Raporu ekibe/kişiye atama
   Support = 'support', // Raporu destekleme (+1)
+  Unsupport = 'unsupport', // Rapor desteğini geri çekme
 }
 
 // Hangi entity'ler üzerinde yetki kontrolü yapılacağını tanımlar
@@ -90,6 +91,9 @@ export class AbilityFactory {
       can(Action.Support, Report, {
         status: { $in: [ReportStatus.OPEN, ReportStatus.IN_REVIEW, ReportStatus.IN_PROGRESS] },
       }); // Açık/incelenen/çalışılan raporları destekleyebilir
+      can(Action.Unsupport, Report, {
+        status: { $in: [ReportStatus.OPEN, ReportStatus.IN_REVIEW, ReportStatus.IN_PROGRESS] },
+      }); // Açık/incelenen/çalışılan raporlarda desteği geri çekebilir
     }
 
     /** ----- TEAM_MEMBER ----- */

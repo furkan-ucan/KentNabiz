@@ -1,4 +1,4 @@
-// apps/api/src/modules/specializations/services/specializations.service.ts
+﻿// apps/api/src/modules/specializations/services/specializations.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -11,7 +11,7 @@ import { Specialization } from '../entities/specialization.entity';
 import { CreateSpecializationDto } from '../dto/create-specialization.dto';
 import { UpdateSpecializationDto } from '../dto/update-specialization.dto';
 import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
-import { UserRole } from '@KentNabiz/shared';
+import { UserRole } from '@kentnabiz/shared';
 
 @Injectable()
 export class SpecializationsService {

@@ -1,4 +1,4 @@
-// Set test environment variables for JWT BEFORE any imports
+﻿// Set test environment variables for JWT BEFORE any imports
 process.env.JWT_SECRET = 'test-jwt-secret-for-e2e-tests-fixed';
 process.env.JWT_REFRESH_SECRET = 'test-jwt-refresh-secret-for-e2e-tests-fixed';
 
@@ -6,7 +6,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { ReportType, MunicipalityDepartment } from '@KentNabiz/shared';
+import { ReportType, MunicipalityDepartment } from '@kentnabiz/shared';
 import { AuthHelper } from './auth-helper';
 
 describe('Reports Workflow (E2E)', () => {

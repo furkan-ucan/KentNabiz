@@ -1,4 +1,4 @@
-import {
+﻿import {
   Controller,
   Get,
   Post,
@@ -30,7 +30,7 @@ import { UserProfileDto } from '../dto/user-profile.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { RolesGuard } from '../../auth/guards/roles.guard';
-import { UserRole } from '@KentNabiz/shared';
+import { UserRole } from '@kentnabiz/shared';
 import { RequestWithUser } from '../../auth/interfaces/jwt-payload.interface';
 import { TeamMembershipHistory } from '../entities/team-membership-history.entity';
 import { PaginatedResponse } from '../../../common/dto/paginated-response.dto';

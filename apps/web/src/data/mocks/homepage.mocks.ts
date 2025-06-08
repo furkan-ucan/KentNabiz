@@ -1,4 +1,4 @@
-import { ReportStatus, ReportType } from '@kentnabiz/shared';
+﻿import { ReportStatus, ReportType } from '@kentnabiz/shared';
 
 export interface MockReport {
   id: number;
@@ -43,7 +43,8 @@ export const homeMocks: HomepageMocks = {
       status: ReportStatus.OPEN,
       reportType: ReportType.POTHOLE,
       createdAt: '2024-06-10T08:15:00Z',
-      imageUrl: '/images/mock/pothole_kadikoy.jpg',
+      imageUrl:
+        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=400&fit=crop&crop=center',
       location: { latitude: 40.9733, longitude: 29.0444 },
       commentCount: 3,
       supportCount: 12,
@@ -56,7 +57,8 @@ export const homeMocks: HomepageMocks = {
       status: ReportStatus.IN_REVIEW,
       reportType: ReportType.PARK_DAMAGE,
       createdAt: '2024-06-09T14:30:00Z',
-      imageUrl: '/images/mock/broken_swing.jpg',
+      imageUrl:
+        'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=600&h=400&fit=crop&crop=center',
       location: { latitude: 41.01, longitude: 28.99 },
       commentCount: 1,
       supportCount: 5,
@@ -69,9 +71,39 @@ export const homeMocks: HomepageMocks = {
       status: ReportStatus.IN_PROGRESS,
       reportType: ReportType.STREET_LIGHT,
       createdAt: '2024-06-08T21:00:00Z',
+      imageUrl:
+        'https://images.unsplash.com/photo-1573152958734-1922c188fba3?w=600&h=400&fit=crop&crop=center',
       location: { latitude: 40.985, longitude: 29.021 },
       commentCount: 7,
       supportCount: 25,
+    },
+    {
+      id: 104,
+      title: 'Su Borusu Patlaması',
+      excerpt:
+        'Ana su borusu patlamış, yol sular altında kalmış durumda. Acil müdahale gerekiyor.',
+      status: ReportStatus.DONE,
+      reportType: ReportType.WATER_LEAKAGE,
+      createdAt: '2024-06-07T10:30:00Z',
+      imageUrl:
+        'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=600&h=400&fit=crop&crop=center',
+      location: { latitude: 40.995, longitude: 29.015 },
+      commentCount: 15,
+      supportCount: 48,
+    },
+    {
+      id: 105,
+      title: 'Park Alanında Çöp Yığılması',
+      excerpt:
+        'Çocuk parkının yanındaki çöp konteynerları taşmış, çevrede kötü koku oluşuyor.',
+      status: ReportStatus.OPEN,
+      reportType: ReportType.GARBAGE_COLLECTION,
+      createdAt: '2024-06-06T16:45:00Z',
+      imageUrl:
+        'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=600&h=400&fit=crop&crop=center',
+      location: { latitude: 40.988, longitude: 29.025 },
+      commentCount: 5,
+      supportCount: 18,
     },
   ],
 };

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+﻿import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, Raw, FindOptionsWhere, FindOperator } from 'typeorm'; // Use FindOptionsWhere, FindOperator
 import { Report } from '../entities/report.entity';
@@ -17,7 +17,7 @@ import {
   ITimeFilter,
   IDepartmentChangeAnalytics, // Assuming this is correctly defined and exported now
 } from '../interfaces/report.analytics.interface';
-import { ReportStatus, MunicipalityDepartment, ReportType } from '@KentNabiz/shared';
+import { ReportStatus, MunicipalityDepartment, ReportType } from '@kentnabiz/shared';
 import { Point } from 'geojson';
 
 // Type guard to check if an object is a valid GeoJSON Point

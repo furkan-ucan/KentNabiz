@@ -1,4 +1,4 @@
-// apps/api/src/modules/reports/entities/report.entity.ts
+﻿// apps/api/src/modules/reports/entities/report.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -17,10 +17,11 @@ import { DepartmentHistory } from './department-history.entity';
 import { Department } from './department.entity';
 import { ReportCategory } from './report-category.entity';
 // CORRECTED IMPORT PATH: Ensure this path is valid for your monorepo setup.
-import { ReportStatus, ReportType } from '@KentNabiz/shared'; // Adjust path if necessary
+import { ReportStatus, ReportType, MunicipalityDepartment } from '@kentnabiz/shared'; // Adjust path if necessary
 import { SubStatus } from '../constants/report.constants';
 import { Assignment } from './assignment.entity';
 import { ReportStatusHistory } from './report-status-history.entity';
+import { ReportSupport } from './report-support.entity';
 
 @Entity('reports')
 export class Report {
@@ -52,12 +53,20 @@ export class Report {
   })
   reportType?: ReportType; // Changed 'type' to 'reportType' to avoid conflict with 'type' keyword
 
-  @Column({ name: 'category_id', type: 'int', nullable: true })
-  categoryId?: number;
+  // Department code for easy filtering and identification
+  @Column({
+    type: 'enum',
+    enum: MunicipalityDepartment,
+    name: 'department_code',
+  })
+  departmentCode!: MunicipalityDepartment;
 
-  @ManyToOne(() => ReportCategory, { nullable: true, onDelete: 'SET NULL' })
+  @Column({ name: 'category_id', type: 'int' })
+  categoryId!: number;
+
+  @ManyToOne(() => ReportCategory, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'category_id' })
-  category?: ReportCategory;
+  category!: ReportCategory;
 
   @Column({
     type: 'enum',
@@ -125,4 +134,10 @@ export class Report {
 
   @OneToMany(() => ReportStatusHistory, statusHistory => statusHistory.report)
   statusHistory!: ReportStatusHistory[];
+
+  @OneToMany(() => ReportSupport, support => support.report)
+  supports!: ReportSupport[];
+
+  // Virtual field - not stored in database, computed at query time
+  isSupportedByCurrentUser?: boolean;
 }

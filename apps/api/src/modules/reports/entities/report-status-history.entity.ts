@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { ReportStatus } from '@KentNabiz/shared'; // Corrected import path
+﻿import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { ReportStatus } from '@kentnabiz/shared'; // Corrected import path
 import { Report } from './report.entity';
 import { User } from '../../users/entities/user.entity';
 

@@ -1,4 +1,4 @@
-import {
+﻿import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
@@ -11,6 +11,8 @@ import {
 } from 'typeorm';
 // Keep import for type hints IF the relationship exists
 import { Report } from './report.entity';
+import { Department } from './department.entity';
+import { ReportType } from '@kentnabiz/shared';
 
 @Entity('report_categories')
 export class ReportCategory {
@@ -41,6 +43,26 @@ export class ReportCategory {
 
   @OneToMany(() => ReportCategory, category => category.parent)
   children!: ReportCategory[];
+
+  // Department relationship
+  @Column({ name: 'department_id', type: 'int' })
+  departmentId!: number;
+
+  @ManyToOne(() => Department, (department: Department) => department.categories, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'department_id' })
+  department!: Department;
+
+  // Default report type for this category
+  @Column({
+    type: 'enum',
+    enum: ReportType,
+    default: ReportType.OTHER,
+    name: 'default_report_type',
+  })
+  defaultReportType!: ReportType;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   @Index()

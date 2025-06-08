@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @kentnabiz/shared paketi ana modülü
  * Bu paket, tüm uygulamalarda paylaşılan tip tanımlarını, yardımcı fonksiyonları ve sabitleri içerir.
  */

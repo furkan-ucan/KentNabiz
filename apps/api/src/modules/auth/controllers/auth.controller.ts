@@ -142,4 +142,43 @@ export class AuthController {
   async getProfile(@Req() req: RequestWithUser): Promise<UserProfileDto> {
     return this.usersService.findOneProfile(req.user.sub);
   }
+
+  // --- YENİ ME ENDPOINT'İ - Frontend için ---
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get current user information for frontend' })
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: 200,
+    description: 'Current user information retrieved successfully',
+    schema: {
+      properties: {
+        user: {
+          type: 'object',
+          properties: {
+            sub: { type: 'number' },
+            email: { type: 'string' },
+            roles: { type: 'array', items: { type: 'string' } },
+            departmentId: { type: 'number' },
+            jti: { type: 'string' },
+            iat: { type: 'number' },
+            exp: { type: 'number' },
+          },
+        },
+        accessToken: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  getMe(@Req() req: RequestWithUser): Promise<{
+    user: JwtPayload;
+    accessToken: string;
+  }> {
+    // Frontend AuthResponseData formatını bekliyor
+    // user: JwtPayload ve accessToken: string
+    return Promise.resolve({
+      user: req.user, // JWT payload'ı direkt döndür
+      accessToken: req.headers.authorization?.split(' ')[1] || '', // Mevcut token'ı döndür
+    });
+  }
 }

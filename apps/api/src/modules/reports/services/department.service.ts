@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+﻿import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager } from 'typeorm';
 import { Department } from '../entities/department.entity';
@@ -7,7 +7,7 @@ import { DepartmentDto } from '../dto/department.dto';
 import { Report } from '../entities/report.entity';
 import { DepartmentHistory } from '../entities/department-history.entity';
 import { ForwardReportDto } from '../dto/forward-report.dto';
-import { MunicipalityDepartment, ReportStatus, ReportType } from '@KentNabiz/shared';
+import { MunicipalityDepartment, ReportStatus, ReportType } from '@kentnabiz/shared';
 
 @Injectable()
 export class DepartmentService {
@@ -24,6 +24,17 @@ export class DepartmentService {
 
   async findAll(): Promise<Department[]> {
     return this.departmentRepository.findAll();
+  }
+
+  async findOneByCode(code: MunicipalityDepartment): Promise<Department | null> {
+    try {
+      return await this.findByCode(code);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return null;
+      }
+      throw error;
+    }
   }
 
   async findById(id: number): Promise<Department> {
@@ -81,7 +92,10 @@ export class DepartmentService {
     }
 
     if (!departments || departments.length === 0) {
-      const generalDepartment = await this.findByCode(MunicipalityDepartment.GENERAL, manager);
+      const generalDepartment = await this.findByCode(
+        MunicipalityDepartment.GENERAL_AFFAIRS,
+        manager
+      );
       return generalDepartment;
     }
     return departments[0];

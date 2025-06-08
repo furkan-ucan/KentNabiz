@@ -1,4 +1,4 @@
-// apps/api/src/modules/users/repositories/user.repository.ts
+﻿// apps/api/src/modules/users/repositories/user.repository.ts
 /**
  * @file user.repository.ts
  * @module users
@@ -15,7 +15,7 @@ import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 // Doğru import yolu (önceki adımlarda konuştuğumuz gibi workspace path'leri yerine göreceli yol daha güvenli olabilir)
 // Örnek: import { UserRole } from '../../../../../packages/shared/src/types/user.types';
-import { UserRole } from '@KentNabiz/shared'; // Bu yolun çalıştığından emin olun, aksi takdirde göreceli yola geçin.
+import { UserRole } from '@kentnabiz/shared'; // Bu yolun çalıştığından emin olun, aksi takdirde göreceli yola geçin.
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { IUserFindOptions } from '../interfaces/user.interface';

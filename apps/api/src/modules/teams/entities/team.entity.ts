@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
-import { TeamStatus } from '@KentNabiz/shared';
+﻿import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { TeamStatus } from '@kentnabiz/shared';
 import { Point } from 'geojson';
 import { TeamSpecialization } from './team-specialization.entity';
 import { Department } from '../../reports/entities/department.entity';

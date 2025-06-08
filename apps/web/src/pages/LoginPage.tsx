@@ -1,181 +1,144 @@
-import React, { useEffect } from 'react';
-import { Formik, Form, Field, FieldProps } from 'formik';
-import * as Yup from 'yup';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import type { AppDispatch } from '@/store';
-import {
-  Box,
-  Button,
-  Card,
-  Container,
-  Heading,
-  HStack,
-  Input,
-  Stack,
-  Text,
-} from '@chakra-ui/react';
-import { Field as ChakraField } from '@/components/ui/field';
-import { loginUser } from '@/store/thunks/authThunks';
-import {
-  clearAuthError,
-  selectAuthStatus,
-  selectAuthError,
-  selectIsAuthenticated,
-} from '@/store/slices/authSlice';
-import { LoginRequest } from '@KentNabiz/shared';
+import { Link as RouterLink } from 'react-router-dom';
+import { Box, Card, Typography, Stack, Link } from '@mui/material';
+import { FeaturesColumn } from './LoginPage/FeaturesColumn';
+import { LoginForm } from './LoginPage/LoginForm';
 
-// Validation schema
-const loginSchema = Yup.object().shape({
-  email: Yup.string()
-    .email('Geçerli bir e-posta adresi giriniz')
-    .required('E-posta adresi zorunludur'),
-  password: Yup.string()
-    .min(6, 'Şifre en az 6 karakter olmalıdır')
-    .required('Şifre zorunludur'),
-});
-
-const LoginPage: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const isAuthenticated = useSelector(selectIsAuthenticated);
-  const status = useSelector(selectAuthStatus);
-  const error = useSelector(selectAuthError);
-
-  const isLoading = status === 'loading';
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      // Login sonrası kullanıcının geldiği sayfaya yönlendir, yoksa /app'e git
-      const from = location.state?.from?.pathname || '/app';
-      navigate(from, { replace: true });
-    }
-  }, [isAuthenticated, navigate, location.state]);
-
-  // Clear errors when component mounts
-  useEffect(() => {
-    dispatch(clearAuthError());
-  }, [dispatch]);
-
-  const handleSubmit = async (values: LoginRequest) => {
-    dispatch(loginUser(values));
-  };
-
+export function LoginPage() {
   return (
-    <Container
-      maxW="lg"
-      py={{ base: '12', md: '24' }}
-      px={{ base: '0', sm: '8' }}
+    <Box
+      component="main"
+      sx={{
+        minHeight: '100vh',
+        px: { xs: 2, md: 8 },
+        py: { xs: 4, md: 8 },
+        backgroundColor: 'background.default',
+      }}
     >
-      <Stack gap="8">
-        <Stack gap="6">
-          <Stack gap={{ base: '2', md: '3' }} textAlign="center">
-            <Heading size={{ base: 'xs', md: 'sm' }}>
-              KentNabız&apos;a Giriş Yapın
-            </Heading>
-            <Text color="fg.muted">
-              Hesabınızla giriş yaparak şehir sorunlarını raporlayabilirsiniz
-            </Text>
-          </Stack>
-        </Stack>
-
-        <Box py={{ base: '0', sm: '8' }} px={{ base: '4', sm: '10' }}>
-          <Card.Root>
-            <Card.Body>
-              <Stack gap="6">
-                <Formik
-                  initialValues={{
-                    email: '',
-                    password: '',
-                  }}
-                  validationSchema={loginSchema}
-                  onSubmit={handleSubmit}
-                >
-                  {({ errors, touched, isValid, dirty }) => (
-                    <Form>
-                      <Stack gap="5">
-                        <Stack gap="4">
-                          <ChakraField
-                            label="E-posta"
-                            invalid={!!(touched.email && errors.email)}
-                            errorText={touched.email ? errors.email : undefined}
-                          >
-                            <Field name="email">
-                              {({ field }: FieldProps) => (
-                                <Input
-                                  {...field}
-                                  type="email"
-                                  placeholder="ornek@email.com"
-                                />
-                              )}
-                            </Field>
-                          </ChakraField>
-
-                          <ChakraField
-                            label="Şifre"
-                            invalid={!!(touched.password && errors.password)}
-                            errorText={
-                              touched.password ? errors.password : undefined
-                            }
-                          >
-                            <Field name="password">
-                              {({ field }: FieldProps) => (
-                                <Input
-                                  {...field}
-                                  type="password"
-                                  placeholder="Şifrenizi giriniz"
-                                />
-                              )}
-                            </Field>
-                          </ChakraField>
-                        </Stack>
-
-                        {error && (
-                          <Box
-                            p="3"
-                            bg="red.50"
-                            borderWidth="1px"
-                            borderColor="red.200"
-                            borderRadius="md"
-                          >
-                            <Text color="red.700" fontSize="sm">
-                              {error}
-                            </Text>
-                          </Box>
-                        )}
-
-                        <Stack gap="6">
-                          <Button
-                            type="submit"
-                            colorPalette="blue"
-                            loading={isLoading}
-                            disabled={!isValid || !dirty || isLoading}
-                            width="full"
-                          >
-                            Giriş Yap
-                          </Button>
-                        </Stack>
-                      </Stack>
-                    </Form>
-                  )}
-                </Formik>
-              </Stack>
-            </Card.Body>
-          </Card.Root>
+      <Stack
+        direction={{ xs: 'column', lg: 'row' }}
+        spacing={{ xs: 4, md: 6, lg: 8 }}
+        alignItems="center"
+        justifyContent="center"
+        sx={{
+          minHeight: '85vh',
+          maxWidth: '1400px',
+          mx: 'auto',
+          width: '100%',
+        }}
+      >
+        {/* Soldaki özellikler */}
+        <Box
+          sx={{
+            flex: { xs: 'none', lg: '1 1 60%' },
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: { xs: '100%', lg: 'auto' },
+          }}
+        >
+          <FeaturesColumn />
         </Box>
 
-        <HStack gap="1" justify="center">
-          <Text color="fg.muted">Hesabınız yok mu?</Text>
-          <Button variant="plain" size="sm" asChild>
-            <Link to="/register">Kayıt Olun</Link>
-          </Button>
-        </HStack>
-      </Stack>
-    </Container>
-  );
-};
+        {/* Sağdaki form */}
+        <Box
+          sx={{
+            flex: { xs: 'none', lg: '0 1 40%' },
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: { xs: '100%', lg: 'auto' },
+          }}
+        >
+          <Card
+            elevation={0}
+            sx={{
+              p: { xs: 3, sm: 4, md: 5 },
+              width: '100%',
+              maxWidth: { xs: 400, sm: 420, md: 450 },
+              backdropFilter: 'blur(16px)',
+              backgroundColor: theme => `${theme.palette.background.paper}e6`, // 90% opacity
+              border: theme => `1px solid ${theme.palette.divider}80`, // 50% opacity
+              borderRadius: 3,
+              boxShadow: theme => `0 8px 32px ${theme.palette.common.black}1a`, // 10% opacity
+            }}
+          >
+            {/* Mobil Logo */}
+            <Box
+              sx={{
+                display: { xs: 'flex', md: 'none' },
+                justifyContent: 'center',
+                mb: 3,
+              }}
+            >
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 700,
+                  textAlign: 'center',
+                  color: theme => theme.palette.text.primary,
+                }}
+              >
+                Kent
+                <Box
+                  component="span"
+                  sx={{
+                    background: theme =>
+                      `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.secondary.main} 90%)`,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    fontWeight: 'inherit',
+                  }}
+                >
+                  Nabız
+                </Box>
+              </Typography>
+            </Box>
 
-export default LoginPage;
+            <Stack spacing={3}>
+              <Typography
+                variant="h5"
+                align="center"
+                sx={{
+                  fontWeight: 600,
+                  color: theme => theme.palette.text.primary,
+                }}
+              >
+                Giriş Yap
+              </Typography>
+
+              <LoginForm />
+            </Stack>
+
+            <Stack mt={3} spacing={1} alignItems="center">
+              <Typography
+                variant="body2"
+                sx={{
+                  color: theme => theme.palette.text.secondary,
+                  fontSize: '0.875rem',
+                }}
+              >
+                Hesabınız yok mu?{' '}
+                <Link
+                  component={RouterLink}
+                  to="/register"
+                  sx={{
+                    color: theme => theme.palette.primary.main,
+                    textDecoration: 'none',
+                    fontWeight: 500,
+                    '&:hover': {
+                      color: theme => theme.palette.primary.light,
+                      textDecoration: 'underline',
+                    },
+                  }}
+                >
+                  Kayıt olun
+                </Link>
+              </Typography>
+            </Stack>
+          </Card>
+        </Box>
+      </Stack>
+    </Box>
+  );
+}

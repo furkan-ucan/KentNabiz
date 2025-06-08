@@ -1,7 +1,7 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+﻿import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsString, IsOptional, MaxLength, IsNotEmpty, IsIn } from 'class-validator';
 import { SUB_STATUS, SubStatus } from '../constants/report.constants';
-import { ReportStatus } from '@KentNabiz/shared';
+import { ReportStatus } from '@kentnabiz/shared';
 
 export class UpdateReportStatusDto {
   @ApiProperty({ enum: ReportStatus, example: ReportStatus.IN_REVIEW })

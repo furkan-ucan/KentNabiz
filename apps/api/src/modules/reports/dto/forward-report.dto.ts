@@ -1,12 +1,12 @@
-import { IsEnum, IsString, IsOptional, IsNotEmpty } from 'class-validator';
+﻿import { IsEnum, IsString, IsOptional, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { MunicipalityDepartment } from '@KentNabiz/shared';
+import { MunicipalityDepartment } from '@kentnabiz/shared';
 
 export class ForwardReportDto {
   @ApiProperty({
     description: 'Raporun yönlendirileceği yeni birim',
     enum: MunicipalityDepartment,
-    example: MunicipalityDepartment.ROADS,
+    example: MunicipalityDepartment.ROADS_AND_INFRASTRUCTURE,
   })
   @IsEnum(MunicipalityDepartment)
   @IsNotEmpty()
@@ -29,7 +29,7 @@ export class ForwardReportDto {
   @ApiProperty({
     description: 'Yönlendirmeyi yapan departman kodu',
     enum: MunicipalityDepartment,
-    example: MunicipalityDepartment.GENERAL,
+    example: MunicipalityDepartment.GENERAL_AFFAIRS,
     required: false,
   })
   @IsEnum(MunicipalityDepartment)

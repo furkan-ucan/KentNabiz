@@ -1,4 +1,4 @@
-// Set test environment variables for JWT BEFORE any imports
+﻿// Set test environment variables for JWT BEFORE any imports
 process.env.JWT_SECRET = 'test-jwt-secret-for-e2e-tests-fixed';
 process.env.JWT_REFRESH_SECRET = 'test-jwt-refresh-secret-for-e2e-tests-fixed';
 
@@ -8,7 +8,7 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { AuthHelper } from './auth-helper';
 import TestDataSource from '../src/config/test-data-source';
-import { ReportType, ReportStatus, MunicipalityDepartment } from '@KentNabiz/shared';
+import { ReportType, ReportStatus, MunicipalityDepartment } from '@kentnabiz/shared';
 import { UpdateReportStatusDto } from '../src/modules/reports/dto/update-report-status.dto';
 
 describe('Report Lifecycle E2E', () => {

@@ -20,7 +20,7 @@
     "types": ["node", "jest", "express"],
     "baseUrl": ".",
     "paths": {
-      "@KentNabiz/*": ["./packages/*/src"]
+      "@kentnabiz/*": ["./packages/*/src"]
     }
   },
   "include": ["apps", "packages", "eslint.config.ts"],

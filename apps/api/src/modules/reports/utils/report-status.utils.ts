@@ -1,4 +1,4 @@
-import { ReportStatus, UserRole } from '@KentNabiz/shared';
+﻿import { ReportStatus, UserRole } from '@kentnabiz/shared';
 import { allowedTransitions } from '../constants/report-transitions.constants';
 
 export function canTransition(

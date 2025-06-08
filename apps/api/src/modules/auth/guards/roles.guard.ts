@@ -1,7 +1,7 @@
 // apps/api/src/modules/auth/guards/roles.guard.ts
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserRole } from '../../../../../../packages/shared/src/types/user.types';
+import { UserRole } from '@kentnabiz/shared';
 // import { RequestWithUser } from '../interfaces/request-with-user.interface'; // Geçici olarak yorumlandı
 
 @Injectable()

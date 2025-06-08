@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file report.analytics.interface.ts
  * @author [Your Name]
  * @date [Date]
@@ -9,7 +9,7 @@
  */
 
 import { Point } from 'geojson';
-import { ReportStatus, ReportType, MunicipalityDepartment } from '@KentNabiz/shared'; // Adjust import path if necessary
+import { ReportStatus, ReportType, MunicipalityDepartment } from '@kentnabiz/shared'; // Adjust import path if necessary
 
 /**
  * Rapor analiz verilerini temsil eden arayüzler

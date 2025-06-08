@@ -1,6 +1,6 @@
-import { DataSource } from 'typeorm';
+﻿import { DataSource } from 'typeorm';
 import { Assignment } from '../../modules/reports/entities/assignment.entity';
-import { AssignmentStatus, AssigneeType } from '@KentNabiz/shared';
+import { AssignmentStatus, AssigneeType } from '@kentnabiz/shared';
 
 export const AssignmentsSeed = async (dataSource: DataSource): Promise<void> => {
   const assignmentRepository = dataSource.getRepository(Assignment);

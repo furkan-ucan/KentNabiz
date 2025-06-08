@@ -1,12 +1,12 @@
-import { IsEnum, IsString, IsBoolean, IsOptional, IsArray } from 'class-validator';
+﻿import { IsEnum, IsString, IsBoolean, IsOptional, IsArray } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { MunicipalityDepartment, ReportType } from '@KentNabiz/shared';
+import { MunicipalityDepartment, ReportType } from '@kentnabiz/shared';
 
 export class DepartmentDto {
   @ApiProperty({
     description: 'Birim kodu',
     enum: MunicipalityDepartment,
-    example: MunicipalityDepartment.ROADS,
+    example: MunicipalityDepartment.ROADS_AND_INFRASTRUCTURE,
   })
   @IsEnum(MunicipalityDepartment)
   code!: MunicipalityDepartment;
