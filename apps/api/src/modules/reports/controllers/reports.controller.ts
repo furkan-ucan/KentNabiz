@@ -28,6 +28,7 @@ import { TeamsService } from '../../teams/services/teams.service';
 import { CreateReportDto } from '../dto/create-report.dto';
 import { UpdateReportDto } from '../dto/update-report.dto';
 import { UpdateReportStatusDto } from '../dto/update-report-status.dto';
+import { CompleteWorkDto } from '../dto/complete-work.dto';
 import { ForwardReportDto } from '../dto/forward-report.dto';
 import { RadiusSearchDto } from '../dto/location.dto';
 import { ReportStatus, ReportType, MunicipalityDepartment, UserRole } from '@kentnabiz/shared';
@@ -66,12 +67,29 @@ export class ReportsController {
   @ApiResponse({ status: 400, description: 'Invalid query parameters' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus, isArray: true })
+  @ApiQuery({ name: 'reportType', required: false, enum: ReportType })
+  @ApiQuery({ name: 'departmentCode', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'departmentId', required: false, type: Number })
   async findAll(
     @Req() req: RequestWithUser,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number
-  ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
-    const paginatedResult = await this.reportsService.findAll(req.user, { page, limit });
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('status') status?: ReportStatus | ReportStatus[],
+    @Query('reportType') reportType?: ReportType,
+    @Query('departmentCode') departmentCode?: MunicipalityDepartment,
+    @Query('departmentId') departmentId?: number
+  ): Promise<{ data: IReport[]; total: number; page: number; limit: number }> {
+    const paginatedResult = await this.reportsService.findAll(req.user, {
+      page,
+      limit,
+      status,
+      reportType,
+      departmentCode,
+      departmentId,
+    });
     return {
       data: paginatedResult.data,
       total: paginatedResult.total,
@@ -172,6 +190,34 @@ export class ReportsController {
   @ApiResponse({ status: 200, description: 'List of active departments', type: [Department] })
   async getDepartments(): Promise<Department[]> {
     return this.departmentService.findAll();
+  }
+
+  @Get('status-counts')
+  @ApiOperation({
+    summary: 'Get report counts by status',
+    description: "Returns counts of reports grouped by status for the current user's department",
+  })
+  @Roles(UserRole.DEPARTMENT_SUPERVISOR, UserRole.TEAM_MEMBER, UserRole.SYSTEM_ADMIN)
+  @ApiResponse({
+    status: 200,
+    description: 'Report counts by status',
+    schema: {
+      type: 'object',
+      properties: {
+        OPEN: { type: 'number' },
+        IN_REVIEW: { type: 'number' },
+        IN_PROGRESS: { type: 'number' },
+        DONE: { type: 'number' },
+        REJECTED: { type: 'number' },
+        CANCELLED: { type: 'number' },
+        total: { type: 'number' },
+      },
+    },
+  })
+  async getStatusCounts(
+    @Req() req: RequestWithUser
+  ): Promise<Record<ReportStatus | 'total', number>> {
+    return await this.reportsService.getStatusCounts(req.user);
   }
 
   @Get(':id')
@@ -422,23 +468,26 @@ export class ReportsController {
   }
 
   @Patch(':id/complete-work')
-  @ApiOperation({ summary: 'Complete work on report (TEAM_MEMBER - ABAC POC)' })
+  @ApiOperation({ summary: 'Complete work on a report with proof media (for Team Members)' })
   @UseGuards(JwtAuthGuard, PoliciesGuard)
   @CheckPolicies((ability: AppAbility, subject) => {
-    // Gerçek yetki kontrolü: sadece atanmış ekip üyeleri işi tamamlayabilir
     return ability.can(Action.CompleteWork, subject as Report);
   })
   @ApiParam({ name: 'id', description: 'Report ID', type: Number })
-  @ApiResponse({ status: 200, description: 'Work completed successfully', type: Report })
-  completeWork(
+  @ApiResponse({
+    status: 200,
+    description: 'Work marked as complete with proof media, pending approval.',
+    type: Report,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request. Missing proof media or invalid data.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. User cannot complete work on this report.' })
+  @ApiResponse({ status: 404, description: 'Report not found.' })
+  async completeWork(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: RequestWithUser
-  ): { message: string; reportId: number } {
-    // POC için geçici response - gerçek implementasyonda service method kullanılacak
-    return {
-      message: `Work completed on report ${id} by user ${req.user.sub} - ABAC POC`,
-      reportId: id,
-    };
+    @Req() req: RequestWithUser,
+    @Body() completeWorkDto: CompleteWorkDto
+  ): Promise<Report> {
+    return this.reportsService.completeWork(id, completeWorkDto, req.user);
   }
 
   @Patch(':id/approve')

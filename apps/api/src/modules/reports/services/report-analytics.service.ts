@@ -1,6 +1,13 @@
 ﻿import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, Raw, FindOptionsWhere, FindOperator } from 'typeorm'; // Use FindOptionsWhere, FindOperator
+import {
+  Repository,
+  Between,
+  Raw,
+  FindOptionsWhere,
+  FindOperator,
+  SelectQueryBuilder,
+} from 'typeorm'; // Use FindOptionsWhere, FindOperator
 import { Report } from '../entities/report.entity';
 import { DepartmentHistory } from '../entities/department-history.entity';
 import {
@@ -69,10 +76,6 @@ interface RawResolutionTime {
   max_time: string | null;
   count: string;
 }
-interface RawRegionalDensity {
-  location: string | null;
-  count: string;
-}
 interface RawDistrictCount {
   district: string;
   count: string;
@@ -89,6 +92,11 @@ interface RawDepartmentChangeCount {
 interface RawDepartmentChangeToCount {
   department: string;
   changes_to: string;
+}
+interface RawRegionalDensityResult {
+  cluster_id: number;
+  location: string;
+  count: string;
 }
 // --- End Raw interfaces ---
 
@@ -440,43 +448,97 @@ export class ReportAnalyticsService {
    * Regional report density using PostGIS clustering.
    */
   async getRegionalDensity(filter?: IAnalyticsFilter): Promise<IRegionalDensity[]> {
-    const whereClause = this.buildFilterQuery(filter);
-    // Main QueryBuilder instance
-    const qb = this.reportRepository.createQueryBuilder('report');
-
-    // --- FIX: Subquery needs to output original geometry/geography ---
-    const subQuery = qb
-      .clone() // Clone for subquery
-      .select('report.id', 'report_id')
-      // Select the ORIGINAL location column (geography/geometry)
-      .addSelect('report.location', 'original_location')
-      // Calculate cluster ID
-      .addSelect('ST_ClusterDBSCAN(report.location::geometry, 500, 3) OVER ()', 'cluster_id')
-      .where(whereClause); // Apply filters
-
-    // Main query groups by cluster_id and uses original_location
-    const mainQb = this.reportRepository.manager
-      .createQueryBuilder() // Use manager to query from subquery result
-      .select('sub.cluster_id', 'cluster_id')
-      // Collect the ORIGINAL geometry/geography, cast to geometry if needed by ST_Collect/ST_Centroid
-      .addSelect(
-        `ST_AsGeoJSON(ST_Centroid(ST_Collect(sub.original_location::geometry)))`,
-        'location'
-      )
-      .addSelect('COUNT(sub.report_id)', 'count')
-      .from(`(${subQuery.getQuery()})`, 'sub') // FROM the subquery result
-      .setParameters(subQuery.getParameters())
-      .where('sub.cluster_id IS NOT NULL')
-      .groupBy('sub.cluster_id');
-    // --- END FIX ---
-
     try {
-      const regionalDensity = await mainQb.getRawMany<
-        RawRegionalDensity & { cluster_id: number }
-      >();
+      // Build the query using raw SQL since window functions require subqueries
+      const whereConditions: string[] = ['report.location IS NOT NULL'];
+      const parameters: (string | number | Date)[] = [];
 
-      return regionalDensity
-        .map(item => {
+      // Apply time filters
+      if (filter) {
+        let startDate: Date | undefined;
+        let endDate: Date | undefined = new Date();
+
+        if (filter.startDate && filter.endDate) {
+          startDate = filter.startDate;
+          endDate = filter.endDate;
+        } else if (filter.last7Days) {
+          startDate = new Date();
+          startDate.setDate(endDate.getDate() - 7);
+        } else if (filter.last30Days) {
+          startDate = new Date();
+          startDate.setDate(endDate.getDate() - 30);
+        } else if (filter.lastQuarter) {
+          startDate = new Date();
+          startDate.setMonth(endDate.getMonth() - 3);
+        } else if (filter.lastYear) {
+          startDate = new Date();
+          startDate.setFullYear(endDate.getFullYear() - 1);
+        }
+
+        if (startDate) {
+          whereConditions.push(
+            'report.created_at BETWEEN $' +
+              (parameters.length + 1) +
+              ' AND $' +
+              (parameters.length + 2)
+          );
+          parameters.push(startDate, endDate);
+        }
+
+        // Apply other filters
+        if (filter.department && typeof filter.department === 'number') {
+          whereConditions.push('report.current_department_id = $' + (parameters.length + 1));
+          parameters.push(filter.department);
+        }
+
+        if (filter.status) {
+          whereConditions.push('report.status = $' + (parameters.length + 1));
+          parameters.push(filter.status);
+        }
+
+        if (filter.type) {
+          whereConditions.push('report.report_type = $' + (parameters.length + 1));
+          parameters.push(filter.type);
+        }
+
+        if (filter.userId) {
+          whereConditions.push('report.user_id = $' + (parameters.length + 1));
+          parameters.push(filter.userId);
+        }
+
+        if (filter.categoryId !== undefined) {
+          whereConditions.push('report.category_id = $' + (parameters.length + 1));
+          parameters.push(filter.categoryId);
+        }
+      }
+
+      const whereClause = whereConditions.join(' AND ');
+
+      // Use raw SQL query with proper subquery structure for window functions
+      const sqlQuery = `
+        SELECT
+          sub.cluster_id,
+          ST_AsGeoJSON(ST_Centroid(ST_Collect(sub.location))) AS location,
+          COUNT(sub.report_id) AS count
+        FROM (
+          SELECT
+            report.id AS report_id,
+            report.location,
+            ST_ClusterDBSCAN(report.location, 500, 3) OVER () AS cluster_id
+          FROM reports report
+          WHERE ${whereClause}
+        ) sub
+        WHERE sub.cluster_id IS NOT NULL
+        GROUP BY sub.cluster_id
+      `;
+
+      const rawResults: RawRegionalDensityResult[] = await this.reportRepository.manager.query(
+        sqlQuery,
+        parameters
+      );
+
+      return rawResults
+        .map((item: RawRegionalDensityResult) => {
           let parsedJson: unknown;
           try {
             if (!item.location) {
@@ -513,8 +575,6 @@ export class ReportAnalyticsService {
         `PostGIS query failed in getRegionalDensity: ${error instanceof Error ? error.message : String(error)}`,
         error instanceof Error ? error.stack : undefined
       );
-      this.logger.debug(`Failed SQL (Regional Density): ${mainQb.getSql()}`); // Log the SQL
-      this.logger.debug(`Parameters: ${JSON.stringify(mainQb.getParameters())}`); // Log parameters
       return [];
     }
   }
@@ -631,5 +691,68 @@ export class ReportAnalyticsService {
         changesTo: parseInt(item.changes_to, 10),
       })),
     };
+  }
+
+  /**
+   * Helper function to apply filters to a QueryBuilder instance.
+   */
+  private applyFiltersToQueryBuilder(
+    qb: SelectQueryBuilder<Report>,
+    filter?: IAnalyticsFilter
+  ): void {
+    if (!filter) {
+      return;
+    }
+
+    // Time filter - use the same logic as getTimeFilterCondition but for QueryBuilder
+    let startDate: Date | undefined;
+    let endDate: Date | undefined = new Date(); // Default end date is now
+
+    if (filter.startDate && filter.endDate) {
+      startDate = filter.startDate;
+      endDate = filter.endDate;
+    } else if (filter.last7Days) {
+      startDate = new Date();
+      startDate.setDate(endDate.getDate() - 7);
+    } else if (filter.last30Days) {
+      startDate = new Date();
+      startDate.setDate(endDate.getDate() - 30);
+    } else if (filter.lastQuarter) {
+      startDate = new Date();
+      startDate.setMonth(endDate.getMonth() - 3);
+    } else if (filter.lastYear) {
+      startDate = new Date();
+      startDate.setFullYear(endDate.getFullYear() - 1);
+    }
+
+    if (startDate) {
+      qb.andWhere('report.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+    }
+
+    // Other filters
+    if (filter.department && typeof filter.department === 'number') {
+      qb.andWhere('report.currentDepartmentId = :departmentId', {
+        departmentId: filter.department,
+      });
+    }
+
+    if (filter.status) {
+      qb.andWhere('report.status = :status', { status: filter.status });
+    }
+
+    if (filter.type) {
+      qb.andWhere('report.reportType = :reportType', { reportType: filter.type });
+    }
+
+    if (filter.userId) {
+      qb.andWhere('report.userId = :userId', { userId: filter.userId });
+    }
+
+    if (filter.categoryId !== undefined) {
+      qb.andWhere('report.categoryId = :categoryId', { categoryId: filter.categoryId });
+    }
   }
 }

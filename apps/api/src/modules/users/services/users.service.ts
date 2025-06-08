@@ -188,8 +188,18 @@ export class UsersService {
 
   async remove(id: number): Promise<void> {
     // TODO: add tests for user deletion
-    // userRepository.remove zaten NotFoundException fırlatacak (yaptığımız değişiklikle).
-    await this.userRepository.remove(id);
+    // Use soft delete instead of hard delete
+    const user = await this.userRepository.findById(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found.`);
+    }
+
+    // Use TypeORM's softDelete method
+    const result = await this.dataSource.getRepository(User).softDelete(id);
+
+    if (result.affected === 0) {
+      throw new NotFoundException(`User with ID ${id} not found for deletion.`);
+    }
   }
 
   async updateLastLogin(id: number): Promise<void> {

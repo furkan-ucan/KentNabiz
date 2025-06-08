@@ -1,487 +1,364 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Typography,
   Card,
   CardContent,
-  CardActionArea,
-  Select,
-  MenuItem,
-  TextField,
-  InputAdornment,
-  Paper,
+  Typography,
   Chip,
-  Button,
-  CircularProgress,
-  Alert,
   Stack,
   Grid,
-  IconButton,
-  Menu,
-  ListItemIcon,
-  ListItemText,
 } from '@mui/material';
-import {
-  Search as SearchIcon,
-  FilterList as FilterIcon,
-  Refresh as RefreshIcon,
-  MoreVert as MoreVertIcon,
-  Visibility as VisibilityIcon,
-  Assignment as AssignmentIcon,
-  History as HistoryIcon,
-  SwapHoriz as SwapHorizIcon,
-} from '@mui/icons-material';
-import {
-  DataGrid,
-  GridColDef,
-  GridRenderCellParams,
-  GridPaginationModel,
-} from '@mui/x-data-grid';
-import { useNavigate } from 'react-router-dom';
-import {
-  useSupervisorReports,
-  useSupervisorStats,
-} from '../hooks/useSupervisorReports';
+import { SupervisorReportTable } from '@/components/supervisor/SupervisorReportTable';
+import { useDashboardStore } from '@/store/dashboardStore';
+import { useSupervisorReports } from '@/hooks/useSupervisorReports';
+import { useStatusCounts } from '@/hooks/useStatusCounts';
 import { ReportStatus } from '@kentnabiz/shared';
 import type { SharedReport } from '@kentnabiz/shared';
 
-// Status mapping for Turkish labels and colors
-const statusConfig: Record<
-  ReportStatus,
-  {
-    label: string;
-    color:
-      | 'default'
-      | 'primary'
-      | 'secondary'
-      | 'error'
-      | 'info'
-      | 'success'
-      | 'warning';
-  }
-> = {
-  [ReportStatus.OPEN]: { label: 'Yeni Gelen', color: 'primary' },
-  [ReportStatus.IN_REVIEW]: { label: 'İnceleniyor', color: 'info' },
-  [ReportStatus.IN_PROGRESS]: { label: 'Sahadaki Görev', color: 'warning' },
-  [ReportStatus.DONE]: { label: 'Tamamlandı', color: 'success' },
-  [ReportStatus.REJECTED]: { label: 'Reddedildi', color: 'error' },
-  [ReportStatus.CANCELLED]: { label: 'İptal Edildi', color: 'error' },
-};
-
-interface KPICardProps {
-  title: string;
-  value: number | string;
-  description: string;
-  color: string;
-  onClick?: () => void;
-}
-
-const KPICard: React.FC<KPICardProps> = ({
-  title,
-  value,
-  description,
-  color,
-  onClick,
-}) => (
-  <Card elevation={2} sx={{ height: '100%' }}>
-    <CardActionArea onClick={onClick} disabled={!onClick}>
-      <CardContent>
-        <Typography variant="h6" color="text.secondary" gutterBottom>
-          {title}
-        </Typography>
-        <Typography
-          variant="h3"
-          component="div"
-          color={color}
-          fontWeight="bold"
-        >
-          {value}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {description}
-        </Typography>
-      </CardContent>
-    </CardActionArea>
-  </Card>
-);
-
 export const SupervisorDashboardPage: React.FC = () => {
-  const navigate = useNavigate();
-
-  // Local state for filters and pagination
-  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+  const { filters, setFilters, selectedReport, setSelectedReport } =
+    useDashboardStore();
+  const [pagination, setPagination] = useState({
     page: 0,
     pageSize: 10,
   });
-  const [filterStatus, setFilterStatus] = useState<ReportStatus | 'ALL'>('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
 
-  // Menu state
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
+  // Filtrelenmiş veri çekme (tablo için)
+  const { data, isLoading } = useSupervisorReports(pagination);
+  // Status sayıları için ayrı API çağrısı (filtresiz)
+  const { data: statusCounts, isLoading: statusCountsLoading } =
+    useStatusCounts();
+  const reports = data?.data || [];
+  const totalCount = data?.meta.total || 0;
+  // Dashboard istatistikleri status counts'tan hesaplanır
+  const pendingReports =
+    (statusCounts?.[ReportStatus.OPEN] || 0) +
+    (statusCounts?.[ReportStatus.IN_REVIEW] || 0);
+  const resolvedToday = statusCounts?.[ReportStatus.DONE] || 0; // Geçici olarak, gerçekte bugünkü çözülen raporlar olmalı
 
-  // API calls
-  const {
-    data: reportsData,
-    isLoading: reportsLoading,
-    isError: reportsError,
-    error: reportsErrorDetail,
-    refetch: refetchReports,
-  } = useSupervisorReports({
-    page: paginationModel.page + 1, // API 1-based, DataGrid 0-based
-    limit: paginationModel.pageSize,
-    status: filterStatus === 'ALL' ? undefined : filterStatus,
-    search: searchQuery || undefined,
-  });
-
-  const {
-    data: statsData,
-    isLoading: statsLoading,
-    refetch: refetchStats,
-  } = useSupervisorStats();
-
-  // Handle pagination change
-  const handlePaginationModelChange = (newModel: GridPaginationModel) => {
-    setPaginationModel(newModel);
+  const handleStatusFilter = (status: ReportStatus[]) => {
+    console.log('Status filter called with:', status);
+    setFilters({ status });
   };
 
-  // Handle KPI card clicks for filtering
-  const handleKPICardClick = (status: ReportStatus) => {
-    setFilterStatus(status);
-    setPaginationModel({ page: 0, pageSize: paginationModel.pageSize });
+  // Report action handlers
+  const handleViewDetails = (reportId: number) => {
+    console.log('Viewing details for report:', reportId);
+    // TODO: Navigate to report details page
   };
 
-  // Handle refresh
-  const handleRefresh = () => {
-    refetchReports();
-    refetchStats();
+  const handleAssignToTeam = (reportId: number) => {
+    console.log('Assigning report to team:', reportId);
+    // TODO: Open assign to team modal
   };
 
-  // Handle clear filters
-  const handleClearFilters = () => {
-    setFilterStatus('ALL');
-    setSearchQuery('');
-    setPaginationModel({ page: 0, pageSize: paginationModel.pageSize });
+  const handleTransferDepartment = (reportId: number) => {
+    console.log('Transferring report to department:', reportId);
+    // TODO: Open transfer modal
+  };
+  const handleViewHistory = (reportId: number) => {
+    console.log('Viewing history for report:', reportId);
+    // TODO: Open history modal
+  };
+  const handleRowClick = (report: SharedReport) => {
+    setSelectedReport(report);
   };
 
-  // Menu handlers
-  const handleMenuOpen = (
-    event: React.MouseEvent<HTMLElement>,
-    reportId: number
-  ) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedReportId(reportId);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    setSelectedReportId(null);
-  };
-
-  const handleViewDetails = () => {
-    if (selectedReportId) {
-      navigate(`/reports/${selectedReportId}`);
-    }
-    handleMenuClose();
-  };
-
-  const handleAssignToTeam = () => {
-    // TODO: Ekipe atama modalı açılacak
-    console.log('Assign to team:', selectedReportId);
-    handleMenuClose();
-  };
-
-  const handleViewHistory = () => {
-    // TODO: Geçmiş modalı açılacak
-    console.log('View history:', selectedReportId);
-    handleMenuClose();
-  };
-
-  const handleTransferDepartment = () => {
-    // TODO: Departman transfer modalı açılacak
-    console.log('Transfer department:', selectedReportId);
-    handleMenuClose();
-  };
-
-  // DataGrid columns
-  const columns: GridColDef[] = [
+  const statusChips = [
     {
-      field: 'id',
-      headerName: 'ID',
-      width: 80,
-      type: 'number',
+      label: 'Tümü',
+      count: statusCounts?.total || 0,
+      active: !filters.status || filters.status.length === 0,
+      onClick: () => setFilters({ status: undefined }),
+      color: 'default' as const,
     },
     {
-      field: 'title',
-      headerName: 'Başlık',
-      flex: 1,
-      minWidth: 200,
-      renderCell: (params: GridRenderCellParams<SharedReport>) => (
-        <Box>
-          <Typography variant="body2" fontWeight="medium">
-            {params.row.title}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {params.row.address}
-          </Typography>
-        </Box>
-      ),
+      label: 'Yeni Gelen',
+      count: statusCounts?.[ReportStatus.OPEN] || 0,
+      active:
+        Array.isArray(filters.status) &&
+        filters.status.length === 1 &&
+        filters.status.includes(ReportStatus.OPEN),
+      onClick: () => handleStatusFilter([ReportStatus.OPEN]),
+      color: 'primary' as const,
     },
     {
-      field: 'status',
-      headerName: 'Durum',
-      width: 150,
-      renderCell: (params: GridRenderCellParams<SharedReport>) => {
-        const config = statusConfig[params.row.status];
-        return (
-          <Chip
-            label={config.label}
-            color={config.color}
-            size="small"
-            variant="filled"
-          />
-        );
-      },
+      label: 'İnceleniyor',
+      count: statusCounts?.[ReportStatus.IN_REVIEW] || 0,
+      active:
+        Array.isArray(filters.status) &&
+        filters.status.length === 1 &&
+        filters.status.includes(ReportStatus.IN_REVIEW),
+      onClick: () => handleStatusFilter([ReportStatus.IN_REVIEW]),
+      color: 'info' as const,
     },
     {
-      field: 'assignedToEmployee',
-      headerName: 'Atanan',
-      width: 150,
-      renderCell: (params: GridRenderCellParams<SharedReport>) => (
-        <Typography variant="body2">
-          {params.row.assignedToEmployee?.fullName || 'Atanmadı'}
-        </Typography>
-      ),
+      label: 'Sahada',
+      count: statusCounts?.[ReportStatus.IN_PROGRESS] || 0,
+      active:
+        Array.isArray(filters.status) &&
+        filters.status.length === 1 &&
+        filters.status.includes(ReportStatus.IN_PROGRESS),
+      onClick: () => handleStatusFilter([ReportStatus.IN_PROGRESS]),
+      color: 'warning' as const,
     },
     {
-      field: 'createdAt',
-      headerName: 'Oluşturulma',
-      width: 140,
-      type: 'dateTime',
-      valueGetter: ({ value }: { value: string }) => new Date(value),
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography variant="body2">
-          {new Date(params.value as Date).toLocaleDateString('tr-TR')}
-        </Typography>
-      ),
+      label: 'Tamamlandı',
+      count: statusCounts?.[ReportStatus.DONE] || 0,
+      active:
+        Array.isArray(filters.status) &&
+        filters.status.length === 1 &&
+        filters.status.includes(ReportStatus.DONE),
+      onClick: () => handleStatusFilter([ReportStatus.DONE]),
+      color: 'success' as const,
     },
     {
-      field: 'actions',
-      headerName: 'İşlemler',
-      width: 120,
-      sortable: false,
-      renderCell: (params: GridRenderCellParams<SharedReport>) => (
-        <IconButton
-          size="small"
-          onClick={event => handleMenuOpen(event, params.row.id)}
-          aria-label="Aksiyon menüsü"
-        >
-          <MoreVertIcon />
-        </IconButton>
-      ),
+      label: 'Reddedildi/İptal',
+      count:
+        (statusCounts?.[ReportStatus.REJECTED] || 0) +
+        (statusCounts?.[ReportStatus.CANCELLED] || 0),
+      active:
+        Array.isArray(filters.status) &&
+        filters.status.length === 2 &&
+        filters.status.includes(ReportStatus.REJECTED) &&
+        filters.status.includes(ReportStatus.CANCELLED),
+      onClick: () =>
+        handleStatusFilter([ReportStatus.REJECTED, ReportStatus.CANCELLED]),
+      color: 'error' as const,
     },
   ];
 
   return (
-    <Box p={3}>
-      {/* Header */}
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-      >
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          Departman Yönetim Paneli
-        </Typography>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={handleRefresh}
-          disabled={reportsLoading || statsLoading}
-        >
-          Yenile
-        </Button>
-      </Box>{' '}
-      {/* KPI Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <KPICard
-            title="Yeni Gelen Rapor"
-            value={statsData?.pending || 0}
-            description="Onay bekleyen yeni raporlar"
-            color="primary.main"
-            onClick={() => handleKPICardClick(ReportStatus.OPEN)}
-          />
+    <Box sx={{ p: 3 }}>
+      {/* Sayfa Başlığı */}
+      <Typography variant="h4" gutterBottom>
+        Komuta Merkezi
+      </Typography>{' '}
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+        Kent raporlarını izleyin, yönetin ve ekiplerinizi koordine edin
+      </Typography>
+      {/* 3-Sütun Responsive Layout */}
+      <Grid container spacing={3}>
+        {/* Sol Sütun - Filtreler ve Hızlı Aksiyonlar */}
+        <Grid size={{ xs: 12, md: 3 }}>
+          <Stack spacing={2}>
+            {/* Status Filtreleri */}
+            <Card>
+              <CardContent>
+                {' '}
+                <Typography variant="h6" gutterBottom>
+                  Durum Filtreleri
+                </Typography>
+                <Stack spacing={1}>
+                  {statusCountsLoading
+                    ? // Loading skeleton for status chips
+                      Array.from({ length: 6 }).map((_, index) => (
+                        <Box key={index} sx={{ height: 32, width: '100%' }}>
+                          <Typography variant="body2">Loading...</Typography>
+                        </Box>
+                      ))
+                    : statusChips.map(chip => (
+                        <Chip
+                          key={chip.label}
+                          label={`${chip.label} (${chip.count})`}
+                          variant={chip.active ? 'filled' : 'outlined'}
+                          color={chip.active ? chip.color : 'default'}
+                          onClick={chip.onClick}
+                          sx={{
+                            justifyContent: 'flex-start',
+                            cursor: 'pointer',
+                            '&:hover': {
+                              backgroundColor: chip.active
+                                ? undefined
+                                : `${chip.color === 'default' ? 'grey' : chip.color}.50`,
+                            },
+                          }}
+                        />
+                      ))}
+                </Stack>
+              </CardContent>
+            </Card>
+
+            {/* Hızlı İstatistikler */}
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Bugünkü Özet
+                </Typography>
+                <Stack spacing={2}>
+                  <Box>
+                    {' '}
+                    <Typography variant="body2" color="text.secondary">
+                      Çözülen Raporlar
+                    </Typography>
+                    <Typography variant="h4" color="success.main">
+                      {resolvedToday}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      Bekleyen İncelemeler
+                    </Typography>
+                    <Typography variant="h4" color="warning.main">
+                      {pendingReports}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Stack>
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <KPICard
-            title="Sahadaki Aktif Görev"
-            value={statsData?.inProgress || 0}
-            description="Sahada devam eden işler"
-            color="warning.main"
-            onClick={() => handleKPICardClick(ReportStatus.IN_PROGRESS)}
-          />
+
+        {/* Orta Sütun - Ana Rapor Tablosu */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card sx={{ height: 'fit-content' }}>
+            <CardContent>
+              {' '}
+              <Typography variant="h6" gutterBottom>
+                Kent Raporları
+              </Typography>
+              <SupervisorReportTable
+                reports={reports}
+                rowCount={totalCount}
+                isLoading={isLoading}
+                paginationModel={pagination}
+                onPaginationModelChange={setPagination}
+                onRowClick={handleRowClick}
+                onViewDetails={handleViewDetails}
+                onAssignToTeam={handleAssignToTeam}
+                onTransferDepartment={handleTransferDepartment}
+                onViewHistory={handleViewHistory}
+              />{' '}
+            </CardContent>
+          </Card>
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <KPICard
-            title="Onay Bekleyen"
-            value={statsData?.resolved || 0}
-            description="Tamamlandı, onay bekliyor"
-            color="success.main"
-            onClick={() => handleKPICardClick(ReportStatus.DONE)}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <KPICard
-            title="Ortalama Çözüm"
-            value={
-              statsData?.averageResolutionTime
-                ? `${statsData?.averageResolutionTime.toFixed(1)} Gün`
-                : 'Hesaplanıyor'
-            }
-            description="Son 30 günün ortalaması"
-            color="info.main"
-          />
+
+        {/* Sağ Sütun - Detay Paneli ve Harita */}
+        <Grid size={{ xs: 12, md: 3 }}>
+          <Stack spacing={2}>
+            {/* Seçili Rapor Detayları */}
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Rapor Detayı
+                </Typography>
+                {selectedReport ? (
+                  <Stack spacing={2}>
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Başlık
+                      </Typography>
+                      <Typography variant="body2" fontWeight="medium">
+                        {selectedReport.title}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Açıklama
+                      </Typography>
+                      <Typography variant="body2">
+                        {selectedReport.description || 'Açıklama yok'}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Adres
+                      </Typography>
+                      <Typography variant="body2">
+                        {selectedReport.address}{' '}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Durum
+                      </Typography>
+                      <Chip
+                        label={
+                          {
+                            [ReportStatus.OPEN]: 'Yeni Gelen',
+                            [ReportStatus.IN_REVIEW]: 'İnceleniyor',
+                            [ReportStatus.IN_PROGRESS]: 'Sahada',
+                            [ReportStatus.DONE]: 'Çözüldü',
+                            [ReportStatus.REJECTED]: 'Reddedildi',
+                            [ReportStatus.CANCELLED]: 'İptal Edildi',
+                          }[selectedReport.status] || selectedReport.status
+                        }
+                        color={
+                          (
+                            {
+                              [ReportStatus.OPEN]: 'primary',
+                              [ReportStatus.IN_REVIEW]: 'info',
+                              [ReportStatus.IN_PROGRESS]: 'warning',
+                              [ReportStatus.DONE]: 'success',
+                              [ReportStatus.REJECTED]: 'error',
+                              [ReportStatus.CANCELLED]: 'default',
+                            } as const
+                          )[selectedReport.status] || 'default'
+                        }
+                        size="small"
+                      />
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Oluşturulma Tarihi
+                      </Typography>
+                      <Typography variant="body2">
+                        {new Date(selectedReport.createdAt).toLocaleDateString(
+                          'tr-TR',
+                          {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }
+                        )}
+                      </Typography>
+                    </Box>
+                    {selectedReport.assignedToEmployee && (
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Atanan Kişi
+                        </Typography>
+                        <Typography variant="body2">
+                          {selectedReport.assignedToEmployee.fullName}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Bir rapor seçerek detaylarını görüntüleyin
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Mini Harita */}
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Konum Görünümü
+                </Typography>
+                <Box
+                  sx={{
+                    height: 200,
+                    backgroundColor: 'grey.100',
+                    borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    Harita Görünümü
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Stack>
         </Grid>
       </Grid>
-      {/* Filters */}
-      <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={2}
-          alignItems="center"
-        >
-          <TextField
-            placeholder="Rapor başlığı veya adresinde ara..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ minWidth: 300 }}
-            size="small"
-          />
-
-          <Select
-            value={filterStatus}
-            onChange={e =>
-              setFilterStatus(e.target.value as ReportStatus | 'ALL')
-            }
-            size="small"
-            startAdornment={<FilterIcon sx={{ mr: 1 }} />}
-            sx={{ minWidth: 180 }}
-          >
-            <MenuItem value="ALL">Tüm Durumlar</MenuItem>
-            {Object.entries(statusConfig).map(([status, config]) => (
-              <MenuItem key={status} value={status}>
-                {config.label}
-              </MenuItem>
-            ))}
-          </Select>
-
-          <Button variant="outlined" onClick={handleClearFilters} size="small">
-            Filtreleri Temizle
-          </Button>
-        </Stack>
-      </Paper>
-      {/* Error handling */}
-      {reportsError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Raporlar yüklenirken hata oluştu: {reportsErrorDetail?.message}
-          <Button onClick={handleRefresh} size="small" sx={{ ml: 1 }}>
-            Tekrar Dene
-          </Button>
-        </Alert>
-      )}
-      {/* Data Table */}
-      <Paper elevation={1}>
-        <DataGrid
-          rows={reportsData?.data || []}
-          columns={columns}
-          paginationModel={paginationModel}
-          onPaginationModelChange={handlePaginationModelChange}
-          rowCount={reportsData?.meta.total || 0}
-          loading={reportsLoading}
-          paginationMode="server"
-          pageSizeOptions={[10, 25, 50]}
-          disableRowSelectionOnClick
-          autoHeight
-          sx={{
-            border: 'none',
-            '& .MuiDataGrid-cell:focus': {
-              outline: 'none',
-            },
-            '& .MuiDataGrid-row:hover': {
-              backgroundColor: 'action.hover',
-            },
-          }}
-          slots={{
-            loadingOverlay: () => (
-              <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                height="200px"
-              >
-                <CircularProgress />
-              </Box>
-            ),
-            noRowsOverlay: () => (
-              <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                height="200px"
-              >
-                <Typography color="text.secondary">
-                  {filterStatus !== 'ALL' || searchQuery
-                    ? 'Filtrelere uygun rapor bulunamadı'
-                    : 'Henüz rapor bulunmuyor'}
-                </Typography>
-              </Box>
-            ),
-          }}
-        />
-      </Paper>
-      {/* Action Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        PaperProps={{
-          sx: { minWidth: 200 },
-        }}
-      >
-        <MenuItem onClick={handleViewDetails}>
-          <ListItemIcon>
-            <VisibilityIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Detayları Görüntüle" />
-        </MenuItem>
-        <MenuItem onClick={handleAssignToTeam}>
-          <ListItemIcon>
-            <AssignmentIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Ekibe/Kişiye Ata" />
-        </MenuItem>
-        <MenuItem onClick={handleTransferDepartment}>
-          <ListItemIcon>
-            <SwapHorizIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Departmana Yönlendir" />
-        </MenuItem>
-        <MenuItem onClick={handleViewHistory}>
-          <ListItemIcon>
-            <HistoryIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Geçmişi Görüntüle" />
-        </MenuItem>
-      </Menu>
     </Box>
   );
 };

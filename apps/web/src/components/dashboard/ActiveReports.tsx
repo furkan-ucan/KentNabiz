@@ -22,7 +22,6 @@ interface Report {
   category: string;
   location: string;
   createdAt: string;
-  priority: 'low' | 'medium' | 'high';
 }
 
 interface ActiveReportsProps {

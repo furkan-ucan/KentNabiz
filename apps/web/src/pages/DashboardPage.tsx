@@ -35,7 +35,6 @@ interface Report {
   category: string;
   location: string;
   createdAt: string;
-  priority: 'low' | 'medium' | 'high';
 }
 
 interface Announcement {
@@ -64,7 +63,6 @@ const mockActiveReports: Report[] = [
     category: 'Ulaşım',
     location: 'Atatürk Bulvarı, Çankaya',
     createdAt: '2024-01-15T10:30:00Z',
-    priority: 'high',
   },
   {
     id: '2',
@@ -74,7 +72,6 @@ const mockActiveReports: Report[] = [
     category: 'Altyapı',
     location: 'Kızılay Meydanı',
     createdAt: '2024-01-14T14:15:00Z',
-    priority: 'medium',
   },
   {
     id: '3',
@@ -84,7 +81,6 @@ const mockActiveReports: Report[] = [
     category: 'Temizlik',
     location: 'Kuğulu Park',
     createdAt: '2024-01-13T09:20:00Z',
-    priority: 'low',
   },
 ];
 

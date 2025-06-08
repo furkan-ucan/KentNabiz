@@ -1,4 +1,14 @@
-﻿import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+﻿import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+} from 'typeorm';
 import { TeamStatus } from '@kentnabiz/shared';
 import { Point } from 'geojson';
 import { TeamSpecialization } from './team-specialization.entity';
@@ -58,5 +68,12 @@ export class Team {
   @OneToMany(() => TeamMembershipHistory, tmh => tmh.team)
   membershipsHistory!: TeamMembershipHistory[];
 
-  // TeamMembershipHistory, TeamSpecialization, Assignment ilişkileri (daha sonra eklenecek)
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at', nullable: true })
+  deletedAt?: Date;
 }

@@ -38,6 +38,7 @@ export class ReportRepository {
     reportType?: ReportType;
     status?: ReportStatus | ReportStatus[];
     departmentCode?: MunicipalityDepartment;
+    departmentId?: number;
     currentUserId?: number;
   }): Promise<ISpatialQueryResult> {
     const limit = options?.limit || 10;
@@ -83,6 +84,11 @@ export class ReportRepository {
     if (options?.departmentCode) {
       queryBuilder.andWhere('departmentEntity.code = :departmentCode', {
         departmentCode: options.departmentCode,
+      });
+    }
+    if (options?.departmentId) {
+      queryBuilder.andWhere('report.currentDepartmentId = :departmentId', {
+        departmentId: options.departmentId,
       });
     }
 
@@ -224,6 +230,7 @@ export class ReportRepository {
     }
 
     queryBuilder.skip(skip).take(limit);
+
     const [reports, total] = await queryBuilder.getManyAndCount();
     const processedReports = reports.map(r => {
       // TypeORM'dan dönen ek alanlar için güvenli erişim
@@ -406,7 +413,7 @@ export class ReportRepository {
   }
 
   async remove(id: number): Promise<DeleteResult> {
-    return this.reportRepository.delete(id);
+    return this.reportRepository.softDelete(id);
   }
 
   async findByOptions(options: IReportFindOptions): Promise<Report[]> {

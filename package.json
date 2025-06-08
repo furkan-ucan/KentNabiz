@@ -16,7 +16,7 @@
     "clean": "node -e \"const fs=require('fs');['.turbo','tsconfig.tsbuildinfo','apps/api/dist','apps/web/dist','apps/web/.next','apps/mobile/dist','packages/shared/dist','packages/ui/dist','packages/design-tokens/dist','packages/shared/tsconfig.tsbuildinfo','packages/ui/tsconfig.tsbuildinfo','packages/design-tokens/tsconfig.tsbuildinfo'].forEach(p=>{try{fs.rmSync(p,{recursive:true,force:true})}catch(e){}})\"",
     "reset": "pnpm run clean && node -e \"try{require('fs').rmSync('node_modules',{recursive:true,force:true})}catch(e){}\"",
     "fresh-start": "pnpm run reset && pnpm install --frozen-lockfile && pnpm build",
-    "typeorm:api": "pnpm exec typeorm -d apps/api/dist/config/data-source.js",
+    "typeorm:api": "pnpm exec typeorm -d apps/api/dist/src/config/data-source.js",
     "migration:run": "pnpm typeorm:api migration:run",
     "migration:revert": "pnpm typeorm:api migration:revert",
     "migration:show": "pnpm typeorm:api migration:show",

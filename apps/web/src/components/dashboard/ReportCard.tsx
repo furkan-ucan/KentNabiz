@@ -24,7 +24,6 @@ interface Report {
   category: string;
   location: string;
   createdAt: string;
-  priority: 'low' | 'medium' | 'high';
 }
 
 interface ReportCardProps {
@@ -62,19 +61,6 @@ export const ReportCard: React.FC<ReportCardProps> = ({ report, onClick }) => {
         return 'Reddedildi';
       default:
         return status;
-    }
-  };
-
-  const getPriorityColor = (priority: Report['priority']) => {
-    switch (priority) {
-      case 'high':
-        return theme.palette.error.main;
-      case 'medium':
-        return theme.palette.warning.main;
-      case 'low':
-        return theme.palette.success.main;
-      default:
-        return theme.palette.grey[500];
     }
   };
 
@@ -135,14 +121,6 @@ export const ReportCard: React.FC<ReportCardProps> = ({ report, onClick }) => {
                   color: getStatusColor(report.status),
                   fontWeight: 600,
                   fontSize: '0.75rem',
-                }}
-              />
-              <Box
-                sx={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  backgroundColor: getPriorityColor(report.priority),
                 }}
               />
             </Box>

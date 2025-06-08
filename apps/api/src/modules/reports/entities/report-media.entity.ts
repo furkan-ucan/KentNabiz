@@ -9,6 +9,12 @@ import {
 } from 'typeorm';
 // Keep import for type hints
 import { Report } from './report.entity';
+import { User } from '../../users/entities/user.entity';
+
+export enum ReportMediaContext {
+  INITIAL_REPORT = 'INITIAL_REPORT',
+  RESOLUTION_PROOF = 'RESOLUTION_PROOF',
+}
 
 @Entity('report_medias')
 export class ReportMedia {
@@ -30,6 +36,21 @@ export class ReportMedia {
 
   @Column({ type: 'varchar', length: 50 })
   type!: string;
+
+  @Column({
+    name: 'media_context',
+    type: 'enum',
+    enum: ReportMediaContext,
+    default: ReportMediaContext.INITIAL_REPORT,
+  })
+  mediaContext!: ReportMediaContext;
+
+  @Column({ name: 'uploaded_by_user_id', nullable: true })
+  uploadedByUserId?: number;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'uploaded_by_user_id' })
+  uploadedByUser?: User;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

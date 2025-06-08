@@ -8,11 +8,12 @@
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { ReportRepository } from '../repositories/report.repository';
 import { CreateReportDto } from '../dto/create-report.dto';
 import { UpdateReportDto } from '../dto/update-report.dto';
 import { UpdateReportStatusDto } from '../dto/update-report-status.dto';
+import { CompleteWorkDto } from '../dto/complete-work.dto';
 import { ForwardReportDto } from '../dto/forward-report.dto';
 import { Report } from '../entities/report.entity';
 import { Assignment } from '../entities/assignment.entity';
@@ -35,7 +36,8 @@ import { ISpatialQueryResult } from '../interfaces/report.interface';
 import { JwtPayload as AuthUser } from '../../auth/interfaces/jwt-payload.interface';
 import { UsersService } from '../../users/services/users.service';
 import { DepartmentHistoryResponseDto } from '../dto/department-history.response.dto';
-import { ReportMedia } from '../entities/report-media.entity';
+import { ReportMedia, ReportMediaContext } from '../entities/report-media.entity';
+import { Media } from '../../media/entities/media.entity';
 import { ReportSupport } from '../entities/report-support.entity';
 import { CreateReportData } from '../repositories/report.repository';
 import { canTransition } from '../utils/report-status.utils';
@@ -48,9 +50,10 @@ interface IReportFindAllOptions {
   page?: number;
   userId?: number;
   reportType?: ReportType; // type -> reportType olarak güncellendi
-  status?: ReportStatus;
+  status?: ReportStatus | ReportStatus[]; // Birden fazla status destekle
   departmentCode?: MunicipalityDepartment; // department -> departmentCode olarak güncellendi
   currentUserId?: number; // isSupportedByCurrentUser için gerekli
+  departmentId?: number; // departmentId de destekle
 }
 
 @Injectable()
@@ -179,10 +182,11 @@ export class ReportsService {
     ) {
       if (authUser.departmentId) {
         // Eğer kullanıcı kendi departmanına ait raporları istiyorsa ve özellikle bir departman filtresi belirtmemişse
-        if (!options?.departmentCode && authUser.departmentId) {
+        if (!options?.departmentCode && !options?.departmentId && authUser.departmentId) {
           try {
             const userDepartment = await this.departmentService.findById(authUser.departmentId);
             queryOptions.departmentCode = userDepartment.code; // department -> departmentCode
+            queryOptions.departmentId = authUser.departmentId; // departmentId de ekle
           } catch (error) {
             console.error(
               `Department not found for user ${authUser.sub} with departmentId ${authUser.departmentId}: ${(error as Error).message}`
@@ -200,7 +204,11 @@ export class ReportsService {
         // Bu davranış şimdilik korunuyor.
       } else {
         // Kullanıcının departman ID'si yoksa ve admin değilse ve departman filtresi de yoksa hata fırlat.
-        if (!options?.departmentCode && !authUser.roles.includes(UserRole.SYSTEM_ADMIN)) {
+        if (
+          !options?.departmentCode &&
+          !options?.departmentId &&
+          !authUser.roles.includes(UserRole.SYSTEM_ADMIN)
+        ) {
           throw new UnauthorizedException(
             'User department information is missing and no department filter provided.'
           );
@@ -339,7 +347,10 @@ export class ReportsService {
     if (!this.canUserPerformActionOnReport(report, authUser, 'delete')) {
       throw new UnauthorizedException('You do not have permission to delete this report.');
     }
-    const result = await this.reportRepository.remove(id);
+
+    // Use soft delete instead of hard delete
+    const result = await this.dataSource.getRepository(Report).softDelete(id);
+
     if (result.affected === 0) {
       throw new NotFoundException(`Report with ID ${id} not found for deletion.`);
     }
@@ -538,17 +549,6 @@ export class ReportsService {
           activeAssignment.acceptedAt = new Date();
           activeAssignment.status = AssignmentStatus.ACTIVE; // Ensure it's active
           await queryRunner.manager.save(Assignment, activeAssignment);
-        }
-      } else if (
-        authUser.roles.includes(UserRole.TEAM_MEMBER) &&
-        !authUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR) &&
-        lockedReport.status === ReportStatus.IN_PROGRESS &&
-        nextStatus === ReportStatus.DONE
-      ) {
-        lockedReport.status = ReportStatus.IN_PROGRESS;
-        lockedReport.subStatus = SUB_STATUS.PENDING_APPROVAL;
-        if (dto.resolutionNotes) {
-          lockedReport.resolutionNotes = dto.resolutionNotes;
         }
       } else if (
         authUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR) &&
@@ -1248,5 +1248,179 @@ export class ReportsService {
       report.isSupportedByCurrentUser = false;
       return report;
     });
+  }
+
+  /**
+   * Kanıtlı İş Tamamlama - TEAM_MEMBER kullanıcıları raporu kanıt medyalarıyla tamamlayabilir
+   */
+  async completeWork(reportId: number, dto: CompleteWorkDto, authUser: AuthUser): Promise<Report> {
+    console.log(
+      `[ReportsService.completeWork] Entry - Report ID: ${reportId}, User ID: ${authUser.sub}, ProofMediaIds: ${JSON.stringify(dto.proofMediaIds)}`
+    );
+
+    return this.dataSource.transaction(async manager => {
+      // Gerekli repository'leri manager üzerinden alalım
+      const reportRepo = manager.getRepository(Report);
+      const mediaRepo = manager.getRepository(Media);
+      const reportMediaRepo = manager.getRepository(ReportMedia);
+      const statusHistoryRepo = manager.getRepository(ReportStatusHistory);
+
+      // 1. Raporu bul, kilitle ve atamalarıyla birlikte getir
+      const report = await reportRepo.findOne({
+        where: { id: reportId },
+        relations: ['assignments'],
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!report) {
+        throw new NotFoundException(`Report with ID ${reportId} not found`);
+      }
+
+      // 2. Durum ve Yetki Kontrolleri
+      if (report.status !== ReportStatus.IN_PROGRESS) {
+        throw new BadRequestException(
+          'Work can only be completed on reports that are in progress.'
+        );
+      }
+
+      // TEAM_MEMBER için assignment kontrolü
+      if (authUser.roles.includes(UserRole.TEAM_MEMBER)) {
+        const hasActiveAssignment = report.assignments.some(
+          a =>
+            a.status === AssignmentStatus.ACTIVE &&
+            a.acceptedAt !== null &&
+            ((a.assigneeTeamId && a.assigneeTeamId === authUser.activeTeamId) ||
+              (a.assigneeUserId && a.assigneeUserId === authUser.sub))
+        );
+
+        if (!hasActiveAssignment) {
+          console.log(
+            `[ReportsService.completeWork] No active assignment found for user ${authUser.sub}, team ${authUser.activeTeamId} on report ${reportId}`
+          );
+          throw new ForbiddenException(
+            'Bu raporu tamamlamak için kabul edilmiş ve aktif bir atamanız bulunmamaktadır.'
+          );
+        }
+      }
+
+      // 3. Kanıt Medyalarını Doğrula ve YENİ ReportMedia Kayıtları Oluştur
+      if (!dto.proofMediaIds || dto.proofMediaIds.length === 0) {
+        throw new BadRequestException(
+          'İş kanıtı olarak en az bir medya dosyası yüklemeniz gerekmektedir.'
+        );
+      }
+
+      // Frontend'den gelenler Media ID'leridir, ReportMedia ID'leri değil.
+      const proofMedias = await mediaRepo.findBy({ id: In(dto.proofMediaIds) });
+
+      if (proofMedias.length !== dto.proofMediaIds.length) {
+        throw new BadRequestException('Belirtilen medya dosyalarından bazıları bulunamadı.');
+      }
+
+      // Yeni ReportMedia kayıtlarını oluştur
+      const newReportMediaEntries = proofMedias.map(media => {
+        console.log(
+          `[ReportsService.completeWork] Creating ReportMedia for media ID ${media.id}, URL: ${media.url}, mimetype: ${media.mimetype}`
+        );
+        return reportMediaRepo.create({
+          reportId: report.id,
+          url: media.url, // Media entity'sinden URL'i al
+          type: media.mimetype, // Media entity'sinden mimetype'ı al
+
+          mediaContext: ReportMediaContext.RESOLUTION_PROOF,
+          uploadedByUserId: authUser.sub,
+        });
+      });
+
+      // Oluşturulan yeni kayıtları veritabanına ekle
+      await reportMediaRepo.save(newReportMediaEntries);
+
+      // 4. Raporun durumunu güncelle
+      const previousSubStatus = report.subStatus;
+      report.subStatus = SUB_STATUS.PENDING_APPROVAL;
+      if (dto.resolutionNotes) {
+        report.resolutionNotes = dto.resolutionNotes;
+      }
+      await reportRepo.save(report);
+
+      // 5. Tarihçe kaydı oluştur
+      const statusHistory = statusHistoryRepo.create({
+        reportId,
+        previousStatus: report.status, // Ana durum değişmiyor
+        newStatus: report.status,
+        previousSubStatus: previousSubStatus || undefined,
+        newSubStatus: SUB_STATUS.PENDING_APPROVAL,
+        changedByUserId: authUser.sub,
+        notes: dto.resolutionNotes || 'Work completed, pending supervisor approval.',
+      });
+      await statusHistoryRepo.save(statusHistory);
+
+      // 6. Sonucu döndür (yeni eklenen medyalarla birlikte)
+      const updatedReport = await reportRepo.findOneOrFail({
+        where: { id: reportId },
+        relations: ['reportMedias', 'reportMedias.uploadedByUser'],
+      });
+
+      console.log(
+        `[ReportsService.completeWork] Success - Report ${reportId} marked as completed with ${dto.proofMediaIds.length} proof media(s)`
+      );
+
+      return updatedReport;
+    });
+  }
+
+  /**
+   * Get report counts by status for the current user's department
+   */
+  async getStatusCounts(authUser: AuthUser): Promise<Record<ReportStatus | 'total', number>> {
+    let whereClause = 'report.deleted_at IS NULL';
+    const parameters: (string | number)[] = [];
+
+    // Role-based filtering
+    if (
+      authUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR) ||
+      authUser.roles.includes(UserRole.TEAM_MEMBER)
+    ) {
+      // Get user's department
+      const user = await this.usersService.findById(authUser.sub);
+      if (!user || !user.departmentId) {
+        throw new BadRequestException('User must be assigned to a department');
+      }
+
+      whereClause += ' AND report.current_department_id = $1';
+      parameters.push(user.departmentId);
+    }
+
+    // Initialize status counts
+    const statusCounts: Record<ReportStatus | 'total', number> = {
+      [ReportStatus.OPEN]: 0,
+      [ReportStatus.IN_REVIEW]: 0,
+      [ReportStatus.IN_PROGRESS]: 0,
+      [ReportStatus.DONE]: 0,
+      [ReportStatus.REJECTED]: 0,
+      [ReportStatus.CANCELLED]: 0,
+      total: 0,
+    };
+
+    // Execute count queries for each status
+    for (const status of Object.values(ReportStatus)) {
+      const statusIndex = parameters.length + 1;
+      const query = `
+        SELECT COUNT(*) as count
+        FROM reports report
+        WHERE ${whereClause} AND report.status = $${statusIndex}
+      `;
+
+      const result = (await this.dataSource.query(query, [
+        ...parameters,
+        status,
+      ])) as unknown as Array<{ count: string }>;
+      const count = parseInt(result[0]?.count || '0');
+
+      statusCounts[status] = count;
+      statusCounts.total += count;
+    }
+
+    return statusCounts;
   }
 }

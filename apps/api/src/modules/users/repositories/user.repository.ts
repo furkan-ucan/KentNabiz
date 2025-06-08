@@ -97,9 +97,8 @@ export class UserRepository {
   }
 
   async remove(id: number): Promise<void> {
-    // delete metodu, var olmayan bir ID için hata fırlatmaz, etkilenen satır sayısını döner.
-    // Servis katmanında zaten varlık kontrolü yapıldığı için bu yeterli.
-    const result = await this.usersRepository.delete(id);
+    // Use soft delete instead of hard delete
+    const result = await this.usersRepository.softDelete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`User with ID ${id} not found for deletion.`);
     }

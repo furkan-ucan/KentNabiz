@@ -53,6 +53,11 @@
       |-- database
         |-- migrations
           |-- 1747835897674-20240601120000-FinalizeCoreSchemaAndConstraints.ts
+          |-- 1747836000000-AddIndexToReportsDepartmentStatus.ts
+          |-- 1749374164651-AddContextToReportMedia.ts
+          |-- 1749387473697-AddIndexToAssignments.ts
+          |-- 1749387546986-AddGistIndexToLocations.ts
+          |-- 1749387805069-AddSoftDeleteColumns.ts
         |-- migrations-backup
           |-- 1680268800000-CreateUsers.ts
           |-- 1680268900000-AddPostGISAndDepartments.ts
@@ -139,6 +144,7 @@
             |-- assign-team-to-report.dto.ts
             |-- assign-user-to-report.dto.ts
             |-- category.dto.ts
+            |-- complete-work.dto.ts
             |-- create-report.dto.ts
             |-- department-history.response.dto.ts
             |-- department.dto.ts
@@ -172,8 +178,6 @@
             |-- department.service.ts
             |-- location.service.ts
             |-- report-analytics.service.ts
-            |-- report-support.service.spec.ts
-            |-- report-support.service.ts
             |-- reports.service.ts
           |-- utils
             |-- report-status.utils.ts
@@ -247,7 +251,7 @@
     |-- nest-cli.json
     |-- package.json
     |-- README.md
-    |-- test-results.txt
+    |-- test-proof.txt
     |-- tsconfig.build.json
     |-- tsconfig.json
   |-- mobile
@@ -2238,14 +2242,25 @@
         |-- landing
           |-- HeroSection.tsx
         |-- maps
+        |-- supervisor
+          |-- KPICard.tsx
+          |-- SupervisorReportFilters.tsx
+          |-- SupervisorReportTable.tsx
+          |-- SupervisorStatsCards.tsx
         |-- ui
-          |-- button.tsx
-          |-- checkbox.tsx
-          |-- ReportCard.tsx
-          |-- ReportCardSkeleton.tsx
-          |-- TextField.tsx
+          |-- color-mode-button.tsx
+          |-- color-mode-icon.tsx
+          |-- color-mode-provider.tsx
+          |-- color-mode-script.tsx
+          |-- color-mode-toggle.tsx
+          |-- color-mode-wrapper.tsx
+          |-- color-mode.tsx
+          |-- enhanced-color-mode.tsx
+          |-- provider.tsx
+          |-- use-color-mode.tsx
         |-- AnimatedIllustration.tsx
         |-- ErrorBoundary.tsx
+        |-- ProtectedRoute.tsx
       |-- config
       |-- contexts
         |-- LoadingContext.ts
@@ -2263,10 +2278,10 @@
         |-- auth
           |-- hooks
       |-- hooks
-        |-- redux.ts
-        |-- useErrorHandler.ts
         |-- useLoading.ts
         |-- useSnackbar.ts
+        |-- useSupervisorReports.ts
+        |-- useSupervisorStats.ts
         |-- useTheme.ts
       |-- layouts
         |-- RootLayout.tsx
@@ -2280,6 +2295,7 @@
           |-- Step1_BasicInfo.tsx
           |-- Step2_Location.tsx
           |-- Step3_Category.tsx
+          |-- Step3_Category_NEW.tsx
           |-- Step4_Media.tsx
           |-- Step5_Preview.tsx
           |-- StepPlaceholders.tsx
@@ -2301,6 +2317,8 @@
         |-- DashboardPage.tsx
         |-- LandingPage.tsx
         |-- LoginPage.tsx
+        |-- SupervisorDashboardPage.tsx
+        |-- TestDashboard.tsx
       |-- providers
         |-- LoadingProvider.tsx
         |-- SnackbarProvider.tsx
@@ -2308,18 +2326,20 @@
       |-- routes
         |-- index.tsx
       |-- services
-        |-- categoryService.ts
-        |-- departmentService.ts
+        |-- reportService.ts
+      |-- styles
+        |-- theme
+          |-- recipes
+            |-- index.ts
       |-- theme
         |-- muiTheme.ts
       |-- types
       |-- utils
+        |-- auth.ts
         |-- color-mode-script.ts
         |-- distance.ts
-        |-- report-helpers.ts
       |-- App.tsx
       |-- index.css
-      |-- index.css.backup
       |-- main.tsx
       |-- vite-env.d.ts
     |-- .env
@@ -2334,13 +2354,14 @@
     |-- LANDING_PAGE_GUIDE.md
     |-- package.json
     |-- postcss.config.mjs
-    |-- README-CSS-Migration.md
     |-- README.md
     |-- tailwind.config.js
     |-- tsconfig.app.json
     |-- tsconfig.json
     |-- tsconfig.node.json
     |-- vite.config.ts
+|-- backups
+  |-- kentnabiz_backup_2025-06-08_11-50-00.sql
 |-- docs
   |-- rfc
     |-- RFC-001-architecture.md
@@ -2381,80 +2402,37 @@
   |-- test-docs.md
   |-- tree.md
 |-- packages
-  |-- design-tokens
-    |-- scripts
   |-- shared
     |-- src
       |-- constants
-        |-- api.d.ts
-        |-- api.d.ts.map
         |-- api.ts
-        |-- app.d.ts
-        |-- app.d.ts.map
         |-- app.ts
-        |-- errors.d.ts
-        |-- errors.d.ts.map
         |-- errors.ts
-        |-- index.d.ts
-        |-- index.d.ts.map
         |-- index.ts
-        |-- regex.d.ts
-        |-- regex.d.ts.map
         |-- regex.ts
       |-- types
-        |-- assignment.types.d.ts
-        |-- assignment.types.d.ts.map
         |-- assignment.types.ts
-        |-- auth.types.d.ts
-        |-- auth.types.d.ts.map
         |-- auth.types.ts
-        |-- department.types.d.ts
-        |-- department.types.d.ts.map
         |-- department.types.ts
-        |-- index.d.ts
-        |-- index.d.ts.map
         |-- index.ts
-        |-- pagination.types.d.ts
-        |-- pagination.types.d.ts.map
         |-- pagination.types.ts
-        |-- report-category.types.d.ts
-        |-- report-category.types.d.ts.map
         |-- report-category.types.ts
-        |-- report.types.d.ts
-        |-- report.types.d.ts.map
         |-- report.types.ts
-        |-- team.types.d.ts
-        |-- team.types.d.ts.map
         |-- team.types.ts
-        |-- user.types.d.ts
-        |-- user.types.d.ts.map
         |-- user.types.ts
       |-- utils
-        |-- formatting.d.ts
-        |-- formatting.d.ts.map
         |-- formatting.ts
-        |-- index.d.ts
-        |-- index.d.ts.map
         |-- index.ts
-        |-- validation.d.ts
-        |-- validation.d.ts.map
         |-- validation.ts
       |-- __tests__
         |-- utils
           |-- formatting.test.ts
           |-- validation.test.ts
-      |-- index.d.ts
-      |-- index.d.ts.map
       |-- index.ts
     |-- jest.config.ts
     |-- package.json
     |-- tsconfig.json
     |-- tsconfig.tsbuildinfo
-  |-- ui
-    |-- src
-      |-- components
-        |-- ReportCard
-        |-- StatCard
 |-- postman
   |-- KentNabiz_API.postman_collection.json
   |-- KentNabiz_API_Env.postman_environment.json
@@ -2479,6 +2457,5 @@
 |-- README.md
 |-- structure.txt
 |-- tree-filtered.ps1
-|-- tree.txt
 |-- tsconfig.json
 |-- turbo.json
