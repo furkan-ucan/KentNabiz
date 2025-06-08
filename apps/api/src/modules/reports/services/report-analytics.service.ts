@@ -293,10 +293,10 @@ export class ReportAnalyticsService {
     const whereClause = this.buildFilterQuery(filter);
     const qb = this.reportRepository.createQueryBuilder('report');
 
-    qb.select('report.department', 'department')
+    qb.select('report.departmentCode', 'department')
       .addSelect('COUNT(report.id)', 'count')
       .where(whereClause)
-      .groupBy('report.department');
+      .groupBy('report.departmentCode');
 
     const departmentCounts = await qb.getRawMany<RawDepartmentCount>();
 
@@ -313,10 +313,10 @@ export class ReportAnalyticsService {
     const whereClause = this.buildFilterQuery(filter);
     const qb = this.reportRepository.createQueryBuilder('report');
 
-    qb.select('report.type', 'type')
+    qb.select('report.reportType', 'type')
       .addSelect('COUNT(report.id)', 'count')
       .where(whereClause)
-      .groupBy('report.type');
+      .groupBy('report.reportType');
 
     const typeCounts = await qb.getRawMany<RawTypeCount>();
 
@@ -417,13 +417,13 @@ export class ReportAnalyticsService {
 
     const timeDiffExpr = `EXTRACT(EPOCH FROM (report.updated_at - report.created_at)) * 1000`; // Milliseconds
 
-    qb.select('report.department', 'department')
+    qb.select('report.departmentCode', 'department')
       .addSelect(`AVG(${timeDiffExpr})`, 'avg_time')
       .addSelect(`MIN(${timeDiffExpr})`, 'min_time')
       .addSelect(`MAX(${timeDiffExpr})`, 'max_time')
       .addSelect('COUNT(report.id)', 'count')
       .where(whereClause)
-      .groupBy('report.department');
+      .groupBy('report.departmentCode');
 
     const resolutionTimes = await qb.getRawMany<RawResolutionTime>();
 

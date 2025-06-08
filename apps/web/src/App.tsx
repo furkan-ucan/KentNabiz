@@ -86,6 +86,18 @@ export function App() {
           }
         />
 
+        {/* Report Detail Page */}
+        <Route
+          path="/reports/:id"
+          element={
+            <ProtectedRoute>
+              <RootLayout>
+                <div>Report Detail Page (To be implemented)</div>
+              </RootLayout>
+            </ProtectedRoute>
+          }
+        />
+
         {/* Default dashboard redirect */}
         <Route path="/app" element={<Navigate to="/dashboard" replace />} />
 

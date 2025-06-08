@@ -34,40 +34,40 @@ export interface ReportStats {
   inProgress: number;
   resolved: number;
   rejected: number;
+  averageResolutionTime?: number; // Gün cinsinden ortalama çözüm süresi
 }
 
 export const reportService = {
   // Departman sorumlusu için raporları getir
   async getSupervisorReports(
-    filters: ReportFilters = {},
-    pagination: PaginationParams = {}
+    queryParams: ReportFilters & PaginationParams = {}
   ): Promise<ReportsResponse> {
     const params = new URLSearchParams();
 
     // Filtreler
-    if (filters.status) params.append('status', filters.status);
-    if (filters.category) params.append('category', filters.category);
-    if (filters.priority) params.append('priority', filters.priority);
-    if (filters.departmentId)
-      params.append('departmentId', filters.departmentId.toString());
-    if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
-    if (filters.dateTo) params.append('dateTo', filters.dateTo);
-    if (filters.search) params.append('search', filters.search);
+    if (queryParams.status) params.append('status', queryParams.status);
+    if (queryParams.category) params.append('category', queryParams.category);
+    if (queryParams.priority) params.append('priority', queryParams.priority);
+    if (queryParams.departmentId)
+      params.append('departmentId', queryParams.departmentId.toString());
+    if (queryParams.dateFrom) params.append('dateFrom', queryParams.dateFrom);
+    if (queryParams.dateTo) params.append('dateTo', queryParams.dateTo);
+    if (queryParams.search) params.append('search', queryParams.search);
 
     // Sayfalama
-    if (pagination.page) params.append('page', pagination.page.toString());
-    if (pagination.limit) params.append('limit', pagination.limit.toString());
-    if (pagination.sortBy) params.append('sortBy', pagination.sortBy);
-    if (pagination.sortOrder) params.append('sortOrder', pagination.sortOrder);
+    if (queryParams.page) params.append('page', queryParams.page.toString());
+    if (queryParams.limit) params.append('limit', queryParams.limit.toString());
+    if (queryParams.sortBy) params.append('sortBy', queryParams.sortBy);
+    if (queryParams.sortOrder)
+      params.append('sortOrder', queryParams.sortOrder);
 
-    const response = await api.get(`/reports/supervisor?${params.toString()}`);
+    const response = await api.get(`/reports?${params.toString()}`);
     return response.data;
   },
 
   // Departman sorumlusu için istatistikleri getir
-  async getSupervisorStats(departmentId?: number): Promise<ReportStats> {
-    const params = departmentId ? `?departmentId=${departmentId}` : '';
-    const response = await api.get(`/reports/supervisor/stats${params}`);
+  async getSupervisorStats(): Promise<ReportStats> {
+    const response = await api.get(`/report-analytics/dashboard`);
     return response.data;
   },
   // Rapor detayını getir

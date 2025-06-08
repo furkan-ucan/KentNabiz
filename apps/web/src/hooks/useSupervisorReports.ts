@@ -29,10 +29,11 @@ export const useSupervisorReports = (
       // Eğer kullanıcının departmanı varsa, filtreler arasına ekle
       const queryParams = {
         ...params,
-        departmentId: params.departmentId || currentUser?.departmentId,
+        departmentId:
+          params.departmentId || currentUser?.departmentId || undefined,
       };
 
-      return reportService.getSupervisorReports(params, queryParams);
+      return reportService.getSupervisorReports(queryParams);
     },
     staleTime: 1000 * 60, // 1 dakika
     gcTime: 1000 * 60 * 5, // 5 dakika (formerly cacheTime)
@@ -49,9 +50,8 @@ export const useSupervisorStats = () => {
   const currentUser = getCurrentUser();
 
   return useQuery({
-    queryKey: ['supervisorStats', currentUser?.departmentId],
-    queryFn: () =>
-      reportService.getSupervisorStats(currentUser?.departmentId || undefined),
+    queryKey: ['supervisorStats', currentUser?.departmentId], // departmentId'yi queryKey'de tutmaya devam edebiliriz, çünkü istatistikler departmana özel olabilir ve farklı departmanlar için önbelleğe alınabilir.
+    queryFn: () => reportService.getSupervisorStats(), // Argüman kaldırıldı
     staleTime: 1000 * 30, // 30 saniye (istatistikler daha sık güncellenebilir)
     gcTime: 1000 * 60 * 2, // 2 dakika
     refetchOnWindowFocus: true,

@@ -30,7 +30,7 @@ export class ReportAnalyticsController {
     summary: 'Yönetsel panel için dashboard istatistiklerini getir',
     description: 'Kapsamlı rapor istatistiklerini tek bir istek ile getiren dashboard verisi',
   })
-  @Roles(UserRole.SYSTEM_ADMIN)
+  @Roles(UserRole.SYSTEM_ADMIN, UserRole.DEPARTMENT_SUPERVISOR)
   @ApiQuery({ name: 'startDate', required: false, type: Date })
   @ApiQuery({ name: 'endDate', required: false, type: Date })
   @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })

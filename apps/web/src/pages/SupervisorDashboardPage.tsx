@@ -16,11 +16,20 @@ import {
   Alert,
   Stack,
   Grid,
+  IconButton,
+  Menu,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import {
   Search as SearchIcon,
   FilterList as FilterIcon,
   Refresh as RefreshIcon,
+  MoreVert as MoreVertIcon,
+  Visibility as VisibilityIcon,
+  Assignment as AssignmentIcon,
+  History as HistoryIcon,
+  SwapHoriz as SwapHorizIcon,
 } from '@mui/icons-material';
 import {
   DataGrid,
@@ -107,6 +116,10 @@ export const SupervisorDashboardPage: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<ReportStatus | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Menu state
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
+
   // API calls
   const {
     data: reportsData,
@@ -149,6 +162,45 @@ export const SupervisorDashboardPage: React.FC = () => {
     setFilterStatus('ALL');
     setSearchQuery('');
     setPaginationModel({ page: 0, pageSize: paginationModel.pageSize });
+  };
+
+  // Menu handlers
+  const handleMenuOpen = (
+    event: React.MouseEvent<HTMLElement>,
+    reportId: number
+  ) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedReportId(reportId);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedReportId(null);
+  };
+
+  const handleViewDetails = () => {
+    if (selectedReportId) {
+      navigate(`/reports/${selectedReportId}`);
+    }
+    handleMenuClose();
+  };
+
+  const handleAssignToTeam = () => {
+    // TODO: Ekipe atama modalı açılacak
+    console.log('Assign to team:', selectedReportId);
+    handleMenuClose();
+  };
+
+  const handleViewHistory = () => {
+    // TODO: Geçmiş modalı açılacak
+    console.log('View history:', selectedReportId);
+    handleMenuClose();
+  };
+
+  const handleTransferDepartment = () => {
+    // TODO: Departman transfer modalı açılacak
+    console.log('Transfer department:', selectedReportId);
+    handleMenuClose();
   };
 
   // DataGrid columns
@@ -219,15 +271,13 @@ export const SupervisorDashboardPage: React.FC = () => {
       width: 120,
       sortable: false,
       renderCell: (params: GridRenderCellParams<SharedReport>) => (
-        <Button
+        <IconButton
           size="small"
-          variant="outlined"
-          onClick={() => {
-            navigate(`/reports/${params.row.id}`);
-          }}
+          onClick={event => handleMenuOpen(event, params.row.id)}
+          aria-label="Aksiyon menüsü"
         >
-          Detay
-        </Button>
+          <MoreVertIcon />
+        </IconButton>
       ),
     },
   ];
@@ -275,18 +325,22 @@ export const SupervisorDashboardPage: React.FC = () => {
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <KPICard
-            title="Tamamlanan İşler"
+            title="Onay Bekleyen"
             value={statsData?.resolved || 0}
-            description="Bu ay tamamlanan raporlar"
+            description="Tamamlandı, onay bekliyor"
             color="success.main"
             onClick={() => handleKPICardClick(ReportStatus.DONE)}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <KPICard
-            title="Toplam Rapor"
-            value={statsData?.total || 0}
-            description="Departmanınızdaki tüm raporlar"
+            title="Ortalama Çözüm"
+            value={
+              statsData?.averageResolutionTime
+                ? `${statsData?.averageResolutionTime.toFixed(1)} Gün`
+                : 'Hesaplanıyor'
+            }
+            description="Son 30 günün ortalaması"
             color="info.main"
           />
         </Grid>
@@ -394,6 +448,40 @@ export const SupervisorDashboardPage: React.FC = () => {
           }}
         />
       </Paper>
+      {/* Action Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        PaperProps={{
+          sx: { minWidth: 200 },
+        }}
+      >
+        <MenuItem onClick={handleViewDetails}>
+          <ListItemIcon>
+            <VisibilityIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Detayları Görüntüle" />
+        </MenuItem>
+        <MenuItem onClick={handleAssignToTeam}>
+          <ListItemIcon>
+            <AssignmentIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Ekibe/Kişiye Ata" />
+        </MenuItem>
+        <MenuItem onClick={handleTransferDepartment}>
+          <ListItemIcon>
+            <SwapHorizIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Departmana Yönlendir" />
+        </MenuItem>
+        <MenuItem onClick={handleViewHistory}>
+          <ListItemIcon>
+            <HistoryIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Geçmişi Görüntüle" />
+        </MenuItem>
+      </Menu>
     </Box>
   );
 };
