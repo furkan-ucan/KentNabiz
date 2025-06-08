@@ -9,6 +9,7 @@ import { SupervisorDashboardPage } from './pages/SupervisorDashboardPage';
 import { CreateReportPage } from './pages/CreateReportPage';
 import { RootLayout } from './layouts/RootLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { isAuthenticated, isDepartmentSupervisor } from './utils/auth';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -22,12 +23,31 @@ const queryClient = new QueryClient({
   },
 });
 
+// Smart root route component
+const RootRedirect = () => {
+  if (!isAuthenticated()) {
+    return <LandingPage />;
+  }
+
+  // Kullanıcı authenticated - uygun dashboard'a yönlendir
+  if (isDepartmentSupervisor()) {
+    return <Navigate to="/dashboard/supervisor" replace />;
+  }
+
+  return <Navigate to="/dashboard" replace />;
+};
+
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
+        {/* Smart Root Route */}
+        <Route path="/" element={<RootRedirect />} />
+
+        {/* Landing Page (açık erişim için) */}
+        <Route path="/landing" element={<LandingPage />} />
+
+        {/* Auth Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 

@@ -18,6 +18,8 @@ import {
 } from '@mui/material';
 import * as S from './LoginForm.styles';
 import { authAPI, type LoginDto } from '../../lib/api';
+import { parseJwtPayload } from '../../utils/auth';
+import { UserRole } from '@kentnabiz/shared';
 
 // --- Form Tipleri ve Validasyon Şeması ---
 const loginSchema = yup.object({
@@ -114,11 +116,17 @@ export const LoginForm = () => {
       setFeedback({
         type: 'success',
         message: 'Başarıyla giriş yapıldı. Yönlendiriliyorsunuz...',
-      });
+      }); // Kullanıcının rolüne göre uygun dashboard'a yönlendir
+      console.log('Login successful, redirecting...'); // Debug için
 
-      // Test dashboard'a yönlendir
-      console.log('Navigating to test dashboard'); // Debug için
-      navigate('/test-dashboard', { replace: true });
+      // JWT'den kullanıcı bilgilerini al
+      const payload = parseJwtPayload(accessToken);
+
+      if (payload?.roles?.includes(UserRole.DEPARTMENT_SUPERVISOR)) {
+        navigate('/dashboard/supervisor', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err) {
       let errorMessage =
         'Giriş bilgileri hatalı veya bir sunucu sorunu oluştu.';
