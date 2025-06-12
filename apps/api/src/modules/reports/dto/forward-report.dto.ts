@@ -1,38 +1,25 @@
-﻿import { IsEnum, IsString, IsOptional, IsNotEmpty } from 'class-validator';
+﻿import { IsNotEmpty, IsInt, Min, IsString, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { MunicipalityDepartment } from '@kentnabiz/shared';
+import { Type } from 'class-transformer';
 
 export class ForwardReportDto {
-  @ApiProperty({
-    description: 'Raporun yönlendirileceği yeni birim',
-    enum: MunicipalityDepartment,
-    example: MunicipalityDepartment.ROADS_AND_INFRASTRUCTURE,
-  })
-  @IsEnum(MunicipalityDepartment)
+  @ApiProperty({ description: "Raporun yönlendirileceği hedef departman ID'si", example: 2 })
   @IsNotEmpty()
-  newDepartment!: MunicipalityDepartment;
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  targetDepartmentId!: number;
 
-  @IsEnum(MunicipalityDepartment)
-  @IsOptional()
-  departmentCode?: MunicipalityDepartment;
+  @ApiProperty({ description: "Yönlendirmeyi yapan (kaynak) departmanın ID'si", example: 1 })
+  @IsNotEmpty()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  fromDepartmentId!: number;
 
-  @ApiProperty({
-    description: 'Rapor yönlendirme nedeni',
-    example: 'Bu konu yollar ve altyapı birimimizin sorumluluk alanına giriyor.',
-    minLength: 10,
-    maxLength: 500,
-  })
+  @ApiProperty({ description: 'Yönlendirme sebebi (zorunlu)', minLength: 10 })
+  @IsNotEmpty()
   @IsString()
-  @IsNotEmpty()
+  @MinLength(10)
   reason!: string;
-
-  @ApiProperty({
-    description: 'Yönlendirmeyi yapan departman kodu',
-    enum: MunicipalityDepartment,
-    example: MunicipalityDepartment.GENERAL_AFFAIRS,
-    required: false,
-  })
-  @IsEnum(MunicipalityDepartment)
-  @IsOptional()
-  changedByDepartment?: MunicipalityDepartment;
 }

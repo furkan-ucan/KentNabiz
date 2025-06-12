@@ -26,7 +26,8 @@
     "migration:show": "pnpm typeorm:api migration:show",
     "schema:drop": "pnpm typeorm:api schema:drop",
     "migration:generate": "pnpm typeorm:api migration:generate src/database/migrations/YourMigrationName",
-    "seed:direct": "node dist/database/seeds/index.js",
+    "migration:create": "pnpm typeorm:api migration:create",
+    "seed:direct": "node dist/src/database/seeds/index.js",
     "db:reset": "pnpm build && pnpm schema:drop && pnpm migration:run && pnpm seed:direct",
     "listEmittedFiles": "npx tsc -p apps/api/tsconfig.build.json --listEmittedFiles"
   },

@@ -14,6 +14,7 @@ import { UpdateTeamDto } from '../dto/update-team.dto';
 import { User } from '../../users/entities/user.entity';
 import { Specialization } from '../../specializations/entities/specialization.entity';
 import { TeamMembershipHistory } from '../../users/entities/team-membership-history.entity';
+import { Report } from '../../reports/entities/report.entity';
 import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
 import { UserRole, TeamStatus } from '@kentnabiz/shared';
 
@@ -30,6 +31,8 @@ export class TeamsService {
     private readonly specializationRepository: Repository<Specialization>,
     @InjectRepository(TeamMembershipHistory)
     private readonly teamMembershipHistoryRepository: Repository<TeamMembershipHistory>,
+    @InjectRepository(Report)
+    private readonly reportRepository: Repository<Report>,
     private readonly dataSource: DataSource
   ) {}
 
@@ -591,5 +594,64 @@ export class TeamsService {
     const start = (page - 1) * limit;
     const paginated = allTeams.slice(start, start + limit);
     return { data: paginated, total };
+  }
+
+  /**
+   * Get reports assigned to the current user's active team
+   * Team leaders can see all reports assigned to their team
+   * Team members can see reports assigned to their team
+   */
+  async getMyTeamReports(authUser: JwtPayload): Promise<Report[]> {
+    console.log(`[getMyTeamReports] User ${authUser.sub} requesting team reports`);
+
+    // Check if user has an active team
+    if (!authUser.activeTeamId) {
+      throw new NotFoundException('User has no active team');
+    }
+
+    // Get the team to verify access
+    const team = await this.teamRepository.findOne({
+      where: { id: authUser.activeTeamId },
+      relations: ['department', 'teamLeader'],
+    });
+
+    if (!team) {
+      throw new NotFoundException('Team not found');
+    }
+
+    // Check authorization: team member, team leader, department supervisor, or system admin
+    const isTeamMember = authUser.activeTeamId === team.id;
+    const isTeamLeader = team.teamLeaderId === authUser.sub;
+    const isDepartmentSupervisor =
+      authUser.roles.includes(UserRole.DEPARTMENT_SUPERVISOR) &&
+      authUser.departmentId === team.departmentId;
+    const isSystemAdmin = authUser.roles.includes(UserRole.SYSTEM_ADMIN);
+
+    if (!isTeamMember && !isTeamLeader && !isDepartmentSupervisor && !isSystemAdmin) {
+      throw new ForbiddenException("You are not authorized to view this team's reports");
+    }
+
+    console.log(`[getMyTeamReports] Fetching reports for team ${team.id} (${team.name})`);
+
+    // Get reports assigned to this team through assignments
+    const reports = await this.reportRepository
+      .createQueryBuilder('report')
+      .leftJoinAndSelect('report.assignments', 'assignments')
+      .leftJoinAndSelect('assignments.assigneeTeam', 'assigneeTeam')
+      .leftJoinAndSelect('assignments.assigneeUser', 'assigneeUser')
+      .leftJoinAndSelect('report.user', 'user')
+      .leftJoinAndSelect('report.category', 'category')
+      .leftJoinAndSelect('report.currentDepartment', 'currentDepartment')
+      .leftJoinAndSelect('report.reportMedias', 'reportMedias')
+      .leftJoinAndSelect('report.statusHistory', 'statusHistory')
+      .where('assignments.assignee_team_id = :teamId', { teamId: team.id })
+      .andWhere('assignments.status = :status', { status: 'ACTIVE' })
+      .andWhere('report.deleted_at IS NULL')
+      .orderBy('report.created_at', 'DESC')
+      .getMany();
+
+    console.log(`[getMyTeamReports] Found ${reports.length} reports for team ${team.id}`);
+
+    return reports;
   }
 }

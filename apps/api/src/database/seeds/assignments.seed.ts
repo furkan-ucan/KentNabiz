@@ -1,10 +1,10 @@
-﻿import { DataSource, In } from 'typeorm';
+﻿import { DataSource } from 'typeorm';
 import { Assignment } from '../../modules/reports/entities/assignment.entity';
 import { Report } from '../../modules/reports/entities/report.entity';
 import { User } from '../../modules/users/entities/user.entity';
 import { Team } from '../../modules/teams/entities/team.entity';
-import { AssignmentStatus, AssigneeType, ReportStatus } from '@kentnabiz/shared'; // Kullanılmayan importlar kaldırıldı
-import { faker } from '@faker-js/faker/locale/tr'; // faker eklendi
+import { AssignmentStatus, AssigneeType, ReportStatus, UserRole } from '@kentnabiz/shared';
+import { faker } from '@faker-js/faker/locale/tr';
 import { Logger } from '@nestjs/common';
 
 const logger = new Logger('AssignmentsSeed');
@@ -16,74 +16,167 @@ export const AssignmentsSeed = async (dataSource: DataSource): Promise<void> => 
     return;
   }
 
-  logger.log('Çoklu ve çeşitli atama kayıtları oluşturuluyor...');
+  logger.log('🎯 Gerçekçi departman atamaları ve iş dağılımları oluşturuluyor...');
 
   const reportRepo = dataSource.getRepository(Report);
   const userRepo = dataSource.getRepository(User);
   const teamRepo = dataSource.getRepository(Team);
-  // const departmentRepo = dataSource.getRepository(Department); // Kullanılmayan departmentRepo kaldırıldı
 
-  // Gerekli verileri çek
-  const fenIsleriSupervisor = await userRepo.findOneBy({ email: 'supervisor.fen@kentnabiz.com' });
+  // Tüm supervisor'ları ve ilgili departman bilgilerini çek
+  const supervisors = await userRepo
+    .createQueryBuilder('user')
+    .where(':role = ANY(user.roles)', { role: UserRole.DEPARTMENT_SUPERVISOR })
+    .leftJoinAndSelect('user.department', 'department')
+    .getMany();
 
-  if (!fenIsleriSupervisor || !fenIsleriSupervisor.departmentId) {
-    logger.warn(
-      'Fen İşleri süpervizörü veya departman IDsi bulunamadı. Atama seed işlemi atlanıyor.'
-    );
+  if (supervisors.length === 0) {
+    logger.warn("Hiç departman supervisor'ü bulunamadı. Atama işlemi atlanıyor.");
     return;
   }
 
-  const fenIsleriTakimlari = await teamRepo.find({
-    where: { departmentId: fenIsleriSupervisor.departmentId },
-  });
+  // Tüm kullanıcıları hızlı kontrol için al
+  const allUsers = await userRepo.find();
 
-  // Atama yapılacak IN_PROGRESS, IN_REVIEW, OPEN durumundaki raporları bul
-  const reportsToAssign = await reportRepo.find({
-    where: {
-      status: In([ReportStatus.IN_PROGRESS, ReportStatus.IN_REVIEW, ReportStatus.OPEN]),
-      currentDepartmentId: fenIsleriSupervisor.departmentId, // Süpervizörün departmanındaki raporlar
-    },
-    take: 10, // İlk 10 uygun rapora atama yapalım
-  });
-
-  if (fenIsleriTakimlari.length === 0) {
-    logger.warn(
-      `Fen İşleri departmanında (${fenIsleriSupervisor.departmentId}) hiç takım bulunamadı. Atama yapılamıyor.`
-    );
-    return;
-  }
-  if (reportsToAssign.length === 0) {
-    logger.warn(
-      `Fen İşleri departmanında (${fenIsleriSupervisor.departmentId}) atanacak uygun rapor bulunamadı.`
-    );
-    return;
+  // Hata durumlarında detaylı bilgi ver
+  if (allUsers.length === 0) {
+    logger.error('Hiç kullanıcı bulunamadı. Lütfen önce UsersSeed çalıştırın.');
+    throw new Error('Hiç kullanıcı bulunamadı. Lütfen önce UsersSeed çalıştırın.');
   }
 
-  const assignmentsToCreate: Partial<Assignment>[] = []; // Partial<Assignment> olarak değiştirildi
+  const assignmentsToCreate: Partial<Assignment>[] = [];
+  let totalAssignments = 0;
 
-  for (const report of reportsToAssign) {
-    const randomTeam = faker.helpers.arrayElement(fenIsleriTakimlari);
+  for (const supervisor of supervisors) {
+    if (!supervisor.departmentId) {
+      logger.warn(`Supervisor ${supervisor.fullName} için departman ID bulunamadı, atlanıyor.`);
+      continue;
+    }
 
-    const assignment: Partial<Assignment> = {
-      // Partial<Assignment> olarak tanımlandı
-      reportId: report.id,
-      assigneeType: AssigneeType.TEAM,
-      assigneeTeamId: randomTeam.id,
-      assignedById: fenIsleriSupervisor.id,
-      status: AssignmentStatus.ACTIVE, // status olarak düzeltildi
-      assignedAt: new Date(),
-      acceptedAt: new Date(), // Otomatik kabul edilmiş gibi
-    };
-    assignmentsToCreate.push(assignment);
+    // Bu departmanın takımlarını bul
+    const departmentTeams = await teamRepo.find({
+      where: { departmentId: supervisor.departmentId },
+    });
 
-    // Atama yapılan raporun durumunu da IN_PROGRESS yapalım (eğer OPEN ise)
-    if (report.status === ReportStatus.OPEN) {
+    if (departmentTeams.length === 0) {
+      logger.warn(`${supervisor.fullName} departmanında hiç takım bulunamadı.`);
+      continue;
+    }
+
+    // Bu departmandaki uygun raporları bul - SADECE OPEN durumundakiler
+    // İş akışı kuralı: Sadece atanmamış (OPEN) raporlar atanabilir
+    const departmentReports = await reportRepo
+      .createQueryBuilder('report')
+      .where('report.status = :status', { status: ReportStatus.OPEN })
+      .andWhere('report.currentDepartmentId = :departmentId', {
+        departmentId: supervisor.departmentId,
+      })
+      .orderBy('RANDOM()')
+      .limit(faker.number.int({ min: 3, max: 8 }))
+      .getMany();
+
+    if (departmentReports.length === 0) {
+      logger.warn(`${supervisor.fullName} departmanında atanacak uygun rapor bulunamadı.`);
+      continue;
+    }
+
+    // Bu departmandaki raporları takımlara dağıt
+    for (const report of departmentReports) {
+      const randomTeam = faker.helpers.arrayElement(departmentTeams);
+
+      // Atama tipini rastgele belirle (çoğunlukla takım, bazen bireysel)
+      const isTeamAssignment = faker.datatype.boolean(0.8); // %80 takım, %20 bireysel
+
+      // Atama durumunu rastgele belirle (çoğunlukla aktif, bazen tamamlanmış)
+      const assignmentStatus = faker.helpers.weightedArrayElement([
+        { weight: 7, value: AssignmentStatus.ACTIVE },
+        { weight: 3, value: AssignmentStatus.COMPLETED },
+      ]);
+
+      // Zaman mantığı: assignedAt her zaman acceptedAt'ten önce olmalı
+      const assignedAt = faker.date.recent({ days: 30 });
+
+      // acceptedAt: bazen null (henüz kabul edilmemiş), bazen assignedAt'ten sonra
+      let acceptedAt: Date | undefined = undefined;
+      if (faker.datatype.boolean(0.8)) {
+        // %80 ihtimalle kabul edilmiş
+        acceptedAt = faker.date.between({
+          from: assignedAt,
+          to: new Date(assignedAt.getTime() + 7 * 24 * 60 * 60 * 1000), // 7 gün sonrasına kadar
+        });
+      }
+
+      let assignment: Partial<Assignment>;
+
+      if (isTeamAssignment) {
+        // Takım ataması
+        assignment = {
+          reportId: report.id,
+          assigneeType: AssigneeType.TEAM,
+          assigneeTeamId: randomTeam.id,
+          assignedById: supervisor.id,
+          status: assignmentStatus,
+          assignedAt,
+          acceptedAt,
+        };
+      } else {
+        // Bireysel atama - takımdan rastgele bir üye seç
+        const teamMembers = await userRepo.find({
+          where: { activeTeamId: randomTeam.id },
+        });
+
+        if (teamMembers.length > 0) {
+          const randomMember = faker.helpers.arrayElement(teamMembers);
+          assignment = {
+            reportId: report.id,
+            assigneeType: AssigneeType.USER,
+            assigneeUserId: randomMember.id,
+            assignedById: supervisor.id,
+            status: assignmentStatus,
+            assignedAt,
+            acceptedAt,
+          };
+        } else {
+          // Üye bulunamazsa takım ataması yap
+          assignment = {
+            reportId: report.id,
+            assigneeType: AssigneeType.TEAM,
+            assigneeTeamId: randomTeam.id,
+            assignedById: supervisor.id,
+            status: assignmentStatus,
+            assignedAt,
+            acceptedAt,
+          };
+        }
+      }
+
+      assignmentsToCreate.push(assignment);
+
+      // İş akışı kuralına uygun rapor durumu güncellemesi
+      // OPEN -> IN_PROGRESS (atama yapıldığında)
+      // IN_PROGRESS -> DONE (atama tamamlandığında)
       report.status = ReportStatus.IN_PROGRESS;
+      report.updatedAt = assignedAt; // Atama yapıldığı zaman güncellendi
+
+      if (assignment.status === AssignmentStatus.COMPLETED) {
+        report.status = ReportStatus.DONE;
+        report.updatedAt = acceptedAt || assignedAt; // Tamamlandığı zaman güncellendi
+      }
+
       await reportRepo.save(report);
     }
+
+    totalAssignments += departmentReports.length;
+    logger.log(
+      `📋 ${supervisor.fullName} departmanı: ${departmentReports.length} rapor ${departmentTeams.length} takıma dağıtıldı.`
+    );
   }
 
-  const assignmentEntities = assignmentRepository.create(assignmentsToCreate); // create metodu ile entity oluştur
-  await assignmentRepository.save(assignmentEntities); // save metodu ile kaydet
-  logger.log(`${assignmentEntities.length} adet örnek atama başarıyla oluşturuldu!`);
+  // Tüm atamaları kaydet
+  const assignmentEntities = assignmentRepository.create(assignmentsToCreate);
+  await assignmentRepository.save(assignmentEntities);
+
+  logger.log(`✅ Toplamda ${assignmentEntities.length} adet gerçekçi atama başarıyla oluşturuldu!`);
+  logger.log(
+    `📊 ${supervisors.length} departman supervisor'ü tarafından ${totalAssignments} rapor işleme alındı.`
+  );
 };

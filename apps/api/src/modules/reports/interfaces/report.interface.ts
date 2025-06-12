@@ -85,12 +85,16 @@ export interface IDepartmentChange {
 export interface IReportFindOptions {
   id?: number;
   userId?: number;
-  status?: ReportStatus; // Use imported enum
+  status?: ReportStatus | ReportStatus[]; // Tekil veya dizi olarak kabul et
   reportType?: ReportType; // type -> reportType olarak güncellendi
   departmentCode?: MunicipalityDepartment; // department -> departmentCode olarak güncellendi ve eklendi
+  departmentId?: number; // departmentId eklendi
   categoryId?: number; // Korundu
   limit?: number; // Korundu
   offset?: number; // Korundu
+  page?: number; // sayfalama için
+  currentUserId?: number; // Mevcut kullanıcı ID'si
+  bbox?: string; // Bounding box (coğrafi alan)
   withinRadius?: {
     latitude: number;
     longitude: number;

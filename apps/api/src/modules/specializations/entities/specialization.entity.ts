@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToMany } from 'typeorm';
 import { TeamSpecialization } from '../../teams/entities/team-specialization.entity';
+import { ReportCategory } from '../../reports/entities/report-category.entity';
 // import { TeamSpecialization } from '../../../teams/entities/team-specialization.entity';
 
 @Entity('specializations')
@@ -24,6 +25,10 @@ export class Specialization {
 
   @OneToMany(() => TeamSpecialization, (ts: TeamSpecialization) => ts.specialization)
   teamSpecializations!: TeamSpecialization[];
+
+  // Many-to-many relationship with ReportCategories (inverse side)
+  @ManyToMany(() => ReportCategory)
+  categories!: ReportCategory[];
 
   // TeamSpecialization ile ilişki (daha sonra eklenecek)
 }
