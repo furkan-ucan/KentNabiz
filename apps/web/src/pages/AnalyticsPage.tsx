@@ -4,6 +4,8 @@ import { Refresh as RefreshIcon } from '@mui/icons-material';
 import { useState } from 'react';
 import { AnalyticsFilterBar } from '@/components/analytics/AnalyticsFilterBar';
 import { KpiMetricsWidget } from '@/components/analytics/widgets/KpiMetricsWidget';
+import { FunnelChartWidget } from '@/components/analytics/widgets/FunnelChartWidget';
+import CategoryDistributionWidget from '@/components/analytics/widgets/CategoryDistributionWidget';
 import { useAnalyticsFilters } from '@/hooks/analytics/useAnalyticsFilters';
 import { api } from '@/lib/api';
 
@@ -19,6 +21,24 @@ export const AnalyticsPage = () => {
     message: '',
     severity: 'success',
   });
+
+  // Category drill-down handler
+  const handleCategoryClick = (categoryId: number, categoryName: string) => {
+    console.log('🔽 Drill-down to category:', { categoryId, categoryName });
+
+    // Global filtreyi güncelle (categoryId string olarak)
+    setFilters({
+      ...filters,
+      categoryId: categoryId.toString(),
+    });
+
+    // Snackbar ile bilgilendirme
+    setSnackbar({
+      open: true,
+      message: `"${categoryName}" kategorisine göre filtrelendi`,
+      severity: 'success',
+    });
+  };
 
   const handleRefreshAnalytics = async () => {
     try {
@@ -99,16 +119,21 @@ export const AnalyticsPage = () => {
       </Box>
       {/* BÖLÜM 3: DETAYLI ANALİZ WIDGET'LARI (GRID) */}
       <Grid container spacing={3}>
-        {/*
-          Gelecekte eklenecek widget'lar:
-          <Grid size={{ xs: 12, md: 6 }}>
-            <StatusDistributionWidget filters={filters} />
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <CategoryDistributionWidget filters={filters} />
-          </Grid>
-        */}
-        <Grid size={{ xs: 12 }}>
+        {/* Funnel Chart Widget - İş Akışı Hunisi */}
+        <Grid size={{ xs: 12, lg: 6 }}>
+          <FunnelChartWidget filters={filters} />
+        </Grid>
+
+        {/* Gelecekte eklenecek diğer widget'lar */}
+        <Grid size={{ xs: 12, lg: 6 }}>
+          <CategoryDistributionWidget
+            filters={filters}
+            onCategoryClick={handleCategoryClick}
+            limit={10}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, lg: 6 }}>
           <Box
             sx={{
               p: 3,
@@ -116,14 +141,36 @@ export const AnalyticsPage = () => {
               borderRadius: 2,
               textAlign: 'center',
               color: 'text.secondary',
+              height: 400,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
             }}
           >
-            {' '}
-            <Typography variant="h6">
-              Detaylı Analiz Widget&apos;ları
-            </Typography>
+            <Typography variant="h6">Trend Analizi</Typography>
             <Typography variant="body2">
-              Grafik ve tablo widget&apos;ları buraya eklenecektir
+              Zaman serisi trend analizi widget&apos;ı
+            </Typography>
+          </Box>
+        </Grid>
+
+        <Grid size={{ xs: 12, lg: 6 }}>
+          <Box
+            sx={{
+              p: 3,
+              border: '2px dashed #ccc',
+              borderRadius: 2,
+              textAlign: 'center',
+              color: 'text.secondary',
+              height: 400,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}
+          >
+            <Typography variant="h6">Coğrafi Dağılım</Typography>
+            <Typography variant="body2">
+              Harita tabanlı bölgesel analiz widget&apos;ı
             </Typography>
           </Box>
         </Grid>

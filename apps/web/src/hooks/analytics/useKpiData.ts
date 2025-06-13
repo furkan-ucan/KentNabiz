@@ -101,17 +101,10 @@ export const useKpiData = (filters: AnalyticsFilters) => {
   const countsQuery = results[1];
   const strategicKpisQuery = results[2]; // Combine data from both endpoints into a single object
   const data = useMemo<CombinedKpiData | null>(() => {
-    if (!summaryQuery.data || !countsQuery.data) return null;
-
-    // BAŞARI ORANI HESAPLAMA MANTIGI:
-    // Count verisi status filtresinden BAĞIMSIZ olduğu için
-    // başarı oranını buradan hesaplıyoruz (daha doğru)
-    const totalReports = Object.values(countsQuery.data).reduce(
-      (total, item) => {
-        return total + (item?.count || 0);
-      },
-      0
-    );
+    if (!summaryQuery.data || !countsQuery.data) return null; // BAŞARI ORANI HESAPLAMA MANTIGI:
+    // Toplam rapor sayısını summary stats'tan al (doğru kaynak)
+    // Count verisi status bazlı olduğu için toplam hesaplamada YANLIŞ sonuç verir
+    const totalReports = summaryQuery.data.totalReportCount || 0;
 
     const doneCount = countsQuery.data.DONE?.count || 0;
     const calculatedResolutionRate =
@@ -136,6 +129,17 @@ export const useKpiData = (filters: AnalyticsFilters) => {
     summaryQuery.error || countsQuery.error || strategicKpisQuery.error;
   const isError =
     summaryQuery.isError || countsQuery.isError || strategicKpisQuery.isError;
+
+  // Debug log KPI data
+  console.log('🎯 KPI Data Debug:', {
+    combinedData: data,
+    totalReportCount: data?.totalReportCount,
+    summaryData: summaryQuery.data,
+    countsData: countsQuery.data,
+    isLoading,
+    isError,
+    filters,
+  });
 
   return {
     data,

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart'; // Added import for GoRouter
 import 'package:kentnabiz_mobile/features/citizen/providers/citizen_providers.dart';
 import 'package:kentnabiz_mobile/shared/models/report.dart';
+import 'package:kentnabiz_mobile/shared/widgets/authenticated_image.dart';
 
 class ReportListScreen extends ConsumerStatefulWidget {
   const ReportListScreen({super.key});
@@ -101,12 +102,12 @@ class _ReportListScreenState extends ConsumerState<ReportListScreen> {
   }
 }
 
-class ReportCard extends StatelessWidget {
+class ReportCard extends ConsumerWidget {
   const ReportCard({super.key, required this.report});
   final Report report;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return InkWell(
       onTap: () {
         // DÜZELTME: goNamed yerine go kullanarak tam yolunu belirtiyoruz.
@@ -148,24 +149,34 @@ class ReportCard extends StatelessWidget {
               const SizedBox(height: 8),
               if (report.reportMedias.isNotEmpty &&
                   report.reportMedias.first.url.isNotEmpty)
-                ClipRRect(
+                AuthenticatedImage(
+                  fileName: report.reportMedias.first.url,
+                  height: 160,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
                   borderRadius: BorderRadius.circular(8.0),
-                  child: Image.network(
-                    report.reportMedias.first.url,
+                  placeholder: const Center(
+                    heightFactor: 2,
+                    child: CircularProgressIndicator(),
+                  ),
+                  errorWidget: Container(
                     height: 160,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, progress) =>
-                        progress == null
-                            ? child
-                            : const Center(
-                                heightFactor: 2,
-                                child: CircularProgressIndicator()),
-                    errorBuilder: (context, error, stackTrace) => Container(
-                        height: 160,
-                        color: Colors.grey.shade200,
-                        child: const Icon(Icons.broken_image_outlined,
-                            color: Colors.grey)),
+                    color: Colors.grey.shade200,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.broken_image_outlined,
+                            color: Colors.grey),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Resim yüklenemedi',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               const SizedBox(height: 12),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kentnabiz_mobile/features/citizen/providers/citizen_providers.dart';
 import 'package:kentnabiz_mobile/shared/models/report.dart';
+import 'package:kentnabiz_mobile/shared/widgets/authenticated_image.dart';
 
 class ReportDetailScreen extends ConsumerWidget {
   // ConsumerWidget'a çevir
@@ -69,10 +70,35 @@ class ReportDetailScreen extends ConsumerWidget {
                       itemBuilder: (context, index) {
                         return Padding(
                           padding: const EdgeInsets.only(right: 8.0),
-                          child: ClipRRect(
+                          child: AuthenticatedImage(
+                            fileName: report.reportMedias[index].url,
+                            width: 200,
+                            height: 200,
+                            fit: BoxFit.cover,
                             borderRadius: BorderRadius.circular(12),
-                            child: Image.network(report.reportMedias[index].url,
-                                fit: BoxFit.cover),
+                            errorWidget: Container(
+                              width: 200,
+                              height: 200,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.broken_image_outlined,
+                                      color: Colors.grey),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Resim yüklenemedi',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         );
                       },

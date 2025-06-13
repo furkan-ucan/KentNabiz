@@ -105,6 +105,49 @@ export const analyticsService = {
     );
     return response.data.data;
   },
+
+  // Funnel istatistiklerini getir
+  async getFunnelStats(
+    filters: AnalyticsFilters
+  ): Promise<FunnelStatsResponse> {
+    const params = buildQueryParams(filters);
+    const response = await api.get<FunnelStatsResponse>(
+      '/report-analytics/funnel-stats',
+      { params }
+    );
+    return response.data;
+  },
+
+  // Category distribution istatistiklerini getir
+  async getCategoryDistribution(
+    filters: AnalyticsFilters & { limit?: number }
+  ): Promise<CategoryDistributionResponse[]> {
+    const params = {
+      ...buildQueryParams(filters),
+      ...(filters.limit && { limit: filters.limit.toString() }),
+    };
+
+    const response = await api.get<
+      CategoryDistributionResponse[] | { data: CategoryDistributionResponse[] }
+    >('/report-analytics/category-distribution', { params });
+
+    // Backend response check - bazen data wrapper'da olabilir
+    const responseData = response.data;
+    if (
+      responseData &&
+      typeof responseData === 'object' &&
+      'data' in responseData
+    ) {
+      return responseData.data || [];
+    }
+
+    // Direkt array olarak geliyorsa
+    if (Array.isArray(responseData)) {
+      return responseData;
+    }
+
+    return [];
+  },
 };
 
 export default analyticsService;
@@ -131,4 +174,17 @@ export interface StrategicKpisResponse {
   reopenedReports: ReopenedReportsResult;
   trendingIssue: TrendingIssueResult;
   citizenInteraction: CitizenInteractionResult;
+}
+
+export interface FunnelStatsResponse {
+  totalReports: number;
+  assignedReports: number;
+  resolvedReports: number;
+}
+
+export interface CategoryDistributionResponse {
+  categoryId: number;
+  categoryName: string;
+  categoryCode: string;
+  count: number;
 }

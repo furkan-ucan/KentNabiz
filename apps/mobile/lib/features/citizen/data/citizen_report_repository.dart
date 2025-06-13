@@ -110,6 +110,29 @@ class CitizenReportRepository {
         .toList();
   }
 
+  // YENİ METOD: Yakındaki raporları getir
+  Future<List<Report>> getNearbyReports({
+    required double latitude,
+    required double longitude,
+    double radiusKm = 5.0,
+  }) async {
+    final response = await _apiClient.dio.get(
+      '/reports/nearby',
+      queryParameters: {
+        'latitude': latitude.toString(),
+        'longitude': longitude.toString(),
+        'radius': (radiusKm * 1000).toString(), // API metre olarak bekliyorsa
+      },
+    );
+
+    // API yanıtındaki 'data' nesnesini doğrudan parse et
+    final List<dynamic> reportListJson = response.data['data'];
+
+    return reportListJson
+        .map((json) => Report.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
   String _convertStatusToString(ReportStatus status) {
     switch (status) {
       case ReportStatus.open:

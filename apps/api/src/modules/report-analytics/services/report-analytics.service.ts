@@ -39,6 +39,13 @@ export interface ReopenedReportsResult {
   reportIds: number[];
 }
 
+// Funnel Chart için interface
+export interface FunnelStatsResult {
+  totalReports: number;
+  assignedReports: number;
+  resolvedReports: number;
+}
+
 export interface TrendingIssueResult {
   categoryName: string | null;
   categoryCode: string | null;

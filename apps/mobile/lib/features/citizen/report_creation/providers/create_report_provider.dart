@@ -72,7 +72,7 @@ class CreateReportNotifier extends StateNotifier<CreateReportState> {
       final mediaDtos = uploadedMedias.map((media) {
         // Backend'in CreateReportMediaDto'su 'url' ve 'type' bekliyor.
         return {
-          'url': media.url,
+          'url': media.filename,
           'type': media.type ?? 'image/jpeg',
         };
       }).toList();

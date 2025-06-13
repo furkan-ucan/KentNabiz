@@ -5,6 +5,11 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <!-- Galeriden okuma izni (Eski versiyonlar için) -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- Konum izinleri -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Arka planda konum alma (isteğe bağlı) -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <application
         android:label="kentnabiz_mobile"
         android:name="${applicationName}"

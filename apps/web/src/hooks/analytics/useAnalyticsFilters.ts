@@ -38,6 +38,9 @@ export const useAnalyticsFilters = () => {
     };
   }, [searchParams]);
 
+  // Debug log for filters
+  console.log('🔧 Analytics filters parsed:', filters);
+
   // Filtreleri güncelle (URL'e yaz)
   const setFilters = useCallback(
     (newFilters: Partial<AnalyticsFilters>) => {

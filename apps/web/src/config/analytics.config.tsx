@@ -49,6 +49,7 @@ export interface KpiDefinition {
 }
 
 export const KPI_DEFINITIONS: KpiDefinition[] = [
+  // İlk Satır - Operasyonel KPIs
   {
     id: 'totalReportCount',
     title: 'Toplam Rapor',
@@ -56,47 +57,6 @@ export const KPI_DEFINITIONS: KpiDefinition[] = [
     color: 'primary.main',
     formatType: 'number',
     description: 'Sistemdeki toplam rapor sayısı',
-    targetUrl: null,
-  },
-  {
-    id: 'resolutionRate',
-    title: 'Başarı Oranı',
-    icon: <CheckCircleIcon />,
-    color: 'success.main',
-    suffix: '%',
-    formatType: 'percentage',
-    description: 'Çözülen raporların toplam raporlara oranı',
-    targetUrl: null,
-  },
-  {
-    id: 'avgResolutionDays',
-    title: 'Ort. Çözüm Süresi',
-    icon: <TimerIcon />,
-    color: 'info.main',
-    suffix: ' Gün',
-    formatType: 'duration',
-    description: 'Raporların ortalama çözülme süresi',
-    targetUrl: null,
-  },
-  {
-    id: 'avgInterventionHours',
-    title: 'Ort. Müdahale Süresi',
-    icon: <FlashOnIcon />,
-    color: 'secondary.main',
-    suffix: ' Saat',
-    formatType: 'duration',
-    description: 'Atamadan kabule kadar geçen ortalama süre',
-    targetUrl: null,
-  },
-  {
-    id: 'avgFirstResponseHours',
-    title: 'Ort. İlk Yanıt Süresi',
-    icon: <SpeedIcon />,
-    color: 'warning.main',
-    suffix: ' Saat',
-    formatType: 'duration',
-    description:
-      'Raporun oluşturulmasından atanmasına kadar geçen ortalama süre',
     targetUrl: null,
   },
   {
@@ -148,7 +108,6 @@ export const KPI_DEFINITIONS: KpiDefinition[] = [
     description: 'Süresi geçmiş raporlar (7 günden eski)',
     targetUrl: '/supervisor/dashboard?status=IN_PROGRESS&overdue=true',
   },
-  // Strategic KPIs
   {
     id: 'reopenedReports',
     title: 'Yeniden Açılan',
@@ -161,6 +120,49 @@ export const KPI_DEFINITIONS: KpiDefinition[] = [
     description:
       'Çözüldükten sonra yeniden açılan raporlar - kalite kontrol metriği',
     targetUrl: '/supervisor/dashboard?reopened=true',
+  },
+
+  // İkinci Satır - Performans KPIs
+  {
+    id: 'resolutionRate',
+    title: 'Başarı Oranı',
+    icon: <CheckCircleIcon />,
+    color: 'success.main',
+    suffix: '%',
+    formatType: 'percentage',
+    description: 'Çözülen raporların toplam raporlara oranı',
+    targetUrl: null,
+  },
+  {
+    id: 'avgResolutionDays',
+    title: 'Ort. Çözüm Süresi',
+    icon: <TimerIcon />,
+    color: 'info.main',
+    suffix: ' Gün',
+    formatType: 'duration',
+    description: 'Raporların ortalama çözülme süresi',
+    targetUrl: null,
+  },
+  {
+    id: 'avgInterventionHours',
+    title: 'Ort. Müdahale Süresi',
+    icon: <FlashOnIcon />,
+    color: 'secondary.main',
+    suffix: ' Saat',
+    formatType: 'duration',
+    description: 'Atamadan kabule kadar geçen ortalama süre',
+    targetUrl: null,
+  },
+  {
+    id: 'avgFirstResponseHours',
+    title: 'Ort. İlk Yanıt Süresi',
+    icon: <SpeedIcon />,
+    color: 'warning.main',
+    suffix: ' Saat',
+    formatType: 'duration',
+    description:
+      'Raporun oluşturulmasından atanmasına kadar geçen ortalama süre',
+    targetUrl: null,
   },
   {
     id: 'trendingIssue',

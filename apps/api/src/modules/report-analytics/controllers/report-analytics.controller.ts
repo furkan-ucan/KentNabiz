@@ -15,6 +15,11 @@ import {
   CountsResponse,
   SummaryStatsResponse,
 } from '../services/report-analytics.service';
+import { FunnelAnalyticsService, FunnelStatsResult } from '../services/funnel-analytics.service';
+import {
+  CategoryAnalyticsService,
+  CategoryDistributionResult,
+} from '../services/category-analytics.service';
 import { CitizenSummaryDto } from '../dto/citizen-summary.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
 import { RequestWithUser } from '../../auth/interfaces/jwt-payload.interface';
@@ -25,7 +30,11 @@ import { UserRole } from '@kentnabiz/shared';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class ReportAnalyticsController {
-  constructor(private readonly reportAnalyticsService: ReportAnalyticsService) {}
+  constructor(
+    private readonly reportAnalyticsService: ReportAnalyticsService,
+    private readonly funnelAnalyticsService: FunnelAnalyticsService,
+    private readonly categoryAnalyticsService: CategoryAnalyticsService
+  ) {}
 
   @Get('citizen-summary')
   @ApiOperation({
@@ -316,5 +325,130 @@ export class ReportAnalyticsController {
         citizenInteraction: interaction,
       },
     };
+  }
+
+  @Get('funnel-stats')
+  @ApiOperation({
+    summary: 'Get report funnel statistics',
+    description:
+      'Returns funnel chart data showing report lifecycle stages: Total, Assigned, Resolved',
+  })
+  @ApiQuery({ name: 'startDate', type: String, required: false })
+  @ApiQuery({ name: 'endDate', type: String, required: false })
+  @ApiQuery({ name: 'departmentId', type: Number, required: false })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved funnel statistics',
+    schema: {
+      type: 'object',
+      properties: {
+        totalReports: { type: 'number' },
+        assignedReports: { type: 'number' },
+        resolvedReports: { type: 'number' },
+      },
+    },
+  })
+  async getFunnelStats(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('departmentId') departmentId?: number,
+    @Req() req?: RequestWithUser
+  ): Promise<FunnelStatsResult> {
+    const authUser = req?.user;
+
+    // Tarih parametrelerini parse et
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Son 30 gün
+    const end = endDate ? new Date(endDate) : new Date();
+
+    // Tarih validasyonu
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new BadRequestException('Invalid date format');
+    }
+
+    return await this.funnelAnalyticsService.getFunnelStats(start, end, departmentId, authUser);
+  }
+
+  @Get('category-distribution')
+  @ApiOperation({
+    summary: 'Get category distribution statistics',
+    description: 'Returns the distribution of reports by category for analytics dashboard',
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    description: 'Start date (ISO string)',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+    description: 'End date (ISO string)',
+  })
+  @ApiQuery({
+    name: 'departmentId',
+    required: false,
+    type: Number,
+    description: 'Department ID filter',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Maximum number of categories to return (default: 10)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved category distribution statistics',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          categoryId: { type: 'number' },
+          categoryName: { type: 'string' },
+          categoryCode: { type: 'string' },
+          count: { type: 'number' },
+        },
+      },
+    },
+  })
+  async getCategoryDistribution(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('departmentId') departmentId?: number,
+    @Query('limit') limit?: number,
+    @Req() req?: RequestWithUser
+  ): Promise<CategoryDistributionResult[]> {
+    const authUser = req?.user;
+
+    // Tarih parametrelerini parse et
+    let start: Date | undefined;
+    let end: Date | undefined;
+
+    if (startDate) {
+      start = new Date(startDate);
+      if (isNaN(start.getTime())) {
+        throw new BadRequestException('Invalid start date format');
+      }
+    }
+
+    if (endDate) {
+      end = new Date(endDate);
+      if (isNaN(end.getTime())) {
+        throw new BadRequestException('Invalid end date format');
+      }
+    }
+
+    // Limit validasyonu
+    const effectiveLimit = limit && limit > 0 && limit <= 50 ? limit : 10;
+
+    return await this.categoryAnalyticsService.getCategoryDistribution(
+      start,
+      end,
+      departmentId,
+      authUser,
+      effectiveLimit
+    );
   }
 }

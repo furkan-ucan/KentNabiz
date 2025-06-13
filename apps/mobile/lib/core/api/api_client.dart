@@ -55,4 +55,27 @@ class ApiClient {
       ),
     );
   }
+
+  /// Media URL'leri için authorization header ile beraber HTTP HEAD isteği yapar
+  /// Bu sayede resmin mevcut olup olmadığını kontrol eder
+  Future<bool> checkMediaAccess(String mediaUrl) async {
+    try {
+      final response = await dio.head(mediaUrl);
+      return response.statusCode == 200;
+    } catch (e) {
+      logger.w('Media access check failed for $mediaUrl: $e');
+      return false;
+    }
+  }
+
+  /// Media dosyalarını almak için özel method
+  /// Authorization header ile beraber istek yapar
+  Future<Response> getMediaFile(String mediaPath) async {
+    return await dio.get(
+      '/media/view/private/$mediaPath',
+      options: Options(
+        responseType: ResponseType.bytes,
+      ),
+    );
+  }
 }

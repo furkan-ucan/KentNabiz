@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Konum izinleri -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Yakınınızdaki raporları gösterebilmek için konumunuza ihtiyacımız var.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Yakınınızdaki raporları gösterebilmek için konumunuza ihtiyacımız var.</string>
 </dict>
 </plist>
