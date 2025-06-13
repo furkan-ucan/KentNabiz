@@ -20,6 +20,11 @@ import {
   CategoryAnalyticsService,
   CategoryDistributionResult,
 } from '../services/category-analytics.service';
+import {
+  TemporalAnalyticsService,
+  TemporalDataPoint,
+  TemporalQueryDto,
+} from '../services/temporal-analytics.service';
 import { CitizenSummaryDto } from '../dto/citizen-summary.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
 import { RequestWithUser } from '../../auth/interfaces/jwt-payload.interface';
@@ -33,7 +38,8 @@ export class ReportAnalyticsController {
   constructor(
     private readonly reportAnalyticsService: ReportAnalyticsService,
     private readonly funnelAnalyticsService: FunnelAnalyticsService,
-    private readonly categoryAnalyticsService: CategoryAnalyticsService
+    private readonly categoryAnalyticsService: CategoryAnalyticsService,
+    private readonly temporalAnalyticsService: TemporalAnalyticsService
   ) {}
 
   @Get('citizen-summary')
@@ -450,5 +456,87 @@ export class ReportAnalyticsController {
       authUser,
       effectiveLimit
     );
+  }
+
+  @Get('temporal-distribution')
+  @ApiOperation({
+    summary: 'Get temporal distribution of created and resolved reports',
+    description:
+      'Returns time-based data showing trends of created and resolved reports over different granularities (daily, weekly, monthly).',
+  })
+  @ApiQuery({
+    name: 'granularity',
+    description: 'Time granularity for grouping data',
+    enum: ['daily', 'weekly', 'monthly'],
+    required: true,
+  })
+  @ApiQuery({
+    name: 'startDate',
+    description: 'Start date for filtering (ISO 8601 format)',
+    type: String,
+    example: '2024-01-01',
+    required: true,
+  })
+  @ApiQuery({
+    name: 'endDate',
+    description: 'End date for filtering (ISO 8601 format)',
+    type: String,
+    example: '2024-12-31',
+    required: true,
+  })
+  @ApiQuery({
+    name: 'departmentId',
+    description: 'Department ID for filtering (optional)',
+    type: Number,
+    required: false,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved temporal distribution data',
+    type: [Object],
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid parameters',
+  })
+  async getTemporalDistribution(
+    @Query('granularity') granularity: 'daily' | 'weekly' | 'monthly',
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('departmentId') departmentId?: number,
+    @Req() req?: RequestWithUser
+  ): Promise<TemporalDataPoint[]> {
+    // Gerekli parametreleri kontrol et
+    if (!granularity || !startDate || !endDate) {
+      throw new BadRequestException('Granularity, startDate, and endDate are required');
+    }
+
+    // Granularity validasyonu
+    const validGranularities = ['daily', 'weekly', 'monthly'];
+    if (!validGranularities.includes(granularity)) {
+      throw new BadRequestException('Invalid granularity. Must be one of: daily, weekly, monthly');
+    }
+
+    // Tarih validasyonu
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new BadRequestException('Invalid date format');
+    }
+
+    if (start >= end) {
+      throw new BadRequestException('Start date must be before end date');
+    }
+
+    const filters: TemporalQueryDto = {
+      granularity,
+      startDate,
+      endDate,
+      departmentId,
+    };
+
+    const authUser = req?.user;
+    return await this.temporalAnalyticsService.getTemporalDistribution(filters, authUser);
   }
 }

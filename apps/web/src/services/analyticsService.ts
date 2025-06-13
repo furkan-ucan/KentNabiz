@@ -148,6 +148,41 @@ export const analyticsService = {
 
     return [];
   },
+
+  // Temporal distribution (zaman bazlı trend) istatistiklerini getir
+  async getTemporalDistribution(
+    filters: TemporalDistributionFilters
+  ): Promise<TemporalDistributionResponse[]> {
+    const params = {
+      granularity: filters.granularity,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      ...(filters.departmentId && {
+        departmentId: filters.departmentId.toString(),
+      }),
+    };
+
+    const response = await api.get<
+      TemporalDistributionResponse[] | { data: TemporalDistributionResponse[] }
+    >('/report-analytics/temporal-distribution', { params });
+
+    // Backend response check - bazen data wrapper'da olabilir
+    const responseData = response.data;
+    if (
+      responseData &&
+      typeof responseData === 'object' &&
+      'data' in responseData
+    ) {
+      return responseData.data || [];
+    }
+
+    // Direkt array olarak geliyorsa
+    if (Array.isArray(responseData)) {
+      return responseData;
+    }
+
+    return [];
+  },
 };
 
 export default analyticsService;
@@ -187,4 +222,17 @@ export interface CategoryDistributionResponse {
   categoryName: string;
   categoryCode: string;
   count: number;
+}
+
+export interface TemporalDistributionFilters {
+  granularity: 'daily' | 'weekly' | 'monthly';
+  startDate: string;
+  endDate: string;
+  departmentId?: number;
+}
+
+export interface TemporalDistributionResponse {
+  date: string;
+  createdCount: number;
+  resolvedCount: number;
 }

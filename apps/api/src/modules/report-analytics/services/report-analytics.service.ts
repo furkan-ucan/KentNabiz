@@ -58,6 +58,20 @@ export interface CitizenInteractionResult {
   totalSupports: number;
 }
 
+// Temporal Trend Chart için interface'ler
+export interface TemporalQueryDto {
+  granularity: 'daily' | 'weekly' | 'monthly';
+  startDate: string;
+  endDate: string;
+  departmentId?: number;
+}
+
+export interface TemporalDataPoint {
+  date: string;
+  createdCount: number;
+  resolvedCount: number;
+}
+
 // Debug fonksiyonu için veri tip tanımları
 interface DebugReportData {
   total_reports: string;

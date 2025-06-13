@@ -6,6 +6,7 @@ import { AnalyticsFilterBar } from '@/components/analytics/AnalyticsFilterBar';
 import { KpiMetricsWidget } from '@/components/analytics/widgets/KpiMetricsWidget';
 import { FunnelChartWidget } from '@/components/analytics/widgets/FunnelChartWidget';
 import CategoryDistributionWidget from '@/components/analytics/widgets/CategoryDistributionWidget';
+import { TemporalTrendWidget } from '@/components/analytics/widgets/TemporalTrendWidget';
 import { useAnalyticsFilters } from '@/hooks/analytics/useAnalyticsFilters';
 import { api } from '@/lib/api';
 
@@ -134,24 +135,7 @@ export const AnalyticsPage = () => {
         </Grid>
 
         <Grid size={{ xs: 12, lg: 6 }}>
-          <Box
-            sx={{
-              p: 3,
-              border: '2px dashed #ccc',
-              borderRadius: 2,
-              textAlign: 'center',
-              color: 'text.secondary',
-              height: 400,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-            }}
-          >
-            <Typography variant="h6">Trend Analizi</Typography>
-            <Typography variant="body2">
-              Zaman serisi trend analizi widget&apos;ı
-            </Typography>
-          </Box>
+          <TemporalTrendWidget filters={filters} />
         </Grid>
 
         <Grid size={{ xs: 12, lg: 6 }}>
