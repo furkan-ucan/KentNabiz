@@ -33,6 +33,24 @@ export interface SummaryStatsResponse {
   totalReportCount: number;
 }
 
+// Strategic KPIs için yeni interface'ler
+export interface ReopenedReportsResult {
+  count: number;
+  reportIds: number[];
+}
+
+export interface TrendingIssueResult {
+  categoryName: string | null;
+  categoryCode: string | null;
+  percentageIncrease: number;
+  currentPeriodCount: number;
+  previousPeriodCount: number;
+}
+
+export interface CitizenInteractionResult {
+  totalSupports: number;
+}
+
 // Debug fonksiyonu için veri tip tanımları
 interface DebugReportData {
   total_reports: string;
@@ -172,8 +190,9 @@ export class ReportAnalyticsService {
    * Materialized View'ı manuel olarak yeniler
    * Production'da cron job ile otomatik yapılmalı
    */
-  async refreshAnalyticsView(): Promise<void> {
+  async refreshAnalyticsView(): Promise<Date> {
     await this.dataSource.query('REFRESH MATERIALIZED VIEW report_analytics_mv;');
+    return new Date();
   }
 
   /**
@@ -551,5 +570,284 @@ export class ReportAnalyticsService {
       sql: conditions.join(' AND '),
       params,
     };
+  }
+
+  // ==================== STRATEGIC KPIs METHODS ====================
+
+  /**
+   * Yeniden açılan raporları hesapla
+   */
+  async getReopenedReportsCount(
+    filters: {
+      startDate: string;
+      endDate: string;
+      departmentId?: number;
+      categoryId?: string;
+    },
+    authUser: AuthUser
+  ): Promise<ReopenedReportsResult> {
+    // Admin değilse kendi departmanını kullan
+    const effectiveDepartmentId = authUser.roles?.includes(UserRole.SYSTEM_ADMIN)
+      ? filters.departmentId
+      : authUser.departmentId;
+
+    // Bu karmaşık sorgu, ReportStatusHistory tablosunu kullanarak
+    // DONE durumundan tekrar OPEN/IN_PROGRESS'e geçen raporları bulur
+    let baseQuery = `
+      SELECT
+        COUNT(DISTINCT t2.report_id) as count,
+        ARRAY_AGG(DISTINCT t2.report_id) as report_ids
+      FROM
+        report_status_history t1 -- Raporun 'DONE' olduğu anı bul
+      JOIN
+        report_status_history t2 ON t1.report_id = t2.report_id
+      JOIN
+        reports r ON t1.report_id = r.id
+      WHERE
+        t1.new_status = 'DONE'
+        AND t2.new_status IN ('OPEN', 'IN_PROGRESS')
+        AND t2.changed_at > t1.changed_at
+        AND t1.changed_at BETWEEN $1 AND $2
+        AND r.deleted_at IS NULL
+    `;
+
+    const params: (string | number)[] = [filters.startDate, filters.endDate];
+    let paramIndex = 3;
+
+    // Departman filtresi
+    if (effectiveDepartmentId) {
+      baseQuery += ` AND r.current_department_id = $${paramIndex}`;
+      params.push(effectiveDepartmentId);
+      paramIndex++;
+    }
+
+    // Kategori filtresi
+    if (filters.categoryId) {
+      baseQuery += ` AND EXISTS (
+        SELECT 1 FROM report_categories rc
+        WHERE rc.id = r.category_id AND rc.code = $${paramIndex}
+      )`;
+      params.push(filters.categoryId);
+      paramIndex++;
+    }
+
+    try {
+      interface ReopenedQueryResult {
+        count: string;
+        report_ids: number[];
+      }
+
+      const result = await this.dataSource.query(baseQuery, params);
+
+      if (result && Array.isArray(result) && result.length > 0) {
+        const row = result[0] as ReopenedQueryResult;
+        return {
+          count: parseInt(row.count, 10) || 0,
+          reportIds: row.report_ids || [],
+        };
+      }
+
+      return { count: 0, reportIds: [] };
+    } catch (error) {
+      console.error('Error in getReopenedReportsCount:', error);
+      // Fallback: ReportStatusHistory tablosu yoksa basit yaklaşım
+      return { count: 0, reportIds: [] };
+    }
+  }
+
+  /**
+   * Trend olan sorunu bul
+   */
+  async getTrendingIssue(
+    filters: {
+      startDate: string;
+      endDate: string;
+      departmentId?: number;
+      categoryId?: string;
+    },
+    authUser: AuthUser
+  ): Promise<TrendingIssueResult> {
+    // Admin değilse kendi departmanını kullan
+    const effectiveDepartmentId = authUser.roles?.includes(UserRole.SYSTEM_ADMIN)
+      ? filters.departmentId
+      : authUser.departmentId;
+
+    // Son 7 gün vs önceki 7 gün karşılaştırması
+    const endDate = new Date(filters.endDate);
+    const midDate = new Date(endDate);
+    midDate.setDate(endDate.getDate() - 7);
+    const startDate = new Date(midDate);
+    startDate.setDate(midDate.getDate() - 7);
+
+    // İki ayrı periyot için kategori bazında rapor sayıları
+    let baseQuery = `
+      WITH current_period AS (
+        SELECT
+          category_code,
+          COUNT(*) as current_count
+        FROM report_analytics_mv
+        WHERE created_at BETWEEN $1 AND $2
+          AND category_code IS NOT NULL
+    `;
+
+    let previousPeriodQuery = `
+      ), previous_period AS (
+        SELECT
+          category_code,
+          COUNT(*) as previous_count
+        FROM report_analytics_mv
+        WHERE created_at BETWEEN $3 AND $4
+          AND category_code IS NOT NULL
+    `;
+
+    const params: (string | number)[] = [
+      midDate.toISOString(),
+      endDate.toISOString(),
+      startDate.toISOString(),
+      midDate.toISOString(),
+    ];
+    let paramIndex = 5;
+
+    // Departman filtresi
+    if (effectiveDepartmentId) {
+      const departmentFilter = ` AND department_id = $${paramIndex}`;
+      baseQuery += departmentFilter;
+      previousPeriodQuery += departmentFilter;
+      params.push(effectiveDepartmentId);
+      paramIndex++;
+    }
+
+    // Kategori filtresi (belirli bir kategori seçilmişse o kategoriyi dikkate al)
+    if (filters.categoryId) {
+      const categoryFilter = ` AND category_code = $${paramIndex}`;
+      baseQuery += categoryFilter;
+      previousPeriodQuery += categoryFilter;
+      params.push(filters.categoryId);
+    }
+
+    const fullQuery = `
+      ${baseQuery}
+        GROUP BY category_code
+      ${previousPeriodQuery}
+        GROUP BY category_code
+      )
+      SELECT
+        COALESCE(c.category_code, p.category_code) as category_code,
+        COALESCE(c.current_count, 0) as current_count,
+        COALESCE(p.previous_count, 0) as previous_count,
+        CASE
+          WHEN COALESCE(p.previous_count, 0) = 0 THEN
+            CASE WHEN COALESCE(c.current_count, 0) > 0 THEN 999 ELSE 0 END
+          ELSE
+            ROUND(((COALESCE(c.current_count, 0) - COALESCE(p.previous_count, 0))::NUMERIC / p.previous_count) * 100, 2)
+        END as percentage_increase
+      FROM current_period c
+      FULL OUTER JOIN previous_period p ON c.category_code = p.category_code
+      WHERE COALESCE(c.current_count, 0) > COALESCE(p.previous_count, 0)  -- SADECE ARTAN KATEGORILER
+      ORDER BY percentage_increase DESC
+      LIMIT 1;
+    `;
+
+    try {
+      interface TrendingQueryResult {
+        category_code: string;
+        current_count: string;
+        previous_count: string;
+        percentage_increase: string;
+      }
+
+      const result = await this.dataSource.query(fullQuery, params);
+
+      if (result && Array.isArray(result) && result.length > 0) {
+        const row = result[0] as TrendingQueryResult;
+        return {
+          categoryName: row.category_code || null, // TODO: Category name mapping
+          categoryCode: row.category_code || null,
+          percentageIncrease: parseFloat(row.percentage_increase) || 0,
+          currentPeriodCount: parseInt(row.current_count, 10) || 0,
+          previousPeriodCount: parseInt(row.previous_count, 10) || 0,
+        };
+      }
+
+      return {
+        categoryName: null,
+        categoryCode: null,
+        percentageIncrease: 0,
+        currentPeriodCount: 0,
+        previousPeriodCount: 0,
+      };
+    } catch (error) {
+      console.error('Error in getTrendingIssue:', error);
+      return {
+        categoryName: null,
+        categoryCode: null,
+        percentageIncrease: 0,
+        currentPeriodCount: 0,
+        previousPeriodCount: 0,
+      };
+    }
+  }
+
+  /**
+   * Vatandaş etkileşim skorunu hesapla
+   */
+  async getCitizenInteractionScore(
+    filters: {
+      startDate: string;
+      endDate: string;
+      departmentId?: number;
+      categoryId?: string;
+    },
+    authUser: AuthUser
+  ): Promise<CitizenInteractionResult> {
+    // Admin değilse kendi departmanını kullan
+    const effectiveDepartmentId = authUser.roles?.includes(UserRole.SYSTEM_ADMIN)
+      ? filters.departmentId
+      : authUser.departmentId;
+
+    // Materialized View'dan support_count toplamını al
+    let baseQuery = `
+      SELECT
+        COALESCE(SUM(support_count), 0) as total_supports
+      FROM report_analytics_mv
+      WHERE created_at BETWEEN $1 AND $2
+    `;
+
+    const params: (string | number)[] = [filters.startDate, filters.endDate];
+    let paramIndex = 3;
+
+    // Departman filtresi
+    if (effectiveDepartmentId) {
+      baseQuery += ` AND department_id = $${paramIndex}`;
+      params.push(effectiveDepartmentId);
+      paramIndex++;
+    }
+
+    // Kategori filtresi
+    if (filters.categoryId) {
+      baseQuery += ` AND category_code = $${paramIndex}`;
+      params.push(filters.categoryId);
+    }
+
+    try {
+      interface SupportCountResult {
+        total_supports: string;
+      }
+
+      const result = await this.dataSource.query(baseQuery, params);
+
+      if (result && Array.isArray(result) && result.length > 0) {
+        const row = result[0] as SupportCountResult;
+        return {
+          totalSupports: parseInt(row.total_supports, 10) || 0,
+        };
+      }
+
+      return { totalSupports: 0 };
+    } catch (error) {
+      console.error('Error in getCitizenInteractionScore:', error);
+      // Fallback: support_count kolonu yoksa 0 döndür
+      return { totalSupports: 0 };
+    }
   }
 }

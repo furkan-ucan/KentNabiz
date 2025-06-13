@@ -52,9 +52,9 @@ Map<String, dynamic> _$$ReportImplToJson(_$ReportImpl instance) =>
       'address': instance.address,
       'location': const PointToLocationConverter().toJson(instance.location),
       'supportCount': instance.supportCount,
-      'user': instance.user,
-      'category': instance.category,
-      'reportMedias': instance.reportMedias,
+      'user': instance.user?.toJson(),
+      'category': instance.category?.toJson(),
+      'reportMedias': instance.reportMedias.map((e) => e.toJson()).toList(),
     };
 
 const _$ReportStatusEnumMap = {

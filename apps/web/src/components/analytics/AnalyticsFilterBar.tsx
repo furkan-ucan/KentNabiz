@@ -47,6 +47,17 @@ export const AnalyticsFilterBar = ({
   const isSystemAdmin = hasRole(UserRole.SYSTEM_ADMIN);
   const isDepartmentSupervisor = hasRole(UserRole.DEPARTMENT_SUPERVISOR);
 
+  // Default tarih değerleri
+  const getDefaultStartDate = () => {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - 1); // 1 yıl önce
+    return date.toISOString().split('T')[0];
+  };
+
+  const getDefaultEndDate = () => {
+    return new Date().toISOString().split('T')[0]; // Bugün
+  };
+
   // Departmanları backend'den çek (sadece sistem yöneticisi için)
   const { departments, loading: departmentsLoading } = useDepartments();
   // Kategorileri seçili departmana göre çek
@@ -90,6 +101,35 @@ export const AnalyticsFilterBar = ({
       });
     }
   };
+
+  // Hızlı tarih seçim fonksiyonları
+  const handleQuickDateFilter = (days: number) => {
+    const endDate = new Date().toISOString().split('T')[0]; // Bugün
+    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split('T')[0]; // N gün önce
+
+    onFiltersChange({
+      ...filters,
+      startDate,
+      endDate,
+    });
+  };
+
+  // Aktif tarih aralığını kontrol et
+  const isQuickDateActive = (days: number) => {
+    const currentEndDate = filters.endDate || getDefaultEndDate();
+    const currentStartDate = filters.startDate || getDefaultStartDate();
+    const expectedEndDate = new Date().toISOString().split('T')[0];
+    const expectedStartDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split('T')[0];
+
+    return (
+      currentStartDate === expectedStartDate &&
+      currentEndDate === expectedEndDate
+    );
+  };
   return (
     <Card elevation={2}>
       <CardContent>
@@ -115,9 +155,10 @@ export const AnalyticsFilterBar = ({
               fullWidth
               size="small"
               label="Başlangıç Tarihi"
-              value={filters.startDate || ''}
+              value={filters.startDate || getDefaultStartDate()}
               onChange={e => handleFilterChange('startDate', e.target.value)}
               InputLabelProps={{ shrink: true }}
+              helperText="1 yıl öncesinden başlayarak"
             />
           </Grid>
           {/* Bitiş Tarihi */}
@@ -127,15 +168,68 @@ export const AnalyticsFilterBar = ({
               fullWidth
               size="small"
               label="Bitiş Tarihi"
-              value={filters.endDate || ''}
+              value={filters.endDate || getDefaultEndDate()}
               onChange={e => handleFilterChange('endDate', e.target.value)}
               InputLabelProps={{ shrink: true }}
+              helperText="Bugüne kadar"
             />
+          </Grid>
+          {/* Hızlı Tarih Seçim Butonları */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Hızlı Seçim:
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Button
+                size="small"
+                variant={isQuickDateActive(7) ? 'contained' : 'outlined'}
+                color={isQuickDateActive(7) ? 'primary' : 'inherit'}
+                onClick={() => handleQuickDateFilter(7)}
+                sx={{ minWidth: 'auto' }}
+              >
+                Son 7 Gün
+              </Button>
+              <Button
+                size="small"
+                variant={isQuickDateActive(14) ? 'contained' : 'outlined'}
+                color={isQuickDateActive(14) ? 'primary' : 'inherit'}
+                onClick={() => handleQuickDateFilter(14)}
+                sx={{ minWidth: 'auto' }}
+              >
+                Son 14 Gün
+              </Button>
+              <Button
+                size="small"
+                variant={isQuickDateActive(30) ? 'contained' : 'outlined'}
+                color={isQuickDateActive(30) ? 'primary' : 'inherit'}
+                onClick={() => handleQuickDateFilter(30)}
+                sx={{ minWidth: 'auto' }}
+              >
+                Son 30 Gün
+              </Button>
+              <Button
+                size="small"
+                variant={isQuickDateActive(90) ? 'contained' : 'outlined'}
+                color={isQuickDateActive(90) ? 'primary' : 'inherit'}
+                onClick={() => handleQuickDateFilter(90)}
+                sx={{ minWidth: 'auto' }}
+              >
+                Son 3 Ay
+              </Button>
+              <Button
+                size="small"
+                variant={isQuickDateActive(365) ? 'contained' : 'outlined'}
+                color={isQuickDateActive(365) ? 'primary' : 'inherit'}
+                onClick={() => handleQuickDateFilter(365)}
+                sx={{ minWidth: 'auto' }}
+              >
+                Son 1 Yıl
+              </Button>
+            </Stack>
           </Grid>{' '}
           {/* Departman Filtresi - Sadece Sistem Yöneticisi için */}
           {isSystemAdmin && (
-            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-              {' '}
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <TextField
                 select
                 fullWidth
@@ -160,7 +254,7 @@ export const AnalyticsFilterBar = ({
             </Grid>
           )}{' '}
           {/* Kategori Filtresi */}
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <TextField
               select
               fullWidth
@@ -173,14 +267,14 @@ export const AnalyticsFilterBar = ({
               <MenuItem value="">Tümü</MenuItem>
               {Array.isArray(categories) &&
                 categories.map(category => (
-                  <MenuItem key={category.id} value={category.id.toString()}>
+                  <MenuItem key={category.id} value={category.code}>
                     {category.name}
                   </MenuItem>
                 ))}
             </TextField>
           </Grid>
           {/* Durum Filtresi */}
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <TextField
               select
               fullWidth

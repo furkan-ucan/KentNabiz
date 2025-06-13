@@ -199,7 +199,7 @@ export const MyReportsPage: React.FC = () => {
                     label={
                       statusOptions.find(s => s.value === statusFilter)?.label
                     }
-                    color={getStatusColor(statusFilter)}
+                    color={getStatusColor(statusFilter as ReportStatus)}
                     size="small"
                     onDelete={() => handleStatusChange('')}
                   />

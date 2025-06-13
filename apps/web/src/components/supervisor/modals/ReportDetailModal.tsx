@@ -301,9 +301,28 @@ export const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
       ? report.assignments[0].assigneeTeam
         ? `Takım: ${report.assignments[0].assigneeTeam.name}`
         : report.assignments[0].assigneeUser
-          ? getUserDisplayDetails(
-              report.assignments[0].assigneeUser as UserInfo | undefined
-            ).displayName
+          ? getUserDisplayDetails({
+              id: report.assignments[0].assigneeUser.id,
+              fullName:
+                (
+                  report.assignments[0].assigneeUser as {
+                    id: number;
+                    fullName?: string;
+                    name?: string;
+                    email: string;
+                  }
+                ).fullName ||
+                (
+                  report.assignments[0].assigneeUser as {
+                    id: number;
+                    fullName?: string;
+                    name?: string;
+                    email: string;
+                  }
+                ).name ||
+                'Bilinmeyen',
+              email: report.assignments[0].assigneeUser.email,
+            }).displayName
           : 'Belirtilmemiş'
       : 'Atanmamış';
 

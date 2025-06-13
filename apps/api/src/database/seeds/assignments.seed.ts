@@ -92,8 +92,13 @@ export const AssignmentsSeed = async (dataSource: DataSource): Promise<void> => 
         { weight: 3, value: AssignmentStatus.COMPLETED },
       ]);
 
-      // Zaman mantığı: assignedAt her zaman acceptedAt'ten önce olmalı
-      const assignedAt = faker.date.recent({ days: 30 });
+      // Zaman mantığı: assignedAt her zaman report.createdAt'ten sonra olmalı
+      const minAssignmentDate = new Date(report.createdAt.getTime() + 10 * 60 * 1000); // En az 10 dakika sonra
+      const maxAssignmentDate = new Date(report.createdAt.getTime() + 30 * 24 * 60 * 60 * 1000); // En fazla 30 gün sonra
+      const assignedAt = faker.date.between({
+        from: minAssignmentDate,
+        to: maxAssignmentDate,
+      });
 
       // acceptedAt: bazen null (henüz kabul edilmemiş), bazen assignedAt'ten sonra
       let acceptedAt: Date | undefined = undefined;

@@ -1,111 +1,92 @@
 // apps/web/src/components/analytics/widgets/KpiMetricsWidget.tsx
-import { Grid } from '@mui/material';
-import {
-  TrendingUp,
-  CheckCircle,
-  HourglassEmpty,
-  Speed,
-  Timer,
-  FlashOn,
-} from '@mui/icons-material';
+import React from 'react';
+import { Alert, Grid } from '@mui/material';
 import { KpiCard } from '../KpiCard';
-import { useKpiMetrics } from '@/hooks/analytics/useKpiMetrics';
+import { useKpiData } from '@/hooks/analytics/useKpiData';
 import { AnalyticsFilters } from '@/hooks/analytics/useAnalyticsFilters';
+import {
+  KPI_DEFINITIONS,
+  formatKpiValue,
+  getKpiValueFromData,
+  KpiDefinition,
+} from '@/config/analytics.config.tsx';
 
 interface KpiMetricsWidgetProps {
   filters: AnalyticsFilters;
+  onFiltersChange?: (filters: AnalyticsFilters) => void;
 }
 
-export const KpiMetricsWidget = ({ filters }: KpiMetricsWidgetProps) => {
-  const { data, isLoading, error } = useKpiMetrics(filters);
+export const KpiMetricsWidget: React.FC<KpiMetricsWidgetProps> = ({
+  filters,
+  onFiltersChange,
+}) => {
+  const { data, isLoading, isError, error } = useKpiData(filters);
 
-  // Zaman hesaplamaları için yardımcı fonksiyonlar
-  const formatTimeHours = (hours: string | number): string => {
-    const numHours = typeof hours === 'string' ? parseFloat(hours) : hours;
-    if (!numHours || numHours === 0) return '0 saat';
+  if (isError) {
+    return (
+      <Alert severity="error">
+        KPI verileri yüklenirken bir hata oluştu:{' '}
+        {error?.message || 'Bilinmeyen hata'}
+      </Alert>
+    );
+  }
 
-    if (numHours < 24) {
-      return `${numHours.toFixed(1)} saat`;
-    } else {
-      const days = Math.floor(numHours / 24);
-      const remainingHours = numHours % 24;
-      return remainingHours > 0
-        ? `${days} gün ${remainingHours.toFixed(1)} saat`
-        : `${days} gün`;
+  const handleKpiClick = (
+    filterKey?: string,
+    filterValue?: string,
+    kpiDef?: KpiDefinition
+  ) => {
+    if (onFiltersChange && filterKey && filterValue) {
+      // Mevcut filtrelerle birleştir
+      let newFilters = {
+        ...filters,
+        [filterKey]: filterValue,
+      };
+
+      // Trending Issue için özel mantık: categoryId'yi dinamik ayarla
+      if (kpiDef?.id === 'trendingIssue' && data?.strategicKpis) {
+        // Type assertion ile veri yapısını belirle
+        const strategicData = data.strategicKpis as {
+          data?: { trendingIssue?: { categoryCode?: string } };
+        };
+        const categoryCode = strategicData?.data?.trendingIssue?.categoryCode;
+
+        if (categoryCode) {
+          // Trending kategoriyi filtre olarak ayarla
+          newFilters = {
+            ...filters,
+            categoryId: categoryCode,
+          };
+        }
+      }
+
+      onFiltersChange(newFilters);
     }
   };
 
-  const kpiData = [
-    {
-      title: 'Toplam Rapor',
-      value: data?.totalReports || 0,
-      isLoading,
-      icon: <TrendingUp />,
-      color: 'primary' as const,
-      subtitle: 'Toplam rapor sayısı',
-    },
-    {
-      title: 'Çözülen Rapor',
-      value: data?.resolvedReports || 0,
-      isLoading,
-      icon: <CheckCircle />,
-      color: 'success' as const,
-      subtitle: 'Başarıyla tamamlanan',
-    },
-    {
-      title: 'Beklemede',
-      value: data?.pendingReports || 0,
-      isLoading,
-      icon: <HourglassEmpty />,
-      color: 'warning' as const,
-      subtitle: 'İşlem bekleyen rapor',
-    },
-    {
-      title: 'Başarı Oranı',
-      value: data?.resolutionRate ? `%${data.resolutionRate}` : '%0',
-      isLoading,
-      icon: <Speed />,
-      color: 'primary' as const,
-      subtitle: 'Çözüm başarı oranı',
-    },
-    {
-      title: 'Ort. Çözüm Süresi',
-      value: formatTimeHours(data?.avgResolutionTimeHours || '0'),
-      isLoading,
-      icon: <Timer />,
-      color: 'secondary' as const,
-      subtitle: 'Ortalama tamamlanma süresi',
-    },
-    {
-      title: 'Ort. Müdahale Süresi',
-      value: formatTimeHours(data?.avgInterventionTimeHours || '0'),
-      isLoading,
-      icon: <FlashOn />,
-      color: 'error' as const,
-      subtitle: 'Ortalama ilk müdahale süresi',
-    },
-  ];
-  if (error) {
-    return (
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12 }}>
-          <KpiCard
-            title="Hata"
-            value="Veriler yüklenemedi"
-            color="error"
-            subtitle="Lütfen sayfayı yenileyin"
-          />
-        </Grid>
-      </Grid>
-    );
-  }
   return (
     <Grid container spacing={3}>
-      {kpiData.map((kpi, index) => (
-        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }} key={index}>
-          <KpiCard {...kpi} />
-        </Grid>
-      ))}
+      {KPI_DEFINITIONS.map(kpiDef => {
+        const rawValue = getKpiValueFromData(data, kpiDef);
+        const formattedValue = formatKpiValue(rawValue, kpiDef, data);
+
+        return (
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }} key={kpiDef.id}>
+            <KpiCard
+              title={kpiDef.title}
+              value={formattedValue}
+              icon={kpiDef.icon}
+              color={kpiDef.color}
+              isLoading={isLoading}
+              isClickable={kpiDef.isClickable}
+              description={kpiDef.description}
+              onClick={() =>
+                handleKpiClick(kpiDef.filterKey, kpiDef.filterValue, kpiDef)
+              }
+            />
+          </Grid>
+        );
+      })}
     </Grid>
   );
 };

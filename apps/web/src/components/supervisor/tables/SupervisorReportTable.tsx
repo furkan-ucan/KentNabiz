@@ -126,7 +126,20 @@ export const SupervisorReportTable: React.FC<SupervisorReportTableProps> =
           activeAssignment.assigneeType === AssigneeType.USER &&
           activeAssignment.assigneeUser
         ) {
-          assigneeName = activeAssignment.assigneeUser.fullName;
+          assigneeName =
+            (
+              activeAssignment.assigneeUser as {
+                fullName?: string;
+                name?: string;
+              }
+            ).fullName ||
+            (
+              activeAssignment.assigneeUser as {
+                fullName?: string;
+                name?: string;
+              }
+            ).name ||
+            'Bilinmeyen Kullanıcı';
         }
 
         return {

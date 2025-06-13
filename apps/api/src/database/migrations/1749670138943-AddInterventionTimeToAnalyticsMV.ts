@@ -24,12 +24,12 @@ export class AddInterventionTimeToAnalyticsMV1749670138943 implements MigrationI
                 c.code AS category_code,
                 r.created_at,
                 r.resolved_at,
-                -- İlk atama zamanını bulalım
+                -- İlk atama zamanını bulalım (assignments.assigned_at kullanmalı)
                 (
-                    SELECT MIN(a.created_at)
+                    SELECT MIN(a.assigned_at)
                     FROM assignments a
                     WHERE a.report_id = r.id AND a.deleted_at IS NULL
-                ) AS first_assignment_at,
+                ) AS first_assigned_at,
                 -- İlk kabul edilme zamanını bulalım
                 (
                     SELECT MIN(a.accepted_at)
@@ -49,7 +49,7 @@ export class AddInterventionTimeToAnalyticsMV1749670138943 implements MigrationI
                         FROM assignments a
                         WHERE a.report_id = r.id AND a.deleted_at IS NULL AND a.accepted_at IS NOT NULL
                     ) IS NOT NULL AND (
-                        SELECT MIN(a.created_at)
+                        SELECT MIN(a.assigned_at)
                         FROM assignments a
                         WHERE a.report_id = r.id AND a.deleted_at IS NULL
                     ) IS NOT NULL THEN
@@ -59,7 +59,7 @@ export class AddInterventionTimeToAnalyticsMV1749670138943 implements MigrationI
                                 FROM assignments a
                                 WHERE a.report_id = r.id AND a.deleted_at IS NULL AND a.accepted_at IS NOT NULL
                             ) - (
-                                SELECT MIN(a.created_at)
+                                SELECT MIN(a.assigned_at)
                                 FROM assignments a
                                 WHERE a.report_id = r.id AND a.deleted_at IS NULL
                             )
@@ -90,7 +90,7 @@ export class AddInterventionTimeToAnalyticsMV1749670138943 implements MigrationI
       `CREATE INDEX idx_report_analytics_mv_first_accepted ON ${this.viewName} (first_accepted_at);`
     );
     await queryRunner.query(
-      `CREATE INDEX idx_report_analytics_mv_first_assignment ON ${this.viewName} (first_assignment_at);`
+      `CREATE INDEX idx_report_analytics_mv_first_assignment ON ${this.viewName} (first_assigned_at);`
     );
   }
 

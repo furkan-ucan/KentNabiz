@@ -24,8 +24,6 @@ enum ReportStatus {
   unknown,
 }
 
-// YENİ EKLENEN KISIM:
-// Bu extension, ReportStatus enum'una yeni yetenekler kazandırır.
 extension ReportStatusX on ReportStatus {
   String get toTurkish {
     switch (this) {
@@ -103,7 +101,7 @@ enum ReportType {
   unknown
 }
 
-// --- LOCATION ve CONVERTER ---
+// --- LOCATION MODELİ ve CONVERTER'I ---
 @freezed
 class Location with _$Location {
   const factory Location({
@@ -111,21 +109,16 @@ class Location with _$Location {
     required double longitude,
   }) = _Location;
 
-  // Bu fromJson, doğrudan { "latitude": ..., "longitude": ... } yapısını bekler.
-  // Gerçek dönüşümü Converter yapacak.
   factory Location.fromJson(Map<String, dynamic> json) =>
       _$LocationFromJson(json);
 }
 
-// GeoJSON Point objesini Location modeline ve tersine çeviren custom converter
 class PointToLocationConverter
     implements JsonConverter<Location?, Map<String, dynamic>?> {
   const PointToLocationConverter();
-
   @override
   Location? fromJson(Map<String, dynamic>? json) {
     if (json == null) return null;
-    // API'den gelen {"type": "Point", "coordinates": [lng, lat]} yapısını parse et
     final coords = json['coordinates'] as List?;
     if (coords != null && coords.length >= 2) {
       return Location(
@@ -137,7 +130,6 @@ class PointToLocationConverter
   @override
   Map<String, dynamic>? toJson(Location? location) {
     if (location == null) return null;
-    // API'nin beklediği Point yapısına geri çevir
     return {
       'type': 'Point',
       'coordinates': [location.longitude, location.latitude]

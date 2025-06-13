@@ -1,23 +1,43 @@
-// lib/features/citizen/report_creation/screens/step1_category_selection_screen.dart
+// lib/features/citizen/report_creation/screens/step1_category_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kentnabiz_mobile/features/citizen/providers/citizen_providers.dart';
+import 'package:kentnabiz_mobile/features/citizen/report_creation/providers/create_report_provider.dart';
 import 'package:kentnabiz_mobile/shared/models/department.dart';
-import 'package:kentnabiz_mobile/shared/models/report_category.dart';
 
-class CategorySelectionScreen extends ConsumerWidget {
-  const CategorySelectionScreen({super.key});
+class CategoryScreen extends ConsumerStatefulWidget {
+  const CategoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Kullanıcının seçtiği departmanı izle
+  ConsumerState<CategoryScreen> createState() => _CategoryScreenState();
+}
+
+class _CategoryScreenState extends ConsumerState<CategoryScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Bu ekrana her girildiğinde state'i sıfırla (eğer istenirse)
+    // veya sadece çıkarken sıfırla.
+  }
+
+  @override
+  void dispose() {
+    // Bu ekrandan çıkıldığında (akış bittiğinde veya geri gidildiğinde)
+    // rapor state'ini temizle.
+    Future.microtask(() => ref.read(createReportProvider.notifier).reset());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final selectedDepartment = ref.watch(selectedDepartmentProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
             selectedDepartment == null ? 'Departman Seçin' : 'Kategori Seçin'),
-        // Eğer bir departman seçildiyse, geri dönüp değiştirmesine izin ver
         leading: selectedDepartment != null
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
@@ -29,10 +49,8 @@ class CategorySelectionScreen extends ConsumerWidget {
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: selectedDepartment == null
-            ? const DepartmentList() // Departman seçilmemişse listeyi göster
-            : CategoryList(
-                department:
-                    selectedDepartment), // Seçilmişse kategorileri göster
+            ? const DepartmentList()
+            : CategoryList(department: selectedDepartment),
       ),
     );
   }
@@ -48,15 +66,16 @@ class DepartmentList extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) =>
           Center(child: Text('Departmanlar yüklenemedi: $err')),
-      data: (departments) => ListView.builder(
+      data: (departments) => ListView.separated(
         itemCount: departments.length,
+        separatorBuilder: (context, index) => const Divider(height: 1),
         itemBuilder: (context, index) {
           final department = departments[index];
           return ListTile(
-            leading: const Icon(Icons.business_outlined),
+            leading: const Icon(Icons.business_outlined, color: Colors.grey),
             title: Text(department.name),
+            trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              // Seçilen departmanı state'e ata
               ref.read(selectedDepartmentProvider.notifier).state = department;
             },
           );
@@ -78,20 +97,21 @@ class CategoryList extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) =>
           Center(child: Text('Kategoriler yüklenemedi: $err')),
-      data: (categories) => ListView.builder(
+      data: (categories) => ListView.separated(
         itemCount: categories.length,
+        separatorBuilder: (context, index) => const Divider(height: 1),
         itemBuilder: (context, index) {
           final category = categories[index];
           return ListTile(
-            leading: const Icon(Icons.category_outlined),
+            leading: Icon(Icons.category_outlined, color: Colors.grey.shade700),
             title: Text(category.name),
             subtitle: Text(category.description ?? ''),
+            trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              // Seçilen kategoriyi state'e ata ve sonraki adıma git
-              ref.read(selectedCategoryProvider.notifier).state = category;
-              // TODO: GoRouter ile bir sonraki adıma yönlendir
-              print(
-                  'Seçilen Departman: ${department.name}, Kategori: ${category.name}');
+              final notifier = ref.read(createReportProvider.notifier);
+              notifier.setDepartment(department);
+              notifier.setCategory(category);
+              context.goNamed('createReportDetails'); // Sonraki adıma git
             },
           );
         },

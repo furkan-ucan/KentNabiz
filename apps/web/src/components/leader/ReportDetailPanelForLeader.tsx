@@ -645,7 +645,18 @@ export const ReportDetailPanelForLeader: React.FC<
                         <TableRow key={assignment.id}>
                           <TableCell>
                             {assignment.assigneeType === AssigneeType.USER
-                              ? assignment.assigneeUser?.fullName ||
+                              ? (
+                                  assignment.assigneeUser as {
+                                    fullName?: string;
+                                    name?: string;
+                                  }
+                                )?.fullName ||
+                                (
+                                  assignment.assigneeUser as {
+                                    fullName?: string;
+                                    name?: string;
+                                  }
+                                )?.name ||
                                 'Bilinmeyen Kullanıcı'
                               : assignment.assigneeTeam?.name ||
                                 'Bilinmeyen Takım'}

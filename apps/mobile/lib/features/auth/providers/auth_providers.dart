@@ -71,8 +71,11 @@ class AuthController {
             const AuthState(status: AuthStatus.unauthenticated);
       }
     } catch (e, s) {
-      logger.e("[AUTH] checkInitialAuthStatus içinde HATA YAKALANDI",
-          error: e, stackTrace: s);
+      logger.e(
+        "[AUTH] checkInitialAuthStatus içinde HATA YAKALANDI",
+        error: e,
+        stackTrace: s,
+      );
       _ref.read(authStateProvider.notifier).state =
           const AuthState(status: AuthStatus.unauthenticated);
     }
@@ -99,8 +102,11 @@ class AuthController {
       _ref.read(authStateProvider.notifier).state =
           AuthState(status: AuthStatus.authenticated, user: user);
     } catch (e, s) {
-      logger.e("[AUTH] _authenticateWithToken içinde HATA YAKALANDI",
-          error: e, stackTrace: s);
+      logger.e(
+        "[AUTH] _authenticateWithToken içinde HATA YAKALANDI",
+        error: e,
+        stackTrace: s,
+      );
       logout();
     }
     logger.i("[AUTH] _authenticateWithToken: Tamamlandı.");

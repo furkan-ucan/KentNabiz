@@ -194,7 +194,9 @@ export const ViewAssignmentModal: React.FC<ViewAssignmentModalProps> = ({
                     </Avatar>
                     <Box flex={1}>
                       <Typography variant="h6" gutterBottom>
-                        {activeAssignment.assigneeUser.fullName}
+                        {'fullName' in activeAssignment.assigneeUser
+                          ? activeAssignment.assigneeUser.fullName
+                          : activeAssignment.assigneeUser.name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         Bireysel Atama
@@ -258,7 +260,12 @@ export const ViewAssignmentModal: React.FC<ViewAssignmentModalProps> = ({
                 <Box display="flex" alignItems="center" gap={1} mt={1}>
                   <PersonIcon fontSize="small" color="action" />
                   <Typography variant="body2" color="text.secondary">
-                    Atama Eden: {activeAssignment.assignedBy.fullName}
+                    Atama Eden:{' '}
+                    {
+                      ('fullName' in activeAssignment.assignedBy
+                        ? activeAssignment.assignedBy.fullName
+                        : activeAssignment.assignedBy.name) as string
+                    }
                   </Typography>
                 </Box>
               )}

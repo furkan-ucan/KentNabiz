@@ -10,9 +10,12 @@ import 'package:kentnabiz_mobile/features/citizen/screens/citizen_dashboard_scre
 import 'package:kentnabiz_mobile/features/citizen/screens/citizen_shell_screen.dart';
 import 'package:kentnabiz_mobile/features/citizen/screens/profile_screen.dart';
 import 'package:kentnabiz_mobile/features/citizen/screens/report_list_screen.dart';
-import 'package:kentnabiz_mobile/features/citizen/screens/report_detail_screen.dart'; // Added import
+import 'package:kentnabiz_mobile/features/citizen/screens/report_detail_screen.dart';
 import 'package:kentnabiz_mobile/shared/models/user.dart';
 import 'package:kentnabiz_mobile/features/citizen/report_creation/screens/step1_category_selection_screen.dart';
+import 'package:kentnabiz_mobile/features/citizen/report_creation/screens/step2_details_screen.dart';
+import 'package:kentnabiz_mobile/features/citizen/report_creation/screens/step3_media_screen.dart';
+import 'package:kentnabiz_mobile/features/citizen/report_creation/screens/step4_preview_screen.dart';
 
 // --- ÖRNEK EKİP ÜYESİ EKRANI ---
 class TeamMemberHomeScreen extends ConsumerWidget {
@@ -87,6 +90,33 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const LoginScreen(),
       ),
 
+      // YENİ RAPOR OLUŞTURMA AKIŞI
+      GoRoute(
+        path: '/citizen/create-report',
+        name: 'createReport',
+        builder: (context, state) => const CategoryScreen(),
+        routes: [
+          // Alt Rota olarak ekliyoruz
+          GoRoute(
+            path: 'details', // -> /citizen/create-report/details
+            name: 'createReportDetails',
+            builder: (context, state) => const ReportDetailsScreen(),
+          ),
+          // YENİ ROTA
+          GoRoute(
+            path: 'media', // -> /citizen/create-report/media
+            name: 'createReportMedia',
+            builder: (context, state) => const MediaSelectionScreen(),
+          ),
+          // YENİ ROTA
+          GoRoute(
+            path: 'preview', // -> /citizen/create-report/preview
+            name: 'createReportPreview',
+            builder: (context, state) => const PreviewReportScreen(),
+          ),
+        ],
+      ),
+
       // Vatandaş için ana iskelet ve sekmeleri
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
@@ -143,12 +173,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/team/home',
         name: 'teamHome',
         builder: (context, state) => const TeamMemberHomeScreen(),
-      ),
-      // YENİ RAPOR OLUŞTURMA ROTASI
-      GoRoute(
-        path: '/citizen/create-report',
-        name: 'createReport',
-        builder: (context, state) => const CategorySelectionScreen(),
       ),
     ],
   );

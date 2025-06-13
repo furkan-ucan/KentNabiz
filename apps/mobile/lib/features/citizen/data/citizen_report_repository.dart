@@ -1,9 +1,14 @@
 // lib/features/citizen/data/citizen_report_repository.dart
+import 'dart:io'; // For File
+
+import 'package:dio/dio.dart'; // For FormData and MultipartFile
 import 'package:kentnabiz_mobile/core/api/api_client.dart';
+import 'package:kentnabiz_mobile/features/citizen/report_creation/models/create_report_dto.dart';
+import 'package:kentnabiz_mobile/shared/models/department.dart';
 import 'package:kentnabiz_mobile/shared/models/paginated_response.dart';
 import 'package:kentnabiz_mobile/shared/models/report.dart';
 import 'package:kentnabiz_mobile/shared/models/report_category.dart';
-import 'package:kentnabiz_mobile/shared/models/department.dart'; // Yeni import
+import 'package:kentnabiz_mobile/shared/models/report_media.dart'; // ReportMedia için
 
 class CitizenReportRepository {
   final ApiClient _apiClient;
@@ -72,6 +77,36 @@ class CitizenReportRepository {
 
     return categoryListJson
         .map((json) => ReportCategory.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  // Bu metod artık CreateReportDto alıyor.
+  Future<Report> createReport(CreateReportDto dto) async {
+    final response = await _apiClient.dio.post(
+      '/reports',
+      data: dto.toJson(),
+    );
+    // API yanıtındaki 'data' nesnesini doğrudan parse et
+    return Report.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
+  // Bu metod, resimleri yükleyip tam Media nesnelerini döndürür
+  Future<List<ReportMedia>> uploadImages(List<File> photos) async {
+    if (photos.isEmpty) return [];
+    final formData = FormData();
+    for (var file in photos) {
+      formData.files
+          .add(MapEntry('files', await MultipartFile.fromFile(file.path)));
+    }
+    final response = await _apiClient.dio.post(
+      '/media/upload/multiple?isPublic=false',
+      data: formData,
+    );
+    // API yanıtındaki 'data' nesnesini doğrudan parse et
+    // Assuming response.data is already the list of media objects
+    final List<dynamic> mediaListJson = response.data['data'];
+    return mediaListJson
+        .map((json) => ReportMedia.fromJson(json as Map<String, dynamic>))
         .toList();
   }
 

@@ -26,6 +26,7 @@ mixin _$ReportCategory {
   String? get icon => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
   List<ReportCategory> get children => throw _privateConstructorUsedError;
+  ReportType? get defaultReportType => throw _privateConstructorUsedError;
 
   /// Serializes this ReportCategory to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -49,7 +50,8 @@ abstract class $ReportCategoryCopyWith<$Res> {
       String code,
       String? icon,
       String? description,
-      List<ReportCategory> children});
+      List<ReportCategory> children,
+      ReportType? defaultReportType});
 }
 
 /// @nodoc
@@ -73,6 +75,7 @@ class _$ReportCategoryCopyWithImpl<$Res, $Val extends ReportCategory>
     Object? icon = freezed,
     Object? description = freezed,
     Object? children = null,
+    Object? defaultReportType = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -99,6 +102,10 @@ class _$ReportCategoryCopyWithImpl<$Res, $Val extends ReportCategory>
           ? _value.children
           : children // ignore: cast_nullable_to_non_nullable
               as List<ReportCategory>,
+      defaultReportType: freezed == defaultReportType
+          ? _value.defaultReportType
+          : defaultReportType // ignore: cast_nullable_to_non_nullable
+              as ReportType?,
     ) as $Val);
   }
 }
@@ -117,7 +124,8 @@ abstract class _$$ReportCategoryImplCopyWith<$Res>
       String code,
       String? icon,
       String? description,
-      List<ReportCategory> children});
+      List<ReportCategory> children,
+      ReportType? defaultReportType});
 }
 
 /// @nodoc
@@ -139,6 +147,7 @@ class __$$ReportCategoryImplCopyWithImpl<$Res>
     Object? icon = freezed,
     Object? description = freezed,
     Object? children = null,
+    Object? defaultReportType = freezed,
   }) {
     return _then(_$ReportCategoryImpl(
       id: null == id
@@ -165,6 +174,10 @@ class __$$ReportCategoryImplCopyWithImpl<$Res>
           ? _value._children
           : children // ignore: cast_nullable_to_non_nullable
               as List<ReportCategory>,
+      defaultReportType: freezed == defaultReportType
+          ? _value.defaultReportType
+          : defaultReportType // ignore: cast_nullable_to_non_nullable
+              as ReportType?,
     ));
   }
 }
@@ -178,7 +191,8 @@ class _$ReportCategoryImpl implements _ReportCategory {
       required this.code,
       this.icon,
       this.description,
-      final List<ReportCategory> children = const []})
+      final List<ReportCategory> children = const [],
+      this.defaultReportType})
       : _children = children;
 
   factory _$ReportCategoryImpl.fromJson(Map<String, dynamic> json) =>
@@ -204,8 +218,11 @@ class _$ReportCategoryImpl implements _ReportCategory {
   }
 
   @override
+  final ReportType? defaultReportType;
+
+  @override
   String toString() {
-    return 'ReportCategory(id: $id, name: $name, code: $code, icon: $icon, description: $description, children: $children)';
+    return 'ReportCategory(id: $id, name: $name, code: $code, icon: $icon, description: $description, children: $children, defaultReportType: $defaultReportType)';
   }
 
   @override
@@ -219,13 +236,22 @@ class _$ReportCategoryImpl implements _ReportCategory {
             (identical(other.icon, icon) || other.icon == icon) &&
             (identical(other.description, description) ||
                 other.description == description) &&
-            const DeepCollectionEquality().equals(other._children, _children));
+            const DeepCollectionEquality().equals(other._children, _children) &&
+            (identical(other.defaultReportType, defaultReportType) ||
+                other.defaultReportType == defaultReportType));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, name, code, icon,
-      description, const DeepCollectionEquality().hash(_children));
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      name,
+      code,
+      icon,
+      description,
+      const DeepCollectionEquality().hash(_children),
+      defaultReportType);
 
   /// Create a copy of ReportCategory
   /// with the given fields replaced by the non-null parameter values.
@@ -251,7 +277,8 @@ abstract class _ReportCategory implements ReportCategory {
       required final String code,
       final String? icon,
       final String? description,
-      final List<ReportCategory> children}) = _$ReportCategoryImpl;
+      final List<ReportCategory> children,
+      final ReportType? defaultReportType}) = _$ReportCategoryImpl;
 
   factory _ReportCategory.fromJson(Map<String, dynamic> json) =
       _$ReportCategoryImpl.fromJson;
@@ -268,6 +295,8 @@ abstract class _ReportCategory implements ReportCategory {
   String? get description;
   @override
   List<ReportCategory> get children;
+  @override
+  ReportType? get defaultReportType;
 
   /// Create a copy of ReportCategory
   /// with the given fields replaced by the non-null parameter values.

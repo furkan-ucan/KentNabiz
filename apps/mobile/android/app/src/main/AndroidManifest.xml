@@ -1,4 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Kamera izni -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Galeriden okuma izni (Android 13+ için) -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Galeriden okuma izni (Eski versiyonlar için) -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <application
         android:label="kentnabiz_mobile"
         android:name="${applicationName}"

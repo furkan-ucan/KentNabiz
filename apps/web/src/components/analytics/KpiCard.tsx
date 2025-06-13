@@ -6,8 +6,11 @@ interface KpiCardProps {
   value: string | number;
   isLoading?: boolean;
   subtitle?: string;
-  color?: 'primary' | 'secondary' | 'success' | 'warning' | 'error';
+  color?: string;
   icon?: React.ReactNode;
+  isClickable?: boolean;
+  onClick?: () => void;
+  description?: string;
 }
 
 export const KpiCard = ({
@@ -17,7 +20,15 @@ export const KpiCard = ({
   subtitle,
   color = 'primary',
   icon,
+  isClickable = false,
+  onClick,
+  description,
 }: KpiCardProps) => {
+  const handleClick = () => {
+    if (isClickable && onClick) {
+      onClick();
+    }
+  };
   if (isLoading) {
     return (
       <Card sx={{ height: '100%', minHeight: 120 }}>
@@ -35,12 +46,19 @@ export const KpiCard = ({
       sx={{
         height: '100%',
         minHeight: 120,
+        cursor: isClickable ? 'pointer' : 'default',
         transition: 'transform 0.2s, box-shadow 0.2s',
-        '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: 3,
-        },
+        '&:hover': isClickable
+          ? {
+              transform: 'translateY(-2px)',
+              boxShadow: 3,
+            }
+          : {
+              transform: 'translateY(-2px)',
+              boxShadow: 3,
+            },
       }}
+      onClick={handleClick}
     >
       <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -69,6 +87,26 @@ export const KpiCard = ({
         {subtitle && (
           <Typography variant="caption" color="text.secondary">
             {subtitle}
+          </Typography>
+        )}
+
+        {description && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: 'block', mt: 1 }}
+          >
+            {description}
+          </Typography>
+        )}
+
+        {isClickable && !isLoading && (
+          <Typography
+            variant="caption"
+            color={`${color}.main`}
+            sx={{ display: 'block', mt: 1, fontWeight: 500 }}
+          >
+            Detaylar için tıklayın →
           </Typography>
         )}
       </CardContent>
