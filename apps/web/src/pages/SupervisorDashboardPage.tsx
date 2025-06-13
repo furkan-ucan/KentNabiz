@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Box, Typography, Stack, Grid, Snackbar, Alert } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { reportService } from '@/services/reportService';
 import {
-  StatusFilters,
+  EnhancedFilters,
   QuickStats,
   ReportsTableSection,
   ReportsMapSection,
@@ -22,6 +23,14 @@ import type { SharedReport } from '@kentnabiz/shared';
 export const SupervisorDashboardPage: React.FC = React.memo(() => {
   // Auth değişikliklerini izle ve cache'i temizle
   useAuthChangeDetection();
+
+  // URL parametrelerini oku
+  const [searchParams] = useSearchParams();
+  const statusFromUrl = searchParams.get('status');
+  const subStatusFromUrl = searchParams.get('subStatus');
+  const assignmentFromUrl = searchParams.get('assignment');
+  const overdueFromUrl = searchParams.get('overdue') === 'true';
+  const reopenedFromUrl = searchParams.get('reopened') === 'true';
 
   const { filters, setFilters } = useDashboardStore();
   const [pagination, setPagination] = useState({
@@ -64,6 +73,38 @@ export const SupervisorDashboardPage: React.FC = React.memo(() => {
 
   const queryClient = useQueryClient();
 
+  // URL parametrelerini başlangıç filtresi olarak uygula
+  useEffect(() => {
+    if (
+      statusFromUrl ||
+      subStatusFromUrl ||
+      assignmentFromUrl ||
+      overdueFromUrl ||
+      reopenedFromUrl
+    ) {
+      const urlFilters = { ...filters };
+
+      if (statusFromUrl) urlFilters.status = [statusFromUrl as ReportStatus];
+      if (subStatusFromUrl) urlFilters.subStatus = subStatusFromUrl;
+      if (assignmentFromUrl && assignmentFromUrl === 'unassigned') {
+        urlFilters.assignment = 'unassigned' as const;
+      }
+      if (overdueFromUrl) urlFilters.overdue = true;
+      if (reopenedFromUrl) urlFilters.reopened = true;
+
+      setFilters(urlFilters);
+    }
+    // Sadece URL parametreleri değiştiğinde çalışsın, filters döngüye girmesin
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    statusFromUrl,
+    subStatusFromUrl,
+    assignmentFromUrl,
+    overdueFromUrl,
+    reopenedFromUrl,
+    setFilters,
+  ]);
+
   // Supervisor departmanı değiştiğinde cache'leri temizle
   useEffect(() => {
     const user = getCurrentUser?.();
@@ -87,42 +128,6 @@ export const SupervisorDashboardPage: React.FC = React.memo(() => {
       setPagination(model);
     },
     []
-  );
-
-  const handleStatusFilter = useCallback(
-    (status: ReportStatus[]) => {
-      // Check for modern scheduler API for priority scheduling
-      const scheduler = (
-        globalThis as typeof globalThis & {
-          scheduler?: {
-            postTask: (
-              callback: () => void,
-              options?: { priority: string }
-            ) => void;
-          };
-        }
-      ).scheduler;
-
-      if (scheduler?.postTask) {
-        scheduler.postTask(
-          () => {
-            setFilters({ status });
-          },
-          { priority: 'user-blocking' }
-        );
-      } else if (window.requestIdleCallback) {
-        window.requestIdleCallback(
-          () => {
-            setFilters({ status });
-          },
-          { timeout: 16 }
-        ); // Faster timeout for better INP
-      } else {
-        // Direct call for immediate response on older browsers
-        setFilters({ status });
-      }
-    },
-    [setFilters]
   );
 
   // Modal handler optimized with single state object
@@ -380,12 +385,11 @@ export const SupervisorDashboardPage: React.FC = React.memo(() => {
         {/* Sol Sütun - Filtreler ve Hızlı Aksiyonlar */}
         <Grid size={{ xs: 12, md: 2 }}>
           <Stack spacing={2}>
-            {/* Status Filtreleri */}
-            <StatusFilters
+            {/* Enhanced Filtreleri */}
+            <EnhancedFilters
               statusCounts={statusCounts}
               filters={filters}
-              onStatusFilter={handleStatusFilter}
-              onSetFilters={setFilters}
+              onFiltersChange={setFilters}
               isLoading={statusCountsLoading}
             />
 

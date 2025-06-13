@@ -7,6 +7,10 @@ interface DashboardFilters {
   teamId?: number;
   search?: string;
   supported?: boolean;
+  subStatus?: string;
+  assignment?: 'unassigned' | 'assigned';
+  overdue?: boolean;
+  reopened?: boolean;
 }
 
 interface MapBounds {

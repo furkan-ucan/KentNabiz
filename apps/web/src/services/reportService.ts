@@ -10,6 +10,10 @@ export interface ReportFilters {
   dateTo?: string;
   search?: string;
   supported?: boolean;
+  subStatus?: string;
+  assignment?: 'unassigned' | 'assigned';
+  overdue?: boolean;
+  reopened?: boolean;
 }
 
 export interface PaginationParams {
@@ -47,6 +51,11 @@ export interface StatusCounts {
   REJECTED?: number;
   CANCELLED?: number;
   total?: number;
+  // Yeni enhanced filtreler için
+  unassigned?: number;
+  pendingApproval?: number;
+  overdue?: number;
+  reopened?: number;
 }
 
 export const reportService = {
@@ -75,6 +84,16 @@ export const reportService = {
     if (queryParams.search) params.append('search', queryParams.search);
     if (queryParams.supported !== undefined)
       params.append('supported', queryParams.supported.toString());
+
+    // Yeni filtreler
+    if (queryParams.subStatus)
+      params.append('subStatus', queryParams.subStatus);
+    if (queryParams.assignment)
+      params.append('assignment', queryParams.assignment);
+    if (queryParams.overdue !== undefined)
+      params.append('overdue', queryParams.overdue.toString());
+    if (queryParams.reopened !== undefined)
+      params.append('reopened', queryParams.reopened.toString());
 
     // Sayfalama
     if (queryParams.page) params.append('page', queryParams.page.toString());

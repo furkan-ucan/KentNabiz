@@ -80,6 +80,7 @@ export const KpiMetricsWidget: React.FC<KpiMetricsWidgetProps> = ({
               isLoading={isLoading}
               isClickable={kpiDef.isClickable}
               description={kpiDef.description}
+              targetUrl={kpiDef.targetUrl}
               onClick={() =>
                 handleKpiClick(kpiDef.filterKey, kpiDef.filterValue, kpiDef)
               }

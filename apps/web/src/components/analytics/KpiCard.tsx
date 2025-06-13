@@ -1,5 +1,6 @@
 // apps/web/src/components/analytics/KpiCard.tsx
 import { Card, CardContent, Typography, Box, Skeleton } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 interface KpiCardProps {
   title: string;
@@ -11,6 +12,7 @@ interface KpiCardProps {
   isClickable?: boolean;
   onClick?: () => void;
   description?: string;
+  targetUrl?: string | null;
 }
 
 export const KpiCard = ({
@@ -23,10 +25,19 @@ export const KpiCard = ({
   isClickable = false,
   onClick,
   description,
+  targetUrl,
 }: KpiCardProps) => {
+  const navigate = useNavigate();
+
   const handleClick = () => {
-    if (isClickable && onClick) {
-      onClick();
+    if (isClickable) {
+      if (targetUrl) {
+        // Navigate to targetUrl if provided
+        navigate(targetUrl);
+      } else if (onClick) {
+        // Fallback to onClick if no targetUrl
+        onClick();
+      }
     }
   };
   if (isLoading) {
