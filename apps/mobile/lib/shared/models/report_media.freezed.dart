@@ -21,8 +21,19 @@ ReportMedia _$ReportMediaFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$ReportMedia {
   int get id => throw _privateConstructorUsedError;
-  String get url => throw _privateConstructorUsedError;
-  String? get type => throw _privateConstructorUsedError;
+  String get url => throw _privateConstructorUsedError; // DÜZELTME:
+// Backend'den gelen JSON'daki 'mimetype' anahtarını
+// bu modeldeki 'type' alanına atamasını sağlıyoruz.
+// Eğer 'mimetype' yoksa, 'type' anahtarını arar.
+// İkisi de yoksa null olur.
+  @JsonKey(name: 'mimetype')
+  String? get type =>
+      throw _privateConstructorUsedError; // Sunucudan gelebilecek diğer opsiyonel alanları da ekleyebiliriz.
+// Bu, gelecekteki olası hataları önler.
+  String? get filename => throw _privateConstructorUsedError;
+  int? get size => throw _privateConstructorUsedError;
+  DateTime? get createdAt => throw _privateConstructorUsedError;
+  DateTime? get updatedAt => throw _privateConstructorUsedError;
 
   /// Serializes this ReportMedia to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -40,7 +51,14 @@ abstract class $ReportMediaCopyWith<$Res> {
           ReportMedia value, $Res Function(ReportMedia) then) =
       _$ReportMediaCopyWithImpl<$Res, ReportMedia>;
   @useResult
-  $Res call({int id, String url, String? type});
+  $Res call(
+      {int id,
+      String url,
+      @JsonKey(name: 'mimetype') String? type,
+      String? filename,
+      int? size,
+      DateTime? createdAt,
+      DateTime? updatedAt});
 }
 
 /// @nodoc
@@ -61,6 +79,10 @@ class _$ReportMediaCopyWithImpl<$Res, $Val extends ReportMedia>
     Object? id = null,
     Object? url = null,
     Object? type = freezed,
+    Object? filename = freezed,
+    Object? size = freezed,
+    Object? createdAt = freezed,
+    Object? updatedAt = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -75,6 +97,22 @@ class _$ReportMediaCopyWithImpl<$Res, $Val extends ReportMedia>
           ? _value.type
           : type // ignore: cast_nullable_to_non_nullable
               as String?,
+      filename: freezed == filename
+          ? _value.filename
+          : filename // ignore: cast_nullable_to_non_nullable
+              as String?,
+      size: freezed == size
+          ? _value.size
+          : size // ignore: cast_nullable_to_non_nullable
+              as int?,
+      createdAt: freezed == createdAt
+          ? _value.createdAt
+          : createdAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      updatedAt: freezed == updatedAt
+          ? _value.updatedAt
+          : updatedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
     ) as $Val);
   }
 }
@@ -87,7 +125,14 @@ abstract class _$$ReportMediaImplCopyWith<$Res>
       __$$ReportMediaImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({int id, String url, String? type});
+  $Res call(
+      {int id,
+      String url,
+      @JsonKey(name: 'mimetype') String? type,
+      String? filename,
+      int? size,
+      DateTime? createdAt,
+      DateTime? updatedAt});
 }
 
 /// @nodoc
@@ -106,6 +151,10 @@ class __$$ReportMediaImplCopyWithImpl<$Res>
     Object? id = null,
     Object? url = null,
     Object? type = freezed,
+    Object? filename = freezed,
+    Object? size = freezed,
+    Object? createdAt = freezed,
+    Object? updatedAt = freezed,
   }) {
     return _then(_$ReportMediaImpl(
       id: null == id
@@ -120,6 +169,22 @@ class __$$ReportMediaImplCopyWithImpl<$Res>
           ? _value.type
           : type // ignore: cast_nullable_to_non_nullable
               as String?,
+      filename: freezed == filename
+          ? _value.filename
+          : filename // ignore: cast_nullable_to_non_nullable
+              as String?,
+      size: freezed == size
+          ? _value.size
+          : size // ignore: cast_nullable_to_non_nullable
+              as int?,
+      createdAt: freezed == createdAt
+          ? _value.createdAt
+          : createdAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      updatedAt: freezed == updatedAt
+          ? _value.updatedAt
+          : updatedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
     ));
   }
 }
@@ -127,7 +192,14 @@ class __$$ReportMediaImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$ReportMediaImpl implements _ReportMedia {
-  const _$ReportMediaImpl({required this.id, required this.url, this.type});
+  const _$ReportMediaImpl(
+      {required this.id,
+      required this.url,
+      @JsonKey(name: 'mimetype') this.type,
+      this.filename,
+      this.size,
+      this.createdAt,
+      this.updatedAt});
 
   factory _$ReportMediaImpl.fromJson(Map<String, dynamic> json) =>
       _$$ReportMediaImplFromJson(json);
@@ -136,12 +208,28 @@ class _$ReportMediaImpl implements _ReportMedia {
   final int id;
   @override
   final String url;
+// DÜZELTME:
+// Backend'den gelen JSON'daki 'mimetype' anahtarını
+// bu modeldeki 'type' alanına atamasını sağlıyoruz.
+// Eğer 'mimetype' yoksa, 'type' anahtarını arar.
+// İkisi de yoksa null olur.
   @override
+  @JsonKey(name: 'mimetype')
   final String? type;
+// Sunucudan gelebilecek diğer opsiyonel alanları da ekleyebiliriz.
+// Bu, gelecekteki olası hataları önler.
+  @override
+  final String? filename;
+  @override
+  final int? size;
+  @override
+  final DateTime? createdAt;
+  @override
+  final DateTime? updatedAt;
 
   @override
   String toString() {
-    return 'ReportMedia(id: $id, url: $url, type: $type)';
+    return 'ReportMedia(id: $id, url: $url, type: $type, filename: $filename, size: $size, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -151,12 +239,20 @@ class _$ReportMediaImpl implements _ReportMedia {
             other is _$ReportMediaImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.url, url) || other.url == url) &&
-            (identical(other.type, type) || other.type == type));
+            (identical(other.type, type) || other.type == type) &&
+            (identical(other.filename, filename) ||
+                other.filename == filename) &&
+            (identical(other.size, size) || other.size == size) &&
+            (identical(other.createdAt, createdAt) ||
+                other.createdAt == createdAt) &&
+            (identical(other.updatedAt, updatedAt) ||
+                other.updatedAt == updatedAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, url, type);
+  int get hashCode => Object.hash(
+      runtimeType, id, url, type, filename, size, createdAt, updatedAt);
 
   /// Create a copy of ReportMedia
   /// with the given fields replaced by the non-null parameter values.
@@ -178,7 +274,11 @@ abstract class _ReportMedia implements ReportMedia {
   const factory _ReportMedia(
       {required final int id,
       required final String url,
-      final String? type}) = _$ReportMediaImpl;
+      @JsonKey(name: 'mimetype') final String? type,
+      final String? filename,
+      final int? size,
+      final DateTime? createdAt,
+      final DateTime? updatedAt}) = _$ReportMediaImpl;
 
   factory _ReportMedia.fromJson(Map<String, dynamic> json) =
       _$ReportMediaImpl.fromJson;
@@ -186,9 +286,24 @@ abstract class _ReportMedia implements ReportMedia {
   @override
   int get id;
   @override
-  String get url;
+  String get url; // DÜZELTME:
+// Backend'den gelen JSON'daki 'mimetype' anahtarını
+// bu modeldeki 'type' alanına atamasını sağlıyoruz.
+// Eğer 'mimetype' yoksa, 'type' anahtarını arar.
+// İkisi de yoksa null olur.
   @override
-  String? get type;
+  @JsonKey(name: 'mimetype')
+  String?
+      get type; // Sunucudan gelebilecek diğer opsiyonel alanları da ekleyebiliriz.
+// Bu, gelecekteki olası hataları önler.
+  @override
+  String? get filename;
+  @override
+  int? get size;
+  @override
+  DateTime? get createdAt;
+  @override
+  DateTime? get updatedAt;
 
   /// Create a copy of ReportMedia
   /// with the given fields replaced by the non-null parameter values.

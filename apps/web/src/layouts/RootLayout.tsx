@@ -22,7 +22,6 @@ import {
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Settings as SettingsIcon,
   Logout as LogoutIcon,
   AccountCircle as AccountIcon,
   Search as SearchIcon,
@@ -30,10 +29,6 @@ import {
   DarkMode as DarkModeIcon,
   Dashboard,
   Group,
-  Category,
-  Work,
-  School,
-  Business,
   Analytics as AnalyticsIcon,
 } from '@mui/icons-material';
 import { ErrorBoundary } from '../components/ErrorBoundary';
@@ -74,12 +69,7 @@ export const RootLayout = ({ children }: RootLayoutProps) => {
     const path = location.pathname;
     if (path === '/supervisor' || path === '/supervisor/dashboard') return 0; // Ana Sayfa
     if (path === '/supervisor/teams') return 1;
-    if (path === '/supervisor/categories') return 2;
-    if (path === '/supervisor/employees') return 3;
-    if (path === '/supervisor/expertise') return 4;
-    if (path === '/supervisor/departments') return 5;
-    if (path === '/supervisor/analytics') return 6;
-    if (path === '/supervisor/settings') return 7;
+    if (path === '/supervisor/analytics') return 2;
     return 0; // Varsayılan olarak Ana Sayfa
   };
 
@@ -87,23 +77,10 @@ export const RootLayout = ({ children }: RootLayoutProps) => {
     { label: 'Ana Sayfa', path: '/supervisor', icon: <Dashboard /> },
     { label: 'Takımlar', path: '/supervisor/teams', icon: <Group /> },
     {
-      label: 'Kategoriler',
-      path: '/supervisor/categories',
-      icon: <Category />,
-    },
-    { label: 'Çalışanlar', path: '/supervisor/employees', icon: <Work /> },
-    { label: 'Uzmanlık', path: '/supervisor/expertise', icon: <School /> },
-    {
-      label: 'Departmanlar',
-      path: '/supervisor/departments',
-      icon: <Business />,
-    },
-    {
       label: 'Analitik Panel',
       path: '/supervisor/analytics',
       icon: <AnalyticsIcon />,
     },
-    { label: 'Ayarlar', path: '/supervisor/settings', icon: <SettingsIcon /> },
   ];
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -185,18 +162,6 @@ export const RootLayout = ({ children }: RootLayoutProps) => {
       </MenuItem>
 
       {/* Ayarlar - Sadece SYSTEM_ADMIN için */}
-      {hasRole(UserRole.SYSTEM_ADMIN) && (
-        <MenuItem
-          onClick={() => {
-            navigate('/settings');
-            handleProfileMenuClose();
-          }}
-        >
-          <SettingsIcon sx={{ mr: 2, color: 'primary.main' }} />
-          Sistem Ayarları
-        </MenuItem>
-      )}
-
       <Divider
         sx={{ my: 1, borderColor: alpha(theme.palette.text.primary, 0.1) }}
       />

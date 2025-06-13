@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import React, { useMemo, useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, GeoJSON } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import {
@@ -12,6 +12,7 @@ import {
   Badge,
 } from '@mui/material';
 import { SharedReport, ReportStatus } from '@kentnabiz/shared';
+import type { FeatureCollection } from 'geojson';
 import 'leaflet/dist/leaflet.css';
 
 // Leaflet default icon fix
@@ -64,6 +65,17 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
   height = 500,
 }) => {
   const [isMapReady, setIsMapReady] = useState(false);
+  const [islahiyeData, setIslahiyeData] = useState<FeatureCollection | null>(
+    null
+  );
+
+  // İslahiye sınırlarını yükle
+  useEffect(() => {
+    fetch('/src/assets/lottie/islahiye_neighborhoods.geojson')
+      .then(response => response.json())
+      .then(data => setIslahiyeData(data))
+      .catch(error => console.warn('İslahiye sınırları yüklenemedi:', error));
+  }, []);
 
   // Status legend için sayımlar
   const statusCounts = useMemo(() => {
@@ -123,7 +135,7 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
         )}
         <MapContainer
           center={ISLAHIYE_CENTER}
-          zoom={13}
+          zoom={9}
           style={{
             height: '100%',
             width: '100%',
@@ -134,7 +146,7 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
             transition: 'opacity 0.3s',
           }}
           maxBounds={ISLAHIYE_BOUNDS}
-          minZoom={11}
+          minZoom={7}
           maxZoom={19}
           maxBoundsViscosity={1.0}
           whenReady={() => setIsMapReady(true)}
@@ -144,6 +156,29 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             errorTileUrl="https://via.placeholder.com/256x256/ff0000/ffffff?text=Tile+Error"
           />
+
+          {/* İslahiye Sınırları */}
+          {islahiyeData && (
+            <GeoJSON
+              data={islahiyeData}
+              style={{
+                color: '#1976d2',
+                weight: 2,
+                opacity: 0.8,
+                fillColor: '#bbdefb',
+                fillOpacity: 0.1,
+              }}
+              onEachFeature={(feature, layer) => {
+                if (feature.properties?.name) {
+                  layer.bindPopup(
+                    `<strong>${feature.properties.name}</strong><br/>
+                     ${feature.properties.place || 'Mahalle'}`
+                  );
+                }
+              }}
+            />
+          )}
+
           <MarkerClusterGroup
             chunkedLoading
             maxClusterRadius={50}

@@ -41,6 +41,11 @@ export class ReportRepository {
     departmentId?: number;
     currentUserId?: number;
     bbox?: string;
+    // Enhanced filters
+    assignment?: 'unassigned' | 'assigned';
+    subStatus?: string;
+    overdue?: boolean;
+    reopened?: boolean;
   }): Promise<ISpatialQueryResult> {
     const limit = options?.limit || 10;
     const page = options?.page || 1;
@@ -91,6 +96,43 @@ export class ReportRepository {
       queryBuilder.andWhere('report.currentDepartmentId = :departmentId', {
         departmentId: options.departmentId,
       });
+    }
+
+    // Enhanced Filters
+    if (options?.assignment === 'unassigned') {
+      // Aktif assignment'ı olmayan raporlar
+      queryBuilder.andWhere('(assignments.id IS NULL OR assignments.status = :cancelledStatus)', {
+        cancelledStatus: 'CANCELLED',
+      });
+    } else if (options?.assignment === 'assigned') {
+      // Aktif assignment'ı olan raporlar
+      queryBuilder.andWhere(
+        'assignments.id IS NOT NULL AND assignments.status NOT IN (:...inactiveStatuses)',
+        {
+          inactiveStatuses: ['CANCELLED', 'COMPLETED'],
+        }
+      );
+    }
+
+    if (options?.subStatus) {
+      queryBuilder.andWhere('report.subStatus = :subStatus', { subStatus: options.subStatus });
+    }
+
+    if (options?.overdue === true) {
+      queryBuilder.andWhere('report.createdAt < :sevenDaysAgo', {
+        sevenDaysAgo: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      });
+    }
+
+    if (options?.reopened === true) {
+      console.log('>>> REOPENED FILTER ACTIVATED <<<');
+      // Status history tablosunda DONE -> OPEN geçişi olan raporlar
+      queryBuilder.innerJoin(
+        'report_status_histories',
+        'statusHistory',
+        'statusHistory.report_id = report.id AND statusHistory.previous_status = :doneStatus AND statusHistory.new_status = :openStatus',
+        { doneStatus: 'DONE', openStatus: 'OPEN' }
+      );
     }
 
     // Spatial bbox filtering using PostGIS

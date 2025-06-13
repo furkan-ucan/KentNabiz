@@ -1,5 +1,13 @@
 import React, { lazy, Suspense } from 'react';
-import { Card, CardContent, Box, Stack, Typography } from '@mui/material';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  Box,
+  Stack,
+  Typography,
+} from '@mui/material';
+import { Map as MapIcon } from '@mui/icons-material';
 import type { SharedReport } from '@kentnabiz/shared';
 
 const LazyInteractiveReportMap = lazy(
@@ -20,16 +28,22 @@ export const ReportsMapSection: React.FC<ReportsMapSectionProps> = ({
   return (
     <Card
       sx={{
-        height: '80vh',
-        minHeight: '600px',
+        height: '500px',
+        minHeight: '400px',
         // Harita performansı için GPU acceleration
         willChange: 'transform',
         contain: 'layout style paint',
       }}
     >
+      <CardHeader
+        title="Rapor Konumları"
+        titleTypographyProps={{ variant: 'h6', fontSize: '1rem' }}
+        avatar={<MapIcon color="primary" />}
+        sx={{ pb: 1 }}
+      />
       <CardContent
         sx={{
-          height: '100%',
+          height: 'calc(100% - 72px)', // Header için alan bırak
           p: 0,
           // Hardware acceleration için style hints
           transform: 'translateZ(0)',
@@ -41,7 +55,7 @@ export const ReportsMapSection: React.FC<ReportsMapSectionProps> = ({
             <LazyInteractiveReportMap
               reports={reports}
               onReportClick={onReportClick}
-              height="500px"
+              height="100%"
             />
           </Suspense>
         ) : (

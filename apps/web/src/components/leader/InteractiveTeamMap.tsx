@@ -1,8 +1,16 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMap,
+  GeoJSON,
+} from 'react-leaflet';
 import { LatLngExpression, Icon } from 'leaflet';
 import { SharedReport, ReportStatus } from '@kentnabiz/shared';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import L from 'leaflet';
+import type { FeatureCollection } from 'geojson';
 import 'leaflet/dist/leaflet.css';
 
 // Leaflet'ın varsayılan ikonunun düzgün çalışması için bu ayar gerekli
@@ -75,6 +83,17 @@ export function InteractiveTeamMap({
 }: MapProps) {
   // İslahiye koordinatları - haritanın merkezi (doğru koordinatlar)
   const ISLAHIYE_CENTER: LatLngExpression = [37.025638, 36.631124]; // İslahiye/Gaziantep koordinatları
+  const [islahiyeData, setIslahiyeData] = useState<FeatureCollection | null>(
+    null
+  );
+
+  // İslahiye sınırlarını yükle
+  useEffect(() => {
+    fetch('/src/assets/lottie/islahiye_neighborhoods.geojson')
+      .then(response => response.json())
+      .then(data => setIslahiyeData(data))
+      .catch(error => console.warn('İslahiye sınırları yüklenemedi:', error));
+  }, []);
 
   const selectedReport = reports.find(r => r.id === selectedReportId);
   const mapCenter: LatLngExpression = selectedReport?.location
@@ -84,12 +103,12 @@ export function InteractiveTeamMap({
       ]
     : ISLAHIYE_CENTER;
 
-  const zoomLevel = selectedReport ? 16 : 13;
+  const zoomLevel = selectedReport ? 16 : 9;
 
   return (
     <MapContainer
       center={ISLAHIYE_CENTER}
-      zoom={13}
+      zoom={9}
       style={{ height: '100%', width: '100%' }}
       zoomControl={true}
       scrollWheelZoom={true}
@@ -99,6 +118,28 @@ export function InteractiveTeamMap({
         attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+
+      {/* İslahiye Sınırları */}
+      {islahiyeData && (
+        <GeoJSON
+          data={islahiyeData}
+          style={{
+            color: '#1976d2',
+            weight: 2,
+            opacity: 0.8,
+            fillColor: '#bbdefb',
+            fillOpacity: 0.1,
+          }}
+          onEachFeature={(feature, layer) => {
+            if (feature.properties?.name) {
+              layer.bindPopup(
+                `<strong>${feature.properties.name}</strong><br/>
+                 ${feature.properties.place || 'Mahalle'}`
+              );
+            }
+          }}
+        />
+      )}
 
       {/* Seçili bir rapor varsa haritayı o konuma odakla */}
       <ChangeView center={mapCenter} zoom={zoomLevel} />

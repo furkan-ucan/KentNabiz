@@ -26,6 +26,7 @@ interface DashboardState {
   selectedReport: SharedReport | null;
   mapBounds: MapBounds | null;
   setFilters: (newFilters: Partial<DashboardFilters>) => void;
+  replaceFilters: (newFilters: Partial<DashboardFilters>) => void;
   clearFilters: () => void;
   setHoveredReportId: (id: number | null) => void;
   setSelectedReport: (report: SharedReport | null) => void;
@@ -44,6 +45,20 @@ export const useDashboardStore = create<DashboardState>(set => ({
     set(state => ({
       filters: { ...state.filters, ...newFilters },
     })),
+  replaceFilters: newFilters =>
+    set({
+      filters: {
+        // Sadece geçilen filtreleri kullan, gerisini undefined/default yap
+        status: newFilters.status || [ReportStatus.OPEN],
+        teamId: newFilters.teamId,
+        search: newFilters.search,
+        supported: newFilters.supported,
+        subStatus: newFilters.subStatus,
+        assignment: newFilters.assignment,
+        overdue: newFilters.overdue,
+        reopened: newFilters.reopened,
+      },
+    }),
   clearFilters: () =>
     set({
       filters: {

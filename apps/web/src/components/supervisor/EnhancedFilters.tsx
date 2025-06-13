@@ -139,14 +139,15 @@ export const EnhancedFilters: React.FC<EnhancedFiltersProps> = ({
         label: 'Yeniden Açılan',
         count: statusCounts?.reopened || 0,
         active: filters.reopened === true,
-        onClick: () =>
+        onClick: () => {
           onFiltersChange({
             reopened: true,
             status: undefined,
             assignment: undefined,
             subStatus: undefined,
             overdue: undefined,
-          }),
+          });
+        },
         color: 'warning' as const,
         icon: <ReopenedIcon fontSize="small" />,
       },

@@ -32,7 +32,7 @@ export const SupervisorDashboardPage: React.FC = React.memo(() => {
   const overdueFromUrl = searchParams.get('overdue') === 'true';
   const reopenedFromUrl = searchParams.get('reopened') === 'true';
 
-  const { filters, setFilters } = useDashboardStore();
+  const { filters, setFilters, replaceFilters } = useDashboardStore();
   const [pagination, setPagination] = useState({
     page: 0,
     pageSize: 10,
@@ -63,6 +63,7 @@ export const SupervisorDashboardPage: React.FC = React.memo(() => {
     ...pagination,
     ...filters,
   });
+
   // Status sayıları için ayrı API çağrısı (filtresiz)
   const { data: statusCounts, isLoading: statusCountsLoading } =
     useStatusCounts();
@@ -82,7 +83,8 @@ export const SupervisorDashboardPage: React.FC = React.memo(() => {
       overdueFromUrl ||
       reopenedFromUrl
     ) {
-      const urlFilters = { ...filters };
+      // URL parametreleri varsa tamamen yeni filtre objesi oluştur (mevcut filtreleri temizle)
+      const urlFilters: Partial<typeof filters> = {};
 
       if (statusFromUrl) urlFilters.status = [statusFromUrl as ReportStatus];
       if (subStatusFromUrl) urlFilters.subStatus = subStatusFromUrl;
@@ -92,17 +94,15 @@ export const SupervisorDashboardPage: React.FC = React.memo(() => {
       if (overdueFromUrl) urlFilters.overdue = true;
       if (reopenedFromUrl) urlFilters.reopened = true;
 
-      setFilters(urlFilters);
+      replaceFilters(urlFilters);
     }
-    // Sadece URL parametreleri değiştiğinde çalışsın, filters döngüye girmesin
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     statusFromUrl,
     subStatusFromUrl,
     assignmentFromUrl,
     overdueFromUrl,
     reopenedFromUrl,
-    setFilters,
+    replaceFilters,
   ]);
 
   // Supervisor departmanı değiştiğinde cache'leri temizle

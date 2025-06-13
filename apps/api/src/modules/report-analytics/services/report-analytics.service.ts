@@ -171,11 +171,14 @@ export class ReportAnalyticsService {
       });
     }
 
+    // Toplam rapor sayısı (tüm durumlar)
+    const totalReports = await this.reportRepository.count();
+
     // Frontend'in beklediği format
     return {
-      totalReports: summary.totalReportsResolvedAllTime,
+      totalReports, // Tüm raporlar
       pendingReports: summary.pendingReportsCount || 0,
-      resolvedReports: summary.totalReportsResolvedAllTime,
+      resolvedReports: summary.totalReportsResolvedAllTime, // Sadece çözülen raporlar
       myReports,
       averageResolutionTime: Math.round(summary.averageResolutionTimeDays || 0),
     };

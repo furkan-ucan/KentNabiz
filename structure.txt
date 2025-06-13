@@ -35,7 +35,6 @@
         |-- typeorm.config.ts
       |-- core
         |-- authorization
-          |-- ability.factory.spec.ts
           |-- ability.factory.ts
           |-- ability.module.ts
         |-- decorators
@@ -60,6 +59,11 @@
           |-- 1749387546986-AddGistIndexToLocations.ts
           |-- 1749387805069-AddSoftDeleteColumns.ts
           |-- 1749433978775-CreateCategorySpecializationsJoinTable.ts
+          |-- 1749668534770-CreateReportAnalyticsMV.ts
+          |-- 1749670138943-AddInterventionTimeToAnalyticsMV.ts
+          |-- 1749675000000-FixInterventionTimeCalculation.ts
+          |-- 1749695000000-AddSupportCountToAnalyticsMV.ts
+          |-- 1749700000000-UpdateReportAnalyticsMVWithAllColumns.ts
         |-- migrations-backup
           |-- 1680268800000-CreateUsers.ts
           |-- 1680268900000-AddPostGISAndDepartments.ts
@@ -77,6 +81,8 @@
           |-- reports.seed.ts
           |-- specializations.seed.ts
           |-- team-specializations.seed.ts
+          |-- teams-clean.seed.ts
+          |-- teams-old.seed.ts
           |-- teams.seed.ts
           |-- users.seed.ts
         |-- ormconfig.ts
@@ -142,10 +148,10 @@
           |-- controllers
             |-- category.controller.ts
             |-- report-analytics.controller.ts
-            |-- report-support.controller.ts
             |-- reports.controller.ts
           |-- dto
             |-- analytics.dto.ts
+            |-- approve-report.dto.ts
             |-- assign-team-to-report.dto.ts
             |-- assign-user-to-report.dto.ts
             |-- category.dto.ts
@@ -157,6 +163,7 @@
             |-- location.dto.ts
             |-- point.dto.ts
             |-- query-reports.dto.ts
+            |-- reject-report.dto.ts
             |-- report-support.dto.ts
             |-- update-report-status.dto.ts
             |-- update-report.dto.ts
@@ -254,6 +261,8 @@
       |-- users-team-assignment.e2e-spec.ts
     |-- .env
     |-- .env.example
+    |-- data-source.js
+    |-- find-user.js
     |-- jest.config.ts
     |-- nest-cli.json
     |-- package.json
@@ -269,104 +278,1446 @@
           |-- build.dart
           |-- build.dart.dill
         |-- fcd1995bc647fb959e82ea360c6c2c9a
+          |-- error_cache
+            |-- kentnabiz_mobile
+              |-- 128
+                |-- lib
+                  |-- features
+                    |-- citizen
+                      |-- report_creation
+                        |-- models
+                  |-- shared
+                    |-- models
           |-- asset_graph.json
         |-- generated
           |-- async
             |-- lib
+              |-- src
+                |-- delegate
+                  |-- event_sink.dart.transitive_digest
+                  |-- future.dart.transitive_digest
+                  |-- sink.dart.transitive_digest
+                  |-- stream.dart.transitive_digest
+                  |-- stream_consumer.dart.transitive_digest
+                  |-- stream_sink.dart.transitive_digest
+                  |-- stream_subscription.dart.transitive_digest
+                |-- result
+                  |-- capture_sink.dart.transitive_digest
+                  |-- capture_transformer.dart.transitive_digest
+                  |-- error.dart.transitive_digest
+                  |-- future.dart.transitive_digest
+                  |-- release_sink.dart.transitive_digest
+                  |-- release_transformer.dart.transitive_digest
+                  |-- result.dart.transitive_digest
+                  |-- value.dart.transitive_digest
+                |-- stream_sink_transformer
+                  |-- handler_transformer.dart.transitive_digest
+                  |-- reject_errors.dart.transitive_digest
+                  |-- stream_transformer_wrapper.dart.transitive_digest
+                  |-- typed.dart.transitive_digest
+                |-- typed
+                  |-- stream_subscription.dart.transitive_digest
+                |-- async_cache.dart.transitive_digest
+                |-- async_memoizer.dart.transitive_digest
+                |-- byte_collector.dart.transitive_digest
+                |-- cancelable_operation.dart.transitive_digest
+                |-- chunked_stream_reader.dart.transitive_digest
+                |-- future_group.dart.transitive_digest
+                |-- lazy_stream.dart.transitive_digest
+                |-- null_stream_sink.dart.transitive_digest
+                |-- restartable_timer.dart.transitive_digest
+                |-- single_subscription_transformer.dart.transitive_digest
+                |-- sink_base.dart.transitive_digest
+                |-- stream_closer.dart.transitive_digest
+                |-- stream_completer.dart.transitive_digest
+                |-- stream_extensions.dart.transitive_digest
+                |-- stream_group.dart.transitive_digest
+                |-- stream_queue.dart.transitive_digest
+                |-- stream_sink_completer.dart.transitive_digest
+                |-- stream_sink_extensions.dart.transitive_digest
+                |-- stream_sink_transformer.dart.transitive_digest
+                |-- stream_splitter.dart.transitive_digest
+                |-- stream_subscription_transformer.dart.transitive_digest
+                |-- stream_zip.dart.transitive_digest
+                |-- subscription_stream.dart.transitive_digest
+                |-- typed_stream_transformer.dart.transitive_digest
               |-- async.dart.transitive_digest
           |-- characters
             |-- lib
+              |-- src
+                |-- characters.dart.transitive_digest
+                |-- characters_impl.dart.transitive_digest
+                |-- extensions.dart.transitive_digest
               |-- characters.dart.transitive_digest
+          |-- clock
+            |-- lib
+              |-- src
+                |-- clock.dart.transitive_digest
+                |-- default.dart.transitive_digest
+              |-- clock.dart.transitive_digest
           |-- collection
             |-- lib
+              |-- src
+                |-- combined_wrappers
+                  |-- combined_iterable.dart.transitive_digest
+                  |-- combined_iterator.dart.transitive_digest
+                  |-- combined_list.dart.transitive_digest
+                  |-- combined_map.dart.transitive_digest
+                |-- algorithms.dart.transitive_digest
+                |-- boollist.dart.transitive_digest
+                |-- canonicalized_map.dart.transitive_digest
+                |-- comparators.dart.transitive_digest
+                |-- empty_unmodifiable_set.dart.transitive_digest
+                |-- equality.dart.transitive_digest
+                |-- equality_map.dart.transitive_digest
+                |-- equality_set.dart.transitive_digest
+                |-- functions.dart.transitive_digest
+                |-- iterable_extensions.dart.transitive_digest
+                |-- iterable_zip.dart.transitive_digest
+                |-- list_extensions.dart.transitive_digest
+                |-- priority_queue.dart.transitive_digest
+                |-- queue_list.dart.transitive_digest
+                |-- union_set.dart.transitive_digest
+                |-- union_set_controller.dart.transitive_digest
+                |-- unmodifiable_wrappers.dart.transitive_digest
+                |-- utils.dart.transitive_digest
+                |-- wrappers.dart.transitive_digest
               |-- collection.dart.transitive_digest
+          |-- cross_file
+            |-- lib
+              |-- src
+                |-- types
+                  |-- interface.dart.transitive_digest
+                |-- x_file.dart.transitive_digest
+              |-- cross_file.dart.transitive_digest
+          |-- dart_earcut
+            |-- lib
+              |-- dart_earcut.dart.transitive_digest
           |-- dio
             |-- lib
+              |-- src
+                |-- adapters
+                  |-- io_adapter.dart.transitive_digest
+                |-- dio
+                  |-- dio_for_native.dart.transitive_digest
+                |-- interceptors
+                  |-- imply_content_type.dart.transitive_digest
+                  |-- log.dart.transitive_digest
+                |-- multipart_file
+                  |-- io_multipart_file.dart.transitive_digest
+                |-- progress_stream
+                  |-- io_progress_stream.dart.transitive_digest
+                |-- response
+                  |-- response_stream_handler.dart.transitive_digest
+                |-- transformers
+                  |-- background_transformer.dart.transitive_digest
+                  |-- fused_transformer.dart.transitive_digest
+                  |-- sync_transformer.dart.transitive_digest
+                |-- adapter.dart.transitive_digest
+                |-- cancel_token.dart.transitive_digest
+                |-- dio.dart.transitive_digest
+                |-- dio_exception.dart.transitive_digest
+                |-- dio_mixin.dart.transitive_digest
+                |-- form_data.dart.transitive_digest
+                |-- headers.dart.transitive_digest
+                |-- interceptor.dart.transitive_digest
+                |-- multipart_file.dart.transitive_digest
+                |-- options.dart.transitive_digest
+                |-- parameter.dart.transitive_digest
+                |-- redirect_record.dart.transitive_digest
+                |-- response.dart.transitive_digest
+                |-- transformer.dart.transitive_digest
+                |-- utils.dart.transitive_digest
               |-- dio.dart.transitive_digest
           |-- flutter
             |-- lib
+              |-- src
+                |-- animation
+                  |-- animation.dart.transitive_digest
+                  |-- animations.dart.transitive_digest
+                  |-- animation_controller.dart.transitive_digest
+                  |-- animation_style.dart.transitive_digest
+                  |-- curves.dart.transitive_digest
+                  |-- listener_helpers.dart.transitive_digest
+                  |-- tween.dart.transitive_digest
+                  |-- tween_sequence.dart.transitive_digest
+                |-- cupertino
+                  |-- activity_indicator.dart.transitive_digest
+                  |-- adaptive_text_selection_toolbar.dart.transitive_digest
+                  |-- app.dart.transitive_digest
+                  |-- bottom_tab_bar.dart.transitive_digest
+                  |-- button.dart.transitive_digest
+                  |-- checkbox.dart.transitive_digest
+                  |-- colors.dart.transitive_digest
+                  |-- constants.dart.transitive_digest
+                  |-- context_menu.dart.transitive_digest
+                  |-- context_menu_action.dart.transitive_digest
+                  |-- date_picker.dart.transitive_digest
+                  |-- debug.dart.transitive_digest
+                  |-- desktop_text_selection.dart.transitive_digest
+                  |-- desktop_text_selection_toolbar.dart.transitive_digest
+                  |-- desktop_text_selection_toolbar_button.dart.transitive_digest
+                  |-- dialog.dart.transitive_digest
+                  |-- form_row.dart.transitive_digest
+                  |-- form_section.dart.transitive_digest
+                  |-- icons.dart.transitive_digest
+                  |-- icon_theme_data.dart.transitive_digest
+                  |-- interface_level.dart.transitive_digest
+                  |-- list_section.dart.transitive_digest
+                  |-- list_tile.dart.transitive_digest
+                  |-- localizations.dart.transitive_digest
+                  |-- magnifier.dart.transitive_digest
+                  |-- nav_bar.dart.transitive_digest
+                  |-- page_scaffold.dart.transitive_digest
+                  |-- picker.dart.transitive_digest
+                  |-- radio.dart.transitive_digest
+                  |-- refresh.dart.transitive_digest
+                  |-- route.dart.transitive_digest
+                  |-- scrollbar.dart.transitive_digest
+                  |-- search_field.dart.transitive_digest
+                  |-- segmented_control.dart.transitive_digest
+                  |-- sheet.dart.transitive_digest
+                  |-- slider.dart.transitive_digest
+                  |-- sliding_segmented_control.dart.transitive_digest
+                  |-- spell_check_suggestions_toolbar.dart.transitive_digest
+                  |-- switch.dart.transitive_digest
+                  |-- tab_scaffold.dart.transitive_digest
+                  |-- tab_view.dart.transitive_digest
+                  |-- text_field.dart.transitive_digest
+                  |-- text_form_field_row.dart.transitive_digest
+                  |-- text_selection.dart.transitive_digest
+                  |-- text_selection_toolbar.dart.transitive_digest
+                  |-- text_selection_toolbar_button.dart.transitive_digest
+                  |-- text_theme.dart.transitive_digest
+                  |-- theme.dart.transitive_digest
+                  |-- thumb_painter.dart.transitive_digest
+                |-- foundation
+                  |-- annotations.dart.transitive_digest
+                  |-- assertions.dart.transitive_digest
+                  |-- basic_types.dart.transitive_digest
+                  |-- binding.dart.transitive_digest
+                  |-- bitfield.dart.transitive_digest
+                  |-- capabilities.dart.transitive_digest
+                  |-- change_notifier.dart.transitive_digest
+                  |-- collections.dart.transitive_digest
+                  |-- consolidate_response.dart.transitive_digest
+                  |-- constants.dart.transitive_digest
+                  |-- debug.dart.transitive_digest
+                  |-- diagnostics.dart.transitive_digest
+                  |-- isolates.dart.transitive_digest
+                  |-- key.dart.transitive_digest
+                  |-- licenses.dart.transitive_digest
+                  |-- memory_allocations.dart.transitive_digest
+                  |-- node.dart.transitive_digest
+                  |-- object.dart.transitive_digest
+                  |-- observer_list.dart.transitive_digest
+                  |-- persistent_hash_map.dart.transitive_digest
+                  |-- platform.dart.transitive_digest
+                  |-- print.dart.transitive_digest
+                  |-- serialization.dart.transitive_digest
+                  |-- service_extensions.dart.transitive_digest
+                  |-- stack_frame.dart.transitive_digest
+                  |-- synchronous_future.dart.transitive_digest
+                  |-- timeline.dart.transitive_digest
+                  |-- unicode.dart.transitive_digest
+                  |-- _bitfield_io.dart.transitive_digest
+                  |-- _capabilities_io.dart.transitive_digest
+                  |-- _isolates_io.dart.transitive_digest
+                  |-- _platform_io.dart.transitive_digest
+                  |-- _timeline_io.dart.transitive_digest
+                |-- gestures
+                  |-- arena.dart.transitive_digest
+                  |-- binding.dart.transitive_digest
+                  |-- constants.dart.transitive_digest
+                  |-- converter.dart.transitive_digest
+                  |-- debug.dart.transitive_digest
+                  |-- drag.dart.transitive_digest
+                  |-- drag_details.dart.transitive_digest
+                  |-- eager.dart.transitive_digest
+                  |-- events.dart.transitive_digest
+                  |-- force_press.dart.transitive_digest
+                  |-- gesture_settings.dart.transitive_digest
+                  |-- hit_test.dart.transitive_digest
+                  |-- long_press.dart.transitive_digest
+                  |-- lsq_solver.dart.transitive_digest
+                  |-- monodrag.dart.transitive_digest
+                  |-- multidrag.dart.transitive_digest
+                  |-- multitap.dart.transitive_digest
+                  |-- pointer_router.dart.transitive_digest
+                  |-- pointer_signal_resolver.dart.transitive_digest
+                  |-- recognizer.dart.transitive_digest
+                  |-- resampler.dart.transitive_digest
+                  |-- scale.dart.transitive_digest
+                  |-- tap.dart.transitive_digest
+                  |-- tap_and_drag.dart.transitive_digest
+                  |-- team.dart.transitive_digest
+                  |-- velocity_tracker.dart.transitive_digest
+                |-- material
+                  |-- animated_icons
+                    |-- data
+                      |-- add_event.g.dart.transitive_digest
+                      |-- arrow_menu.g.dart.transitive_digest
+                      |-- close_menu.g.dart.transitive_digest
+                      |-- ellipsis_search.g.dart.transitive_digest
+                      |-- event_add.g.dart.transitive_digest
+                      |-- home_menu.g.dart.transitive_digest
+                      |-- list_view.g.dart.transitive_digest
+                      |-- menu_arrow.g.dart.transitive_digest
+                      |-- menu_close.g.dart.transitive_digest
+                      |-- menu_home.g.dart.transitive_digest
+                      |-- pause_play.g.dart.transitive_digest
+                      |-- play_pause.g.dart.transitive_digest
+                      |-- search_ellipsis.g.dart.transitive_digest
+                      |-- view_list.g.dart.transitive_digest
+                    |-- animated_icons.dart.transitive_digest
+                    |-- animated_icons_data.dart.transitive_digest
+                  |-- about.dart.transitive_digest
+                  |-- action_buttons.dart.transitive_digest
+                  |-- action_chip.dart.transitive_digest
+                  |-- action_icons_theme.dart.transitive_digest
+                  |-- adaptive_text_selection_toolbar.dart.transitive_digest
+                  |-- animated_icons.dart.transitive_digest
+                  |-- app.dart.transitive_digest
+                  |-- app_bar.dart.transitive_digest
+                  |-- app_bar_theme.dart.transitive_digest
+                  |-- arc.dart.transitive_digest
+                  |-- autocomplete.dart.transitive_digest
+                  |-- back_button.dart.transitive_digest
+                  |-- badge.dart.transitive_digest
+                  |-- badge_theme.dart.transitive_digest
+                  |-- banner.dart.transitive_digest
+                  |-- banner_theme.dart.transitive_digest
+                  |-- bottom_app_bar.dart.transitive_digest
+                  |-- bottom_app_bar_theme.dart.transitive_digest
+                  |-- bottom_navigation_bar.dart.transitive_digest
+                  |-- bottom_navigation_bar_theme.dart.transitive_digest
+                  |-- bottom_sheet.dart.transitive_digest
+                  |-- bottom_sheet_theme.dart.transitive_digest
+                  |-- button.dart.transitive_digest
+                  |-- button_bar.dart.transitive_digest
+                  |-- button_bar_theme.dart.transitive_digest
+                  |-- button_style.dart.transitive_digest
+                  |-- button_style_button.dart.transitive_digest
+                  |-- button_theme.dart.transitive_digest
+                  |-- calendar_date_picker.dart.transitive_digest
+                  |-- card.dart.transitive_digest
+                  |-- card_theme.dart.transitive_digest
+                  |-- carousel.dart.transitive_digest
+                  |-- checkbox.dart.transitive_digest
+                  |-- checkbox_list_tile.dart.transitive_digest
+                  |-- checkbox_theme.dart.transitive_digest
+                  |-- chip.dart.transitive_digest
+                  |-- chip_theme.dart.transitive_digest
+                  |-- choice_chip.dart.transitive_digest
+                  |-- circle_avatar.dart.transitive_digest
+                  |-- colors.dart.transitive_digest
+                  |-- color_scheme.dart.transitive_digest
+                  |-- constants.dart.transitive_digest
+                  |-- curves.dart.transitive_digest
+                  |-- data_table.dart.transitive_digest
+                  |-- data_table_source.dart.transitive_digest
+                  |-- data_table_theme.dart.transitive_digest
+                  |-- date.dart.transitive_digest
+                  |-- date_picker.dart.transitive_digest
+                  |-- date_picker_theme.dart.transitive_digest
+                  |-- debug.dart.transitive_digest
+                  |-- desktop_text_selection.dart.transitive_digest
+                  |-- desktop_text_selection_toolbar.dart.transitive_digest
+                  |-- desktop_text_selection_toolbar_button.dart.transitive_digest
+                  |-- dialog.dart.transitive_digest
+                  |-- dialog_theme.dart.transitive_digest
+                  |-- divider.dart.transitive_digest
+                  |-- divider_theme.dart.transitive_digest
+                  |-- drawer.dart.transitive_digest
+                  |-- drawer_header.dart.transitive_digest
+                  |-- drawer_theme.dart.transitive_digest
+                  |-- dropdown.dart.transitive_digest
+                  |-- dropdown_menu.dart.transitive_digest
+                  |-- dropdown_menu_theme.dart.transitive_digest
+                  |-- elevated_button.dart.transitive_digest
+                  |-- elevated_button_theme.dart.transitive_digest
+                  |-- elevation_overlay.dart.transitive_digest
+                  |-- expand_icon.dart.transitive_digest
+                  |-- expansion_panel.dart.transitive_digest
+                  |-- expansion_tile.dart.transitive_digest
+                  |-- expansion_tile_theme.dart.transitive_digest
+                  |-- filled_button.dart.transitive_digest
+                  |-- filled_button_theme.dart.transitive_digest
+                  |-- filter_chip.dart.transitive_digest
+                  |-- flexible_space_bar.dart.transitive_digest
+                  |-- floating_action_button.dart.transitive_digest
+                  |-- floating_action_button_location.dart.transitive_digest
+                  |-- floating_action_button_theme.dart.transitive_digest
+                  |-- grid_tile.dart.transitive_digest
+                  |-- grid_tile_bar.dart.transitive_digest
+                  |-- icons.dart.transitive_digest
+                  |-- icon_button.dart.transitive_digest
+                  |-- icon_button_theme.dart.transitive_digest
+                  |-- ink_decoration.dart.transitive_digest
+                  |-- ink_highlight.dart.transitive_digest
+                  |-- ink_ripple.dart.transitive_digest
+                  |-- ink_sparkle.dart.transitive_digest
+                  |-- ink_splash.dart.transitive_digest
+                  |-- ink_well.dart.transitive_digest
+                  |-- input_border.dart.transitive_digest
+                  |-- input_chip.dart.transitive_digest
+                  |-- input_date_picker_form_field.dart.transitive_digest
+                  |-- input_decorator.dart.transitive_digest
+                  |-- list_tile.dart.transitive_digest
+                  |-- list_tile_theme.dart.transitive_digest
+                  |-- magnifier.dart.transitive_digest
+                  |-- material.dart.transitive_digest
+                  |-- material_button.dart.transitive_digest
+                  |-- material_localizations.dart.transitive_digest
+                  |-- material_state.dart.transitive_digest
+                  |-- material_state_mixin.dart.transitive_digest
+                  |-- menu_anchor.dart.transitive_digest
+                  |-- menu_bar_theme.dart.transitive_digest
+                  |-- menu_button_theme.dart.transitive_digest
+                  |-- menu_style.dart.transitive_digest
+                  |-- menu_theme.dart.transitive_digest
+                  |-- mergeable_material.dart.transitive_digest
+                  |-- motion.dart.transitive_digest
+                  |-- navigation_bar.dart.transitive_digest
+                  |-- navigation_bar_theme.dart.transitive_digest
+                  |-- navigation_drawer.dart.transitive_digest
+                  |-- navigation_drawer_theme.dart.transitive_digest
+                  |-- navigation_rail.dart.transitive_digest
+                  |-- navigation_rail_theme.dart.transitive_digest
+                  |-- no_splash.dart.transitive_digest
+                  |-- outlined_button.dart.transitive_digest
+                  |-- outlined_button_theme.dart.transitive_digest
+                  |-- page.dart.transitive_digest
+                  |-- page_transitions_theme.dart.transitive_digest
+                  |-- paginated_data_table.dart.transitive_digest
+                  |-- popup_menu.dart.transitive_digest
+                  |-- popup_menu_theme.dart.transitive_digest
+                  |-- predictive_back_page_transitions_builder.dart.transitive_digest
+                  |-- progress_indicator.dart.transitive_digest
+                  |-- progress_indicator_theme.dart.transitive_digest
+                  |-- radio.dart.transitive_digest
+                  |-- radio_list_tile.dart.transitive_digest
+                  |-- radio_theme.dart.transitive_digest
+                  |-- range_slider.dart.transitive_digest
+                  |-- refresh_indicator.dart.transitive_digest
+                  |-- reorderable_list.dart.transitive_digest
+                  |-- scaffold.dart.transitive_digest
+                  |-- scrollbar.dart.transitive_digest
+                  |-- scrollbar_theme.dart.transitive_digest
+                  |-- search.dart.transitive_digest
+                  |-- search_anchor.dart.transitive_digest
+                  |-- search_bar_theme.dart.transitive_digest
+                  |-- search_view_theme.dart.transitive_digest
+                  |-- segmented_button.dart.transitive_digest
+                  |-- segmented_button_theme.dart.transitive_digest
+                  |-- selectable_text.dart.transitive_digest
+                  |-- selection_area.dart.transitive_digest
+                  |-- shadows.dart.transitive_digest
+                  |-- slider.dart.transitive_digest
+                  |-- slider_theme.dart.transitive_digest
+                  |-- snack_bar.dart.transitive_digest
+                  |-- snack_bar_theme.dart.transitive_digest
+                  |-- spell_check_suggestions_toolbar.dart.transitive_digest
+                  |-- spell_check_suggestions_toolbar_layout_delegate.dart.transitive_digest
+                  |-- stepper.dart.transitive_digest
+                  |-- switch.dart.transitive_digest
+                  |-- switch_list_tile.dart.transitive_digest
+                  |-- switch_theme.dart.transitive_digest
+                  |-- tabs.dart.transitive_digest
+                  |-- tab_bar_theme.dart.transitive_digest
+                  |-- tab_controller.dart.transitive_digest
+                  |-- tab_indicator.dart.transitive_digest
+                  |-- text_button.dart.transitive_digest
+                  |-- text_button_theme.dart.transitive_digest
+                  |-- text_field.dart.transitive_digest
+                  |-- text_form_field.dart.transitive_digest
+                  |-- text_selection.dart.transitive_digest
+                  |-- text_selection_theme.dart.transitive_digest
+                  |-- text_selection_toolbar.dart.transitive_digest
+                  |-- text_selection_toolbar_text_button.dart.transitive_digest
+                  |-- text_theme.dart.transitive_digest
+                  |-- theme.dart.transitive_digest
+                  |-- theme_data.dart.transitive_digest
+                  |-- time.dart.transitive_digest
+                  |-- time_picker.dart.transitive_digest
+                  |-- time_picker_theme.dart.transitive_digest
+                  |-- toggle_buttons.dart.transitive_digest
+                  |-- toggle_buttons_theme.dart.transitive_digest
+                  |-- tooltip.dart.transitive_digest
+                  |-- tooltip_theme.dart.transitive_digest
+                  |-- tooltip_visibility.dart.transitive_digest
+                  |-- typography.dart.transitive_digest
+                  |-- user_accounts_drawer_header.dart.transitive_digest
+                |-- painting
+                  |-- alignment.dart.transitive_digest
+                  |-- basic_types.dart.transitive_digest
+                  |-- beveled_rectangle_border.dart.transitive_digest
+                  |-- binding.dart.transitive_digest
+                  |-- borders.dart.transitive_digest
+                  |-- border_radius.dart.transitive_digest
+                  |-- box_border.dart.transitive_digest
+                  |-- box_decoration.dart.transitive_digest
+                  |-- box_fit.dart.transitive_digest
+                  |-- box_shadow.dart.transitive_digest
+                  |-- circle_border.dart.transitive_digest
+                  |-- clip.dart.transitive_digest
+                  |-- colors.dart.transitive_digest
+                  |-- continuous_rectangle_border.dart.transitive_digest
+                  |-- debug.dart.transitive_digest
+                  |-- decoration.dart.transitive_digest
+                  |-- decoration_image.dart.transitive_digest
+                  |-- edge_insets.dart.transitive_digest
+                  |-- flutter_logo.dart.transitive_digest
+                  |-- fractional_offset.dart.transitive_digest
+                  |-- geometry.dart.transitive_digest
+                  |-- gradient.dart.transitive_digest
+                  |-- image_cache.dart.transitive_digest
+                  |-- image_decoder.dart.transitive_digest
+                  |-- image_provider.dart.transitive_digest
+                  |-- image_resolution.dart.transitive_digest
+                  |-- image_stream.dart.transitive_digest
+                  |-- inline_span.dart.transitive_digest
+                  |-- linear_border.dart.transitive_digest
+                  |-- matrix_utils.dart.transitive_digest
+                  |-- notched_shapes.dart.transitive_digest
+                  |-- oval_border.dart.transitive_digest
+                  |-- paint_utilities.dart.transitive_digest
+                  |-- placeholder_span.dart.transitive_digest
+                  |-- rounded_rectangle_border.dart.transitive_digest
+                  |-- shader_warm_up.dart.transitive_digest
+                  |-- shape_decoration.dart.transitive_digest
+                  |-- stadium_border.dart.transitive_digest
+                  |-- star_border.dart.transitive_digest
+                  |-- strut_style.dart.transitive_digest
+                  |-- text_painter.dart.transitive_digest
+                  |-- text_scaler.dart.transitive_digest
+                  |-- text_span.dart.transitive_digest
+                  |-- text_style.dart.transitive_digest
+                  |-- _web_image_info_io.dart.transitive_digest
+                |-- rendering
+                  |-- animated_size.dart.transitive_digest
+                  |-- binding.dart.transitive_digest
+                  |-- box.dart.transitive_digest
+                  |-- custom_layout.dart.transitive_digest
+                  |-- custom_paint.dart.transitive_digest
+                  |-- debug.dart.transitive_digest
+                  |-- debug_overflow_indicator.dart.transitive_digest
+                  |-- decorated_sliver.dart.transitive_digest
+                  |-- editable.dart.transitive_digest
+                  |-- error.dart.transitive_digest
+                  |-- flex.dart.transitive_digest
+                  |-- flow.dart.transitive_digest
+                  |-- image.dart.transitive_digest
+                  |-- layer.dart.transitive_digest
+                  |-- layout_helper.dart.transitive_digest
+                  |-- list_body.dart.transitive_digest
+                  |-- list_wheel_viewport.dart.transitive_digest
+                  |-- mouse_tracker.dart.transitive_digest
+                  |-- object.dart.transitive_digest
+                  |-- paragraph.dart.transitive_digest
+                  |-- performance_overlay.dart.transitive_digest
+                  |-- platform_view.dart.transitive_digest
+                  |-- proxy_box.dart.transitive_digest
+                  |-- proxy_sliver.dart.transitive_digest
+                  |-- rotated_box.dart.transitive_digest
+                  |-- selection.dart.transitive_digest
+                  |-- service_extensions.dart.transitive_digest
+                  |-- shifted_box.dart.transitive_digest
+                  |-- sliver.dart.transitive_digest
+                  |-- sliver_fill.dart.transitive_digest
+                  |-- sliver_fixed_extent_list.dart.transitive_digest
+                  |-- sliver_grid.dart.transitive_digest
+                  |-- sliver_group.dart.transitive_digest
+                  |-- sliver_list.dart.transitive_digest
+                  |-- sliver_multi_box_adaptor.dart.transitive_digest
+                  |-- sliver_padding.dart.transitive_digest
+                  |-- sliver_persistent_header.dart.transitive_digest
+                  |-- sliver_tree.dart.transitive_digest
+                  |-- stack.dart.transitive_digest
+                  |-- table.dart.transitive_digest
+                  |-- table_border.dart.transitive_digest
+                  |-- texture.dart.transitive_digest
+                  |-- tweens.dart.transitive_digest
+                  |-- view.dart.transitive_digest
+                  |-- viewport.dart.transitive_digest
+                  |-- viewport_offset.dart.transitive_digest
+                  |-- wrap.dart.transitive_digest
+                |-- scheduler
+                  |-- binding.dart.transitive_digest
+                  |-- debug.dart.transitive_digest
+                  |-- priority.dart.transitive_digest
+                  |-- service_extensions.dart.transitive_digest
+                  |-- ticker.dart.transitive_digest
+                |-- semantics
+                  |-- binding.dart.transitive_digest
+                  |-- debug.dart.transitive_digest
+                  |-- semantics.dart.transitive_digest
+                  |-- semantics_event.dart.transitive_digest
+                  |-- semantics_service.dart.transitive_digest
+                |-- services
+                  |-- asset_bundle.dart.transitive_digest
+                  |-- asset_manifest.dart.transitive_digest
+                  |-- autofill.dart.transitive_digest
+                  |-- binary_messenger.dart.transitive_digest
+                  |-- binding.dart.transitive_digest
+                  |-- browser_context_menu.dart.transitive_digest
+                  |-- clipboard.dart.transitive_digest
+                  |-- debug.dart.transitive_digest
+                  |-- deferred_component.dart.transitive_digest
+                  |-- flavor.dart.transitive_digest
+                  |-- font_loader.dart.transitive_digest
+                  |-- haptic_feedback.dart.transitive_digest
+                  |-- hardware_keyboard.dart.transitive_digest
+                  |-- keyboard_inserted_content.dart.transitive_digest
+                  |-- keyboard_key.g.dart.transitive_digest
+                  |-- keyboard_maps.g.dart.transitive_digest
+                  |-- live_text.dart.transitive_digest
+                  |-- message_codec.dart.transitive_digest
+                  |-- message_codecs.dart.transitive_digest
+                  |-- mouse_cursor.dart.transitive_digest
+                  |-- mouse_tracking.dart.transitive_digest
+                  |-- platform_channel.dart.transitive_digest
+                  |-- platform_views.dart.transitive_digest
+                  |-- predictive_back_event.dart.transitive_digest
+                  |-- process_text.dart.transitive_digest
+                  |-- raw_keyboard.dart.transitive_digest
+                  |-- raw_keyboard_android.dart.transitive_digest
+                  |-- raw_keyboard_fuchsia.dart.transitive_digest
+                  |-- raw_keyboard_ios.dart.transitive_digest
+                  |-- raw_keyboard_linux.dart.transitive_digest
+                  |-- raw_keyboard_macos.dart.transitive_digest
+                  |-- raw_keyboard_web.dart.transitive_digest
+                  |-- raw_keyboard_windows.dart.transitive_digest
+                  |-- restoration.dart.transitive_digest
+                  |-- scribe.dart.transitive_digest
+                  |-- service_extensions.dart.transitive_digest
+                  |-- spell_check.dart.transitive_digest
+                  |-- system_channels.dart.transitive_digest
+                  |-- system_chrome.dart.transitive_digest
+                  |-- system_navigator.dart.transitive_digest
+                  |-- system_sound.dart.transitive_digest
+                  |-- text_boundary.dart.transitive_digest
+                  |-- text_editing.dart.transitive_digest
+                  |-- text_editing_delta.dart.transitive_digest
+                  |-- text_formatter.dart.transitive_digest
+                  |-- text_input.dart.transitive_digest
+                  |-- text_layout_metrics.dart.transitive_digest
+                  |-- undo_manager.dart.transitive_digest
+                  |-- _background_isolate_binary_messenger_io.dart.transitive_digest
+                |-- widgets
+                  |-- actions.dart.transitive_digest
+                  |-- adapter.dart.transitive_digest
+                  |-- animated_cross_fade.dart.transitive_digest
+                  |-- animated_scroll_view.dart.transitive_digest
+                  |-- animated_size.dart.transitive_digest
+                  |-- animated_switcher.dart.transitive_digest
+                  |-- annotated_region.dart.transitive_digest
+                  |-- app.dart.transitive_digest
+                  |-- app_lifecycle_listener.dart.transitive_digest
+                  |-- async.dart.transitive_digest
+                  |-- autocomplete.dart.transitive_digest
+                  |-- autofill.dart.transitive_digest
+                  |-- automatic_keep_alive.dart.transitive_digest
+                  |-- banner.dart.transitive_digest
+                  |-- basic.dart.transitive_digest
+                  |-- binding.dart.transitive_digest
+                  |-- bottom_navigation_bar_item.dart.transitive_digest
+                  |-- color_filter.dart.transitive_digest
+                  |-- constants.dart.transitive_digest
+                  |-- container.dart.transitive_digest
+                  |-- context_menu_button_item.dart.transitive_digest
+                  |-- context_menu_controller.dart.transitive_digest
+                  |-- debug.dart.transitive_digest
+                  |-- decorated_sliver.dart.transitive_digest
+                  |-- default_selection_style.dart.transitive_digest
+                  |-- default_text_editing_shortcuts.dart.transitive_digest
+                  |-- desktop_text_selection_toolbar_layout_delegate.dart.transitive_digest
+                  |-- dismissible.dart.transitive_digest
+                  |-- display_feature_sub_screen.dart.transitive_digest
+                  |-- disposable_build_context.dart.transitive_digest
+                  |-- draggable_scrollable_sheet.dart.transitive_digest
+                  |-- drag_boundary.dart.transitive_digest
+                  |-- drag_target.dart.transitive_digest
+                  |-- dual_transition_builder.dart.transitive_digest
+                  |-- editable_text.dart.transitive_digest
+                  |-- fade_in_image.dart.transitive_digest
+                  |-- feedback.dart.transitive_digest
+                  |-- flutter_logo.dart.transitive_digest
+                  |-- focus_manager.dart.transitive_digest
+                  |-- focus_scope.dart.transitive_digest
+                  |-- focus_traversal.dart.transitive_digest
+                  |-- form.dart.transitive_digest
+                  |-- framework.dart.transitive_digest
+                  |-- gesture_detector.dart.transitive_digest
+                  |-- grid_paper.dart.transitive_digest
+                  |-- heroes.dart.transitive_digest
+                  |-- icon.dart.transitive_digest
+                  |-- icon_data.dart.transitive_digest
+                  |-- icon_theme.dart.transitive_digest
+                  |-- icon_theme_data.dart.transitive_digest
+                  |-- image.dart.transitive_digest
+                  |-- image_filter.dart.transitive_digest
+                  |-- image_icon.dart.transitive_digest
+                  |-- implicit_animations.dart.transitive_digest
+                  |-- inherited_model.dart.transitive_digest
+                  |-- inherited_notifier.dart.transitive_digest
+                  |-- inherited_theme.dart.transitive_digest
+                  |-- interactive_viewer.dart.transitive_digest
+                  |-- keyboard_listener.dart.transitive_digest
+                  |-- layout_builder.dart.transitive_digest
+                  |-- list_wheel_scroll_view.dart.transitive_digest
+                  |-- localizations.dart.transitive_digest
+                  |-- lookup_boundary.dart.transitive_digest
+                  |-- magnifier.dart.transitive_digest
+                  |-- media_query.dart.transitive_digest
+                  |-- modal_barrier.dart.transitive_digest
+                  |-- navigation_toolbar.dart.transitive_digest
+                  |-- navigator.dart.transitive_digest
+                  |-- navigator_pop_handler.dart.transitive_digest
+                  |-- nested_scroll_view.dart.transitive_digest
+                  |-- notification_listener.dart.transitive_digest
+                  |-- orientation_builder.dart.transitive_digest
+                  |-- overflow_bar.dart.transitive_digest
+                  |-- overlay.dart.transitive_digest
+                  |-- overscroll_indicator.dart.transitive_digest
+                  |-- pages.dart.transitive_digest
+                  |-- page_storage.dart.transitive_digest
+                  |-- page_view.dart.transitive_digest
+                  |-- performance_overlay.dart.transitive_digest
+                  |-- pinned_header_sliver.dart.transitive_digest
+                  |-- placeholder.dart.transitive_digest
+                  |-- platform_menu_bar.dart.transitive_digest
+                  |-- platform_selectable_region_context_menu.dart.transitive_digest
+                  |-- platform_view.dart.transitive_digest
+                  |-- pop_scope.dart.transitive_digest
+                  |-- preferred_size.dart.transitive_digest
+                  |-- primary_scroll_controller.dart.transitive_digest
+                  |-- raw_keyboard_listener.dart.transitive_digest
+                  |-- reorderable_list.dart.transitive_digest
+                  |-- restoration.dart.transitive_digest
+                  |-- restoration_properties.dart.transitive_digest
+                  |-- router.dart.transitive_digest
+                  |-- routes.dart.transitive_digest
+                  |-- safe_area.dart.transitive_digest
+                  |-- scrollable.dart.transitive_digest
+                  |-- scrollable_helpers.dart.transitive_digest
+                  |-- scrollbar.dart.transitive_digest
+                  |-- scroll_activity.dart.transitive_digest
+                  |-- scroll_aware_image_provider.dart.transitive_digest
+                  |-- scroll_configuration.dart.transitive_digest
+                  |-- scroll_context.dart.transitive_digest
+                  |-- scroll_controller.dart.transitive_digest
+                  |-- scroll_delegate.dart.transitive_digest
+                  |-- scroll_metrics.dart.transitive_digest
+                  |-- scroll_notification.dart.transitive_digest
+                  |-- scroll_notification_observer.dart.transitive_digest
+                  |-- scroll_physics.dart.transitive_digest
+                  |-- scroll_position.dart.transitive_digest
+                  |-- scroll_position_with_single_context.dart.transitive_digest
+                  |-- scroll_simulation.dart.transitive_digest
+                  |-- scroll_view.dart.transitive_digest
+                  |-- selectable_region.dart.transitive_digest
+                  |-- selection_container.dart.transitive_digest
+                  |-- semantics_debugger.dart.transitive_digest
+                  |-- service_extensions.dart.transitive_digest
+                  |-- shared_app_data.dart.transitive_digest
+                  |-- shortcuts.dart.transitive_digest
+                  |-- single_child_scroll_view.dart.transitive_digest
+                  |-- size_changed_layout_notifier.dart.transitive_digest
+                  |-- sliver.dart.transitive_digest
+                  |-- sliver_fill.dart.transitive_digest
+                  |-- sliver_floating_header.dart.transitive_digest
+                  |-- sliver_layout_builder.dart.transitive_digest
+                  |-- sliver_persistent_header.dart.transitive_digest
+                  |-- sliver_prototype_extent_list.dart.transitive_digest
+                  |-- sliver_resizing_header.dart.transitive_digest
+                  |-- sliver_tree.dart.transitive_digest
+                  |-- slotted_render_object_widget.dart.transitive_digest
+                  |-- snapshot_widget.dart.transitive_digest
+                  |-- spacer.dart.transitive_digest
+                  |-- spell_check.dart.transitive_digest
+                  |-- standard_component_type.dart.transitive_digest
+                  |-- status_transitions.dart.transitive_digest
+                  |-- system_context_menu.dart.transitive_digest
+                  |-- table.dart.transitive_digest
+                  |-- tap_region.dart.transitive_digest
+                  |-- text.dart.transitive_digest
+                  |-- texture.dart.transitive_digest
+                  |-- text_editing_intents.dart.transitive_digest
+                  |-- text_selection.dart.transitive_digest
+                  |-- text_selection_toolbar_anchors.dart.transitive_digest
+                  |-- text_selection_toolbar_layout_delegate.dart.transitive_digest
+                  |-- ticker_provider.dart.transitive_digest
+                  |-- title.dart.transitive_digest
+                  |-- toggleable.dart.transitive_digest
+                  |-- transitions.dart.transitive_digest
+                  |-- tween_animation_builder.dart.transitive_digest
+                  |-- two_dimensional_scroll_view.dart.transitive_digest
+                  |-- two_dimensional_viewport.dart.transitive_digest
+                  |-- undo_history.dart.transitive_digest
+                  |-- unique_widget.dart.transitive_digest
+                  |-- value_listenable_builder.dart.transitive_digest
+                  |-- view.dart.transitive_digest
+                  |-- viewport.dart.transitive_digest
+                  |-- visibility.dart.transitive_digest
+                  |-- widget_inspector.dart.transitive_digest
+                  |-- widget_span.dart.transitive_digest
+                  |-- widget_state.dart.transitive_digest
+                  |-- will_pop_scope.dart.transitive_digest
+                  |-- _html_element_view_io.dart.transitive_digest
+                  |-- _platform_selectable_region_context_menu_io.dart.transitive_digest
+                  |-- _web_image_io.dart.transitive_digest
+              |-- animation.dart.transitive_digest
               |-- cupertino.dart.transitive_digest
               |-- foundation.dart.transitive_digest
+              |-- gestures.dart.transitive_digest
               |-- material.dart.transitive_digest
+              |-- painting.dart.transitive_digest
+              |-- physics.dart.transitive_digest
+              |-- rendering.dart.transitive_digest
               |-- scheduler.dart.transitive_digest
+              |-- semantics.dart.transitive_digest
               |-- services.dart.transitive_digest
               |-- widgets.dart.transitive_digest
           |-- flutter_dotenv
             |-- lib
+              |-- src
+                |-- dotenv.dart.transitive_digest
+                |-- errors.dart.transitive_digest
+                |-- parser.dart.transitive_digest
               |-- flutter_dotenv.dart.transitive_digest
+          |-- flutter_map
+            |-- lib
+              |-- src
+                |-- geo
+                  |-- crs.dart.transitive_digest
+                  |-- latlng_bounds.dart.transitive_digest
+                |-- gestures
+                  |-- interactive_flag.dart.transitive_digest
+                  |-- latlng_tween.dart.transitive_digest
+                  |-- map_events.dart.transitive_digest
+                  |-- map_interactive_viewer.dart.transitive_digest
+                  |-- multi_finger_gesture.dart.transitive_digest
+                  |-- positioned_tap_detector_2.dart.transitive_digest
+                |-- layer
+                  |-- attribution_layer
+                    |-- rich
+                      |-- animation.dart.transitive_digest
+                      |-- source.dart.transitive_digest
+                      |-- widget.dart.transitive_digest
+                    |-- simple.dart.transitive_digest
+                  |-- circle_layer
+                    |-- circle_layer.dart.transitive_digest
+                    |-- circle_marker.dart.transitive_digest
+                    |-- painter.dart.transitive_digest
+                  |-- marker_layer
+                    |-- marker.dart.transitive_digest
+                    |-- marker_layer.dart.transitive_digest
+                  |-- overlay_image_layer
+                    |-- overlay_image.dart.transitive_digest
+                    |-- overlay_image_layer.dart.transitive_digest
+                  |-- polygon_layer
+                    |-- label.dart.transitive_digest
+                    |-- painter.dart.transitive_digest
+                    |-- polygon.dart.transitive_digest
+                    |-- polygon_layer.dart.transitive_digest
+                    |-- projected_polygon.dart.transitive_digest
+                  |-- polyline_layer
+                    |-- painter.dart.transitive_digest
+                    |-- polyline.dart.transitive_digest
+                    |-- polyline_layer.dart.transitive_digest
+                    |-- projected_polyline.dart.transitive_digest
+                  |-- scalebar
+                    |-- painter
+                      |-- base.dart.transitive_digest
+                      |-- simple.dart.transitive_digest
+                    |-- scalebar.dart.transitive_digest
+                  |-- shared
+                    |-- layer_interactivity
+                      |-- internal_hit_detectable.dart.transitive_digest
+                      |-- layer_hit_notifier.dart.transitive_digest
+                      |-- layer_hit_result.dart.transitive_digest
+                    |-- layer_projection_simplification
+                      |-- state.dart.transitive_digest
+                      |-- widget.dart.transitive_digest
+                    |-- line_patterns
+                      |-- pixel_hiker.dart.transitive_digest
+                      |-- stroke_pattern.dart.transitive_digest
+                    |-- feature_layer_utils.dart.transitive_digest
+                    |-- mobile_layer_transformer.dart.transitive_digest
+                    |-- translucent_pointer.dart.transitive_digest
+                  |-- tile_layer
+                    |-- tile_bounds
+                      |-- tile_bounds.dart.transitive_digest
+                      |-- tile_bounds_at_zoom.dart.transitive_digest
+                    |-- tile_provider
+                      |-- file_providers
+                        |-- tile_provider_stub.dart.transitive_digest
+                      |-- asset_tile_provider.dart.transitive_digest
+                      |-- base_tile_provider.dart.transitive_digest
+                      |-- network_image_provider.dart.transitive_digest
+                      |-- network_tile_provider.dart.transitive_digest
+                    |-- retina_mode.dart.transitive_digest
+                    |-- tile.dart.transitive_digest
+                    |-- tile_builder.dart.transitive_digest
+                    |-- tile_coordinates.dart.transitive_digest
+                    |-- tile_display.dart.transitive_digest
+                    |-- tile_error_evict_callback.dart.transitive_digest
+                    |-- tile_image.dart.transitive_digest
+                    |-- tile_image_manager.dart.transitive_digest
+                    |-- tile_layer.dart.transitive_digest
+                    |-- tile_range.dart.transitive_digest
+                    |-- tile_range_calculator.dart.transitive_digest
+                    |-- tile_scale_calculator.dart.transitive_digest
+                    |-- tile_update_event.dart.transitive_digest
+                    |-- tile_update_transformer.dart.transitive_digest
+                    |-- wms_tile_layer_options.dart.transitive_digest
+                |-- map
+                  |-- camera
+                    |-- camera.dart.transitive_digest
+                    |-- camera_constraint.dart.transitive_digest
+                    |-- camera_fit.dart.transitive_digest
+                  |-- controller
+                    |-- map_controller.dart.transitive_digest
+                    |-- map_controller_impl.dart.transitive_digest
+                  |-- options
+                    |-- cursor_keyboard_rotation.dart.transitive_digest
+                    |-- interaction.dart.transitive_digest
+                    |-- keyboard.dart.transitive_digest
+                    |-- options.dart.transitive_digest
+                  |-- inherited_model.dart.transitive_digest
+                  |-- widget.dart.transitive_digest
+                |-- misc
+                  |-- extensions.dart.transitive_digest
+                  |-- move_and_rotate_result.dart.transitive_digest
+                  |-- offsets.dart.transitive_digest
+                  |-- point_in_polygon.dart.transitive_digest
+                  |-- simplify.dart.transitive_digest
+              |-- flutter_map.dart.transitive_digest
           |-- flutter_riverpod
             |-- lib
+              |-- src
+                |-- change_notifier_provider
+                  |-- auto_dispose.dart.transitive_digest
+                  |-- base.dart.transitive_digest
+                |-- builders.dart.transitive_digest
+                |-- change_notifier_provider.dart.transitive_digest
+                |-- consumer.dart.transitive_digest
+                |-- framework.dart.transitive_digest
+                |-- internals.dart.transitive_digest
               |-- flutter_riverpod.dart.transitive_digest
           |-- flutter_secure_storage
             |-- lib
+              |-- options
+                |-- android_options.dart.transitive_digest
+                |-- apple_options.dart.transitive_digest
+                |-- ios_options.dart.transitive_digest
+                |-- linux_options.dart.transitive_digest
+                |-- macos_options.dart.transitive_digest
+                |-- web_options.dart.transitive_digest
+                |-- windows_options.dart.transitive_digest
+              |-- test
+                |-- test_flutter_secure_storage_platform.dart.transitive_digest
               |-- flutter_secure_storage.dart.transitive_digest
+          |-- flutter_secure_storage_platform_interface
+            |-- lib
+              |-- src
+                |-- method_channel_flutter_secure_storage.dart.transitive_digest
+                |-- options.dart.transitive_digest
+              |-- flutter_secure_storage_platform_interface.dart.transitive_digest
           |-- freezed_annotation
             |-- lib
               |-- freezed_annotation.dart.transitive_digest
+              |-- freezed_annotation.g.dart.transitive_digest
           |-- go_router
             |-- lib
+              |-- src
+                |-- misc
+                  |-- errors.dart.transitive_digest
+                  |-- error_screen.dart.transitive_digest
+                  |-- extensions.dart.transitive_digest
+                  |-- inherited_router.dart.transitive_digest
+                |-- pages
+                  |-- cupertino.dart.transitive_digest
+                  |-- custom_transition_page.dart.transitive_digest
+                  |-- material.dart.transitive_digest
+                |-- builder.dart.transitive_digest
+                |-- configuration.dart.transitive_digest
+                |-- delegate.dart.transitive_digest
+                |-- information_provider.dart.transitive_digest
+                |-- logging.dart.transitive_digest
+                |-- match.dart.transitive_digest
+                |-- parser.dart.transitive_digest
+                |-- path_utils.dart.transitive_digest
+                |-- route.dart.transitive_digest
+                |-- router.dart.transitive_digest
+                |-- route_data.dart.transitive_digest
+                |-- state.dart.transitive_digest
               |-- go_router.dart.transitive_digest
+          |-- http
+            |-- lib
+              |-- src
+                |-- base_client.dart.transitive_digest
+                |-- base_request.dart.transitive_digest
+                |-- base_response.dart.transitive_digest
+                |-- boundary_characters.dart.transitive_digest
+                |-- byte_stream.dart.transitive_digest
+                |-- client.dart.transitive_digest
+                |-- client_stub.dart.transitive_digest
+                |-- exception.dart.transitive_digest
+                |-- multipart_file.dart.transitive_digest
+                |-- multipart_file_stub.dart.transitive_digest
+                |-- multipart_request.dart.transitive_digest
+                |-- request.dart.transitive_digest
+                |-- response.dart.transitive_digest
+                |-- streamed_request.dart.transitive_digest
+                |-- streamed_response.dart.transitive_digest
+                |-- utils.dart.transitive_digest
+              |-- http.dart.transitive_digest
+              |-- retry.dart.transitive_digest
           |-- http_parser
             |-- lib
+              |-- src
+                |-- chunked_coding
+                  |-- decoder.dart.transitive_digest
+                  |-- encoder.dart.transitive_digest
+                |-- authentication_challenge.dart.transitive_digest
+                |-- case_insensitive_map.dart.transitive_digest
+                |-- chunked_coding.dart.transitive_digest
+                |-- http_date.dart.transitive_digest
+                |-- media_type.dart.transitive_digest
+                |-- scan.dart.transitive_digest
+                |-- utils.dart.transitive_digest
               |-- http_parser.dart.transitive_digest
+          |-- image_picker
+            |-- lib
+              |-- image_picker.dart.transitive_digest
+          |-- image_picker_platform_interface
+            |-- lib
+              |-- src
+                |-- method_channel
+                  |-- method_channel_image_picker.dart.transitive_digest
+                |-- platform_interface
+                  |-- image_picker_platform.dart.transitive_digest
+                |-- types
+                  |-- picked_file
+                    |-- picked_file.dart.transitive_digest
+                  |-- camera_delegate.dart.transitive_digest
+                  |-- camera_device.dart.transitive_digest
+                  |-- image_options.dart.transitive_digest
+                  |-- image_source.dart.transitive_digest
+                  |-- lost_data_response.dart.transitive_digest
+                  |-- media_options.dart.transitive_digest
+                  |-- media_selection_type.dart.transitive_digest
+                  |-- multi_image_picker_options.dart.transitive_digest
+                  |-- retrieve_type.dart.transitive_digest
+                  |-- types.dart.transitive_digest
+              |-- image_picker_platform_interface.dart.transitive_digest
+          |-- intl
+            |-- lib
+              |-- src
+                |-- intl
+                  |-- bidi.dart.transitive_digest
+                  |-- bidi_formatter.dart.transitive_digest
+                  |-- compact_number_format.dart.transitive_digest
+                  |-- constants.dart.transitive_digest
+                  |-- date_builder.dart.transitive_digest
+                  |-- date_computation.dart.transitive_digest
+                  |-- date_format.dart.transitive_digest
+                  |-- date_format_field.dart.transitive_digest
+                  |-- micro_money.dart.transitive_digest
+                  |-- number_format.dart.transitive_digest
+                  |-- number_format_parser.dart.transitive_digest
+                  |-- number_parser.dart.transitive_digest
+                  |-- number_parser_base.dart.transitive_digest
+                  |-- regexp.dart.transitive_digest
+                  |-- string_stack.dart.transitive_digest
+                  |-- text_direction.dart.transitive_digest
+                |-- date_format_internal.dart.transitive_digest
+                |-- global_state.dart.transitive_digest
+                |-- intl_helpers.dart.transitive_digest
+                |-- plural_rules.dart.transitive_digest
+              |-- date_symbols.dart.transitive_digest
+              |-- intl.dart.transitive_digest
+              |-- number_symbols.dart.transitive_digest
+              |-- number_symbols_data.dart.transitive_digest
           |-- json_annotation
             |-- lib
+              |-- src
+                |-- allowed_keys_helpers.dart.transitive_digest
+                |-- checked_helpers.dart.transitive_digest
+                |-- enum_helpers.dart.transitive_digest
+                |-- json_converter.dart.transitive_digest
+                |-- json_enum.dart.transitive_digest
+                |-- json_key.dart.transitive_digest
+                |-- json_literal.dart.transitive_digest
+                |-- json_serializable.dart.transitive_digest
+                |-- json_serializable.g.dart.transitive_digest
+                |-- json_value.dart.transitive_digest
               |-- json_annotation.dart.transitive_digest
+          |-- jwt_decoder
+            |-- lib
+              |-- jwt_decoder.dart.transitive_digest
           |-- kentnabiz_mobile
             |-- lib
               |-- features
                 |-- auth
                   |-- domain
                     |-- token_response.json_serializable.g.part
+                |-- citizen
+                  |-- report_creation
+                    |-- models
+                      |-- create_report_dto.json_serializable.g.part
+              |-- shared
+                |-- models
+                  |-- department.json_serializable.g.part
+                  |-- paginated_response.json_serializable.g.part
+                  |-- report.json_serializable.g.part
+                  |-- report_category.json_serializable.g.part
+                  |-- report_media.json_serializable.g.part
+                  |-- user.json_serializable.g.part
+          |-- latlong2
+            |-- lib
+              |-- latlong
+                |-- calculator
+                  |-- Haversine.dart.transitive_digest
+                  |-- Vincenty.dart.transitive_digest
+                |-- Circle.dart.transitive_digest
+                |-- Distance.dart.transitive_digest
+                |-- interfaces.dart.transitive_digest
+                |-- LatLng.dart.transitive_digest
+                |-- LengthUnit.dart.transitive_digest
+                |-- Path.dart.transitive_digest
+              |-- spline
+                |-- CatmullRomSpline.dart.transitive_digest
+              |-- latlong.dart.transitive_digest
+              |-- spline.dart.transitive_digest
+          |-- lists
+            |-- lib
+              |-- src
+                |-- bit_list.dart.transitive_digest
+                |-- filled_list.dart.transitive_digest
+                |-- grouped_range_list.dart.transitive_digest
+                |-- list_pointer.dart.transitive_digest
+                |-- range_list.dart.transitive_digest
+                |-- sparse_bool_list.dart.transitive_digest
+                |-- sparse_list.dart.transitive_digest
+                |-- step_list.dart.transitive_digest
+                |-- wrapped_list.dart.transitive_digest
+              |-- lists.dart.transitive_digest
           |-- logger
             |-- lib
+              |-- src
+                |-- filters
+                  |-- development_filter.dart.transitive_digest
+                  |-- production_filter.dart.transitive_digest
+                |-- outputs
+                  |-- advanced_file_output_stub.dart.transitive_digest
+                  |-- console_output.dart.transitive_digest
+                  |-- file_output_stub.dart.transitive_digest
+                  |-- memory_output.dart.transitive_digest
+                  |-- multi_output.dart.transitive_digest
+                  |-- stream_output.dart.transitive_digest
+                |-- printers
+                  |-- hybrid_printer.dart.transitive_digest
+                  |-- logfmt_printer.dart.transitive_digest
+                  |-- prefix_printer.dart.transitive_digest
+                  |-- pretty_printer.dart.transitive_digest
+                  |-- simple_printer.dart.transitive_digest
+                |-- ansi_color.dart.transitive_digest
+                |-- date_time_format.dart.transitive_digest
+                |-- logger.dart.transitive_digest
+                |-- log_event.dart.transitive_digest
+                |-- log_filter.dart.transitive_digest
+                |-- log_level.dart.transitive_digest
+                |-- log_output.dart.transitive_digest
+                |-- log_printer.dart.transitive_digest
+                |-- output_event.dart.transitive_digest
               |-- logger.dart.transitive_digest
+              |-- web.dart.transitive_digest
           |-- logging
             |-- lib
+              |-- src
+                |-- level.dart.transitive_digest
+                |-- logger.dart.transitive_digest
+                |-- log_record.dart.transitive_digest
               |-- logging.dart.transitive_digest
           |-- material_color_utilities
             |-- lib
+              |-- blend
+                |-- blend.dart.transitive_digest
+              |-- contrast
+                |-- contrast.dart.transitive_digest
+              |-- dislike
+                |-- dislike_analyzer.dart.transitive_digest
+              |-- dynamiccolor
+                |-- src
+                  |-- contrast_curve.dart.transitive_digest
+                  |-- tone_delta_pair.dart.transitive_digest
+                |-- dynamic_color.dart.transitive_digest
+                |-- dynamic_scheme.dart.transitive_digest
+                |-- material_dynamic_colors.dart.transitive_digest
+                |-- variant.dart.transitive_digest
+              |-- hct
+                |-- src
+                  |-- hct_solver.dart.transitive_digest
+                |-- cam16.dart.transitive_digest
+                |-- hct.dart.transitive_digest
+                |-- viewing_conditions.dart.transitive_digest
+              |-- palettes
+                |-- core_palette.dart.transitive_digest
+                |-- tonal_palette.dart.transitive_digest
+              |-- quantize
+                |-- src
+                  |-- point_provider.dart.transitive_digest
+                  |-- point_provider_lab.dart.transitive_digest
+                |-- quantizer.dart.transitive_digest
+                |-- quantizer_celebi.dart.transitive_digest
+                |-- quantizer_map.dart.transitive_digest
+                |-- quantizer_wsmeans.dart.transitive_digest
+                |-- quantizer_wu.dart.transitive_digest
+              |-- scheme
+                |-- scheme.dart.transitive_digest
+                |-- scheme_content.dart.transitive_digest
+                |-- scheme_expressive.dart.transitive_digest
+                |-- scheme_fidelity.dart.transitive_digest
+                |-- scheme_fruit_salad.dart.transitive_digest
+                |-- scheme_monochrome.dart.transitive_digest
+                |-- scheme_neutral.dart.transitive_digest
+                |-- scheme_rainbow.dart.transitive_digest
+                |-- scheme_tonal_spot.dart.transitive_digest
+                |-- scheme_vibrant.dart.transitive_digest
+              |-- score
+                |-- score.dart.transitive_digest
+              |-- temperature
+                |-- temperature_cache.dart.transitive_digest
+              |-- utils
+                |-- color_utils.dart.transitive_digest
+                |-- math_utils.dart.transitive_digest
+                |-- string_utils.dart.transitive_digest
               |-- material_color_utilities.dart.transitive_digest
           |-- meta
             |-- lib
               |-- meta.dart.transitive_digest
               |-- meta_meta.dart.transitive_digest
+          |-- mgrs_dart
+            |-- lib
+              |-- src
+                |-- classes
+                  |-- bbox.dart.transitive_digest
+                  |-- lonlat.dart.transitive_digest
+                  |-- utm.dart.transitive_digest
+                |-- mgrs.dart.transitive_digest
+              |-- mgrs_dart.dart.transitive_digest
           |-- path
             |-- lib
+              |-- src
+                |-- style
+                  |-- posix.dart.transitive_digest
+                  |-- url.dart.transitive_digest
+                  |-- windows.dart.transitive_digest
+                |-- characters.dart.transitive_digest
+                |-- context.dart.transitive_digest
+                |-- internal_style.dart.transitive_digest
+                |-- parsed_path.dart.transitive_digest
+                |-- path_exception.dart.transitive_digest
+                |-- path_map.dart.transitive_digest
+                |-- path_set.dart.transitive_digest
+                |-- style.dart.transitive_digest
               |-- path.dart.transitive_digest
+          |-- plugin_platform_interface
+            |-- lib
+              |-- plugin_platform_interface.dart.transitive_digest
+          |-- polylabel
+            |-- lib
+              |-- src
+                |-- data.dart.transitive_digest
+                |-- polylabel_base.dart.transitive_digest
+              |-- polylabel.dart.transitive_digest
+          |-- proj4dart
+            |-- lib
+              |-- src
+                |-- classes
+                  |-- datum.dart.transitive_digest
+                  |-- nadgrid.dart.transitive_digest
+                  |-- point.dart.transitive_digest
+                  |-- projection.dart.transitive_digest
+                  |-- projection_tuple.dart.transitive_digest
+                  |-- proj_params.dart.transitive_digest
+                |-- common
+                  |-- datum_transform.dart.transitive_digest
+                  |-- utils.dart.transitive_digest
+                |-- constants
+                  |-- initializers.dart.transitive_digest
+                  |-- values.dart.transitive_digest
+                |-- globals
+                  |-- projection_store.dart.transitive_digest
+              |-- proj4dart.dart.transitive_digest
           |-- riverpod
             |-- lib
               |-- src
+                |-- async_notifier
+                  |-- auto_dispose.dart.transitive_digest
+                  |-- auto_dispose_family.dart.transitive_digest
+                  |-- base.dart.transitive_digest
+                  |-- family.dart.transitive_digest
+                |-- common
+                  |-- env.dart.transitive_digest
+                |-- framework
+                  |-- always_alive.dart.transitive_digest
+                  |-- async_selector.dart.transitive_digest
+                  |-- auto_dispose.dart.transitive_digest
+                  |-- container.dart.transitive_digest
+                  |-- element.dart.transitive_digest
+                  |-- family.dart.transitive_digest
+                  |-- foundation.dart.transitive_digest
+                  |-- listen.dart.transitive_digest
+                  |-- provider_base.dart.transitive_digest
+                  |-- proxy_provider_listenable.dart.transitive_digest
+                  |-- ref.dart.transitive_digest
+                  |-- scheduler.dart.transitive_digest
+                  |-- selector.dart.transitive_digest
+                  |-- value_provider.dart.transitive_digest
+                |-- future_provider
+                  |-- auto_dispose.dart.transitive_digest
+                  |-- base.dart.transitive_digest
+                |-- notifier
+                  |-- auto_dispose.dart.transitive_digest
+                  |-- auto_dispose_family.dart.transitive_digest
+                  |-- base.dart.transitive_digest
+                  |-- family.dart.transitive_digest
+                |-- provider
+                  |-- auto_dispose.dart.transitive_digest
+                  |-- base.dart.transitive_digest
+                |-- state_notifier_provider
+                  |-- auto_dispose.dart.transitive_digest
+                  |-- base.dart.transitive_digest
+                |-- state_provider
+                  |-- auto_dispose.dart.transitive_digest
+                  |-- base.dart.transitive_digest
+                |-- stream_notifier
+                  |-- auto_dispose.dart.transitive_digest
+                  |-- auto_dispose_family.dart.transitive_digest
+                  |-- base.dart.transitive_digest
+                  |-- family.dart.transitive_digest
+                |-- stream_provider
+                  |-- auto_dispose.dart.transitive_digest
+                  |-- base.dart.transitive_digest
+                |-- async_notifier.dart.transitive_digest
+                |-- builders.dart.transitive_digest
+                |-- common.dart.transitive_digest
+                |-- framework.dart.transitive_digest
+                |-- future_provider.dart.transitive_digest
                 |-- internals.dart.transitive_digest
+                |-- listenable.dart.transitive_digest
+                |-- notifier.dart.transitive_digest
+                |-- pragma.dart.transitive_digest
+                |-- provider.dart.transitive_digest
+                |-- result.dart.transitive_digest
+                |-- run_guarded.dart.transitive_digest
+                |-- stack_trace.dart.transitive_digest
+                |-- state_controller.dart.transitive_digest
+                |-- state_notifier_provider.dart.transitive_digest
+                |-- state_provider.dart.transitive_digest
+                |-- stream_notifier.dart.transitive_digest
+                |-- stream_provider.dart.transitive_digest
               |-- riverpod.dart.transitive_digest
           |-- source_span
             |-- lib
+              |-- src
+                |-- file.dart.transitive_digest
+                |-- highlighter.dart.transitive_digest
+                |-- location.dart.transitive_digest
+                |-- location_mixin.dart.transitive_digest
+                |-- span.dart.transitive_digest
+                |-- span_exception.dart.transitive_digest
+                |-- span_mixin.dart.transitive_digest
+                |-- span_with_context.dart.transitive_digest
+                |-- utils.dart.transitive_digest
               |-- source_span.dart.transitive_digest
           |-- stack_trace
             |-- lib
+              |-- src
+                |-- chain.dart.transitive_digest
+                |-- frame.dart.transitive_digest
+                |-- trace.dart.transitive_digest
+                |-- unparsed_frame.dart.transitive_digest
               |-- stack_trace.dart.transitive_digest
           |-- state_notifier
             |-- lib
               |-- state_notifier.dart.transitive_digest
           |-- string_scanner
             |-- lib
+              |-- src
+                |-- charcode.dart.transitive_digest
+                |-- eager_span_scanner.dart.transitive_digest
+                |-- exception.dart.transitive_digest
+                |-- line_scanner.dart.transitive_digest
+                |-- relative_span_scanner.dart.transitive_digest
+                |-- span_scanner.dart.transitive_digest
+                |-- string_scanner.dart.transitive_digest
+                |-- utils.dart.transitive_digest
               |-- string_scanner.dart.transitive_digest
           |-- term_glyph
             |-- lib
+              |-- src
+                |-- generated
+                  |-- ascii_glyph_set.dart.transitive_digest
+                  |-- glyph_set.dart.transitive_digest
+                  |-- top_level.dart.transitive_digest
+                  |-- unicode_glyph_set.dart.transitive_digest
               |-- term_glyph.dart.transitive_digest
           |-- typed_data
             |-- lib
+              |-- src
+                |-- typed_queue.dart.transitive_digest
+              |-- typed_buffers.dart.transitive_digest
               |-- typed_data.dart.transitive_digest
+          |-- unicode
+            |-- lib
+              |-- unicode.dart.transitive_digest
           |-- vector_math
             |-- lib
+              |-- src
+                |-- vector_math_64
+                  |-- aabb2.dart.transitive_digest
+                  |-- aabb3.dart.transitive_digest
+                  |-- colors.dart.transitive_digest
+                  |-- constants.dart.transitive_digest
+                  |-- error_helpers.dart.transitive_digest
+                  |-- frustum.dart.transitive_digest
+                  |-- intersection_result.dart.transitive_digest
+                  |-- matrix2.dart.transitive_digest
+                  |-- matrix3.dart.transitive_digest
+                  |-- matrix4.dart.transitive_digest
+                  |-- noise.dart.transitive_digest
+                  |-- obb3.dart.transitive_digest
+                  |-- opengl.dart.transitive_digest
+                  |-- plane.dart.transitive_digest
+                  |-- quad.dart.transitive_digest
+                  |-- quaternion.dart.transitive_digest
+                  |-- ray.dart.transitive_digest
+                  |-- sphere.dart.transitive_digest
+                  |-- triangle.dart.transitive_digest
+                  |-- utilities.dart.transitive_digest
+                  |-- vector.dart.transitive_digest
+                  |-- vector2.dart.transitive_digest
+                  |-- vector3.dart.transitive_digest
+                  |-- vector4.dart.transitive_digest
               |-- vector_math_64.dart.transitive_digest
+          |-- wkt_parser
+            |-- lib
+              |-- src
+                |-- clean_wkt.dart.transitive_digest
+                |-- parser.dart.transitive_digest
+                |-- process.dart.transitive_digest
+                |-- proj_wkt.dart.transitive_digest
+              |-- wkt_parser.dart.transitive_digest
       |-- build_resolvers
         |-- sdk.sum
         |-- sdk.sum.deps
       |-- dartpad
         |-- web_plugin_registrant.dart
-      |-- extension_discovery
-        |-- vs_code.json
       |-- flutter_build
         |-- 289f96a695729450576dc2c388dc2c0d
           |-- .filecache
@@ -384,6 +1735,7 @@
           |-- kernel_snapshot_program.stamp
           |-- native_assets.json
           |-- outputs.json
+        |-- dart_plugin_registrant.dart
       |-- pub
         |-- bin
           |-- build_runner
@@ -435,6 +1787,192 @@
       |-- app
         |-- .cxx
           |-- Debug
+            |-- 1x1b2a6o
+              |-- arm64-v8a
+                |-- .cmake
+                  |-- api
+                    |-- v1
+                      |-- query
+                        |-- client-agp
+                          |-- cache-v2
+                          |-- cmakeFiles-v1
+                          |-- codemodel-v2
+                      |-- reply
+                        |-- cache-v2-e77c75251040e378bc13.json
+                        |-- cmakeFiles-v1-dcdf0488bec529e34723.json
+                        |-- codemodel-v2-11cd6b61f018eee4d96e.json
+                        |-- directory-.-Debug-d0094a50bb2071803777.json
+                        |-- index-2025-06-10T04-24-57-0802.json
+                |-- CMakeFiles
+                  |-- 3.22.1-g37088a8-dirty
+                    |-- CompilerIdC
+                      |-- tmp
+                      |-- CMakeCCompilerId.c
+                      |-- CMakeCCompilerId.o
+                    |-- CompilerIdCXX
+                      |-- tmp
+                      |-- CMakeCXXCompilerId.cpp
+                      |-- CMakeCXXCompilerId.o
+                    |-- CMakeCCompiler.cmake
+                    |-- CMakeCXXCompiler.cmake
+                    |-- CMakeDetermineCompilerABI_C.bin
+                    |-- CMakeDetermineCompilerABI_CXX.bin
+                    |-- CMakeSystem.cmake
+                  |-- CMakeTmp
+                  |-- cmake.check_cache
+                  |-- CMakeOutput.log
+                  |-- rules.ninja
+                  |-- TargetDirectories.txt
+                |-- additional_project_files.txt
+                |-- android_gradle_build.json
+                |-- android_gradle_build_mini.json
+                |-- build.ninja
+                |-- build_file_index.txt
+                |-- CMakeCache.txt
+                |-- cmake_install.cmake
+                |-- configure_fingerprint.bin
+                |-- metadata_generation_command.txt
+                |-- prefab_config.json
+                |-- symbol_folder_index.txt
+              |-- armeabi-v7a
+                |-- .cmake
+                  |-- api
+                    |-- v1
+                      |-- query
+                        |-- client-agp
+                          |-- cache-v2
+                          |-- cmakeFiles-v1
+                          |-- codemodel-v2
+                      |-- reply
+                        |-- cache-v2-11419d58dfe439d1d28e.json
+                        |-- cmakeFiles-v1-96fbc920529ed4d4488b.json
+                        |-- codemodel-v2-f55ce16e29d4f10e6824.json
+                        |-- directory-.-Debug-d0094a50bb2071803777.json
+                        |-- index-2025-06-10T04-25-41-0854.json
+                |-- CMakeFiles
+                  |-- 3.22.1-g37088a8-dirty
+                    |-- CompilerIdC
+                      |-- tmp
+                      |-- CMakeCCompilerId.c
+                      |-- CMakeCCompilerId.o
+                    |-- CompilerIdCXX
+                      |-- tmp
+                      |-- CMakeCXXCompilerId.cpp
+                      |-- CMakeCXXCompilerId.o
+                    |-- CMakeCCompiler.cmake
+                    |-- CMakeCXXCompiler.cmake
+                    |-- CMakeDetermineCompilerABI_C.bin
+                    |-- CMakeDetermineCompilerABI_CXX.bin
+                    |-- CMakeSystem.cmake
+                  |-- CMakeTmp
+                  |-- cmake.check_cache
+                  |-- CMakeOutput.log
+                  |-- rules.ninja
+                  |-- TargetDirectories.txt
+                |-- additional_project_files.txt
+                |-- android_gradle_build.json
+                |-- android_gradle_build_mini.json
+                |-- build.ninja
+                |-- build_file_index.txt
+                |-- CMakeCache.txt
+                |-- cmake_install.cmake
+                |-- configure_fingerprint.bin
+                |-- metadata_generation_command.txt
+                |-- prefab_config.json
+                |-- symbol_folder_index.txt
+              |-- x86
+                |-- .cmake
+                  |-- api
+                    |-- v1
+                      |-- query
+                        |-- client-agp
+                          |-- cache-v2
+                          |-- cmakeFiles-v1
+                          |-- codemodel-v2
+                      |-- reply
+                        |-- cache-v2-2a54e571376bbe478b4d.json
+                        |-- cmakeFiles-v1-ae32cd0d7be06d9e7174.json
+                        |-- codemodel-v2-7e3460db2761bbba83e3.json
+                        |-- directory-.-Debug-d0094a50bb2071803777.json
+                        |-- index-2025-06-10T04-25-46-0430.json
+                |-- CMakeFiles
+                  |-- 3.22.1-g37088a8-dirty
+                    |-- CompilerIdC
+                      |-- tmp
+                      |-- CMakeCCompilerId.c
+                      |-- CMakeCCompilerId.o
+                    |-- CompilerIdCXX
+                      |-- tmp
+                      |-- CMakeCXXCompilerId.cpp
+                      |-- CMakeCXXCompilerId.o
+                    |-- CMakeCCompiler.cmake
+                    |-- CMakeCXXCompiler.cmake
+                    |-- CMakeDetermineCompilerABI_C.bin
+                    |-- CMakeDetermineCompilerABI_CXX.bin
+                    |-- CMakeSystem.cmake
+                  |-- CMakeTmp
+                  |-- cmake.check_cache
+                  |-- CMakeOutput.log
+                  |-- rules.ninja
+                  |-- TargetDirectories.txt
+                |-- additional_project_files.txt
+                |-- android_gradle_build.json
+                |-- android_gradle_build_mini.json
+                |-- build.ninja
+                |-- build_file_index.txt
+                |-- CMakeCache.txt
+                |-- cmake_install.cmake
+                |-- configure_fingerprint.bin
+                |-- metadata_generation_command.txt
+                |-- prefab_config.json
+                |-- symbol_folder_index.txt
+              |-- x86_64
+                |-- .cmake
+                  |-- api
+                    |-- v1
+                      |-- query
+                        |-- client-agp
+                          |-- cache-v2
+                          |-- cmakeFiles-v1
+                          |-- codemodel-v2
+                      |-- reply
+                        |-- cache-v2-3ef968621119aa7a085d.json
+                        |-- cmakeFiles-v1-98ea0f6cac5f55978095.json
+                        |-- codemodel-v2-c9ab6c308c3460f4b585.json
+                        |-- directory-.-Debug-d0094a50bb2071803777.json
+                        |-- index-2025-06-10T04-25-48-0934.json
+                |-- CMakeFiles
+                  |-- 3.22.1-g37088a8-dirty
+                    |-- CompilerIdC
+                      |-- tmp
+                      |-- CMakeCCompilerId.c
+                      |-- CMakeCCompilerId.o
+                    |-- CompilerIdCXX
+                      |-- tmp
+                      |-- CMakeCXXCompilerId.cpp
+                      |-- CMakeCXXCompilerId.o
+                    |-- CMakeCCompiler.cmake
+                    |-- CMakeCXXCompiler.cmake
+                    |-- CMakeDetermineCompilerABI_C.bin
+                    |-- CMakeDetermineCompilerABI_CXX.bin
+                    |-- CMakeSystem.cmake
+                  |-- CMakeTmp
+                  |-- cmake.check_cache
+                  |-- CMakeOutput.log
+                  |-- rules.ninja
+                  |-- TargetDirectories.txt
+                |-- additional_project_files.txt
+                |-- android_gradle_build.json
+                |-- android_gradle_build_mini.json
+                |-- build.ninja
+                |-- build_file_index.txt
+                |-- CMakeCache.txt
+                |-- cmake_install.cmake
+                |-- configure_fingerprint.bin
+                |-- metadata_generation_command.txt
+                |-- prefab_config.json
+                |-- symbol_folder_index.txt
+              |-- hash_key.txt
             |-- 5b634t4w
               |-- arm64-v8a
                 |-- .cmake
@@ -711,6 +2249,10 @@
                     |-- cupertino_icons
                       |-- assets
                         |-- CupertinoIcons.ttf
+                    |-- flutter_map
+                      |-- lib
+                        |-- assets
+                          |-- flutter_map_logo.png
                   |-- shaders
                     |-- ink_sparkle.frag
                   |-- .env
@@ -742,6 +2284,10 @@
                         |-- cupertino_icons
                           |-- assets
                             |-- CupertinoIcons.ttf.jar
+                        |-- flutter_map
+                          |-- lib
+                            |-- assets
+                              |-- flutter_map_logo.png.jar
                       |-- shaders
                         |-- ink_sparkle.frag.jar
                       |-- .env.jar
@@ -755,43 +2301,27 @@
                       |-- vm_snapshot_data.jar
           |-- cxx
             |-- Debug
-              |-- 5b634t4w
+              |-- 1x1b2a6o
                 |-- logs
                   |-- arm64-v8a
                     |-- build_model.json
-                    |-- configure_command.bat
-                    |-- configure_stderr.txt
-                    |-- configure_stdout.txt
-                    |-- generate_cxx_metadata_150_timing.txt
-                    |-- generate_cxx_metadata_247_timing.txt
-                    |-- generate_cxx_metadata_377_timing.txt
+                    |-- generate_cxx_metadata_1192_timing.txt
+                    |-- generate_cxx_metadata_1360_timing.txt
                     |-- metadata_generation_record.json
                   |-- armeabi-v7a
                     |-- build_model.json
-                    |-- configure_command.bat
-                    |-- configure_stderr.txt
-                    |-- configure_stdout.txt
-                    |-- generate_cxx_metadata_249_timing.txt
-                    |-- generate_cxx_metadata_377_timing.txt
-                    |-- generate_cxx_metadata_81_timing.txt
+                    |-- generate_cxx_metadata_1193_timing.txt
+                    |-- generate_cxx_metadata_1360_timing.txt
                     |-- metadata_generation_record.json
                   |-- x86
                     |-- build_model.json
-                    |-- configure_command.bat
-                    |-- configure_stderr.txt
-                    |-- configure_stdout.txt
-                    |-- generate_cxx_metadata_150_timing.txt
-                    |-- generate_cxx_metadata_249_timing.txt
-                    |-- generate_cxx_metadata_377_timing.txt
+                    |-- generate_cxx_metadata_1193_timing.txt
+                    |-- generate_cxx_metadata_1360_timing.txt
                     |-- metadata_generation_record.json
                   |-- x86_64
                     |-- build_model.json
-                    |-- configure_command.bat
-                    |-- configure_stderr.txt
-                    |-- configure_stdout.txt
-                    |-- generate_cxx_metadata_249_timing.txt
-                    |-- generate_cxx_metadata_377_timing.txt
-                    |-- generate_cxx_metadata_81_timing.txt
+                    |-- generate_cxx_metadata_1193_timing.txt
+                    |-- generate_cxx_metadata_1360_timing.txt
                     |-- metadata_generation_record.json
                 |-- obj
                   |-- arm64-v8a
@@ -836,6 +2366,7 @@
                 |-- classes.dex
               |-- mergeLibDexDebug
                 |-- 0
+                  |-- classes.dex
                 |-- 1
                 |-- 10
                 |-- 11
@@ -902,6 +2433,10 @@
                   |-- cupertino_icons
                     |-- assets
                       |-- CupertinoIcons.ttf
+                  |-- flutter_map
+                    |-- lib
+                      |-- assets
+                        |-- flutter_map_logo.png
                 |-- shaders
                   |-- ink_sparkle.frag
                 |-- .env
@@ -1114,32 +2649,37 @@
                 |-- 20oIv7zyYs3wIoiPeQcC3VSFKcY=
                 |-- 27YB3AHka8o_FcZPrLNadOhFYk8=
                 |-- 2kqHwaQQuhWu7wmOm0BhSNAmj+U=
+                |-- 3FoIRIzYGCJ_D7fTwB51tbUNVv8=
                 |-- 6LtiPZmaE7+WArlwqr+mtmE3yKc=
                 |-- 6pNfxReVX3a3zbMJm5pNswnoCOA=
                 |-- 8T+1ACC27VP6cmZ9TasOsWsGdV4=
-                |-- 9SUzCPykUO4CwgMM6y4YGRNdIJ0=
+                |-- 9eyCGe9v0uUM9iD4blDUwkF93o8=
                 |-- 9wHdNFiDdGu2_16DR7F8pgBa4L4=
-                |-- A95uZSNGYbHPl9wzyKT47jK4ows=
+                |-- AC+8dDIyeRbUdOYkpHSjWH3t5qo=
                 |-- aobpbRKBmz1DUlSriQDY4JlZ75A=
                 |-- aQ1XKMTtoyj6pkujyPoaMRsWIJc=
-                |-- AxtbedjWbL6PBYgEFM92aKj_DrA=
+                |-- bhGdHXzpzruIHlksh2v2PCLcJec=
+                |-- BJV2a4HYzcalqpd1+RGVA+zOE9s=
                 |-- Bk7NlOxtp4MCwipaK7WbDXl9iAE=
                 |-- blAJieCXTYrATUUVhLDyLl4TO9M=
                 |-- Brm8S23vXQR+XtUAAkKUuskx1Ew=
                 |-- CZFG3qv6j+gmil41uStw2YJJKFo=
+                |-- DmG2FxqO6ysKjksFfSIRRmjp42U=
                 |-- FnUd3QYb8XW1V7FIWXkqYLJgWrc=
                 |-- gEuxpD8STxrtCf49GBQs5cT5RB4=
                 |-- I63u97_WLJT0HdZ798Tc7v8JkrM=
                 |-- iAddbeTGmxM6cCdKxjXJuwMUDfQ=
                 |-- JCVb242BT_vqqzUi3nLkVOvvQxw=
                 |-- Jh0MEcFjpIAqX8VITAtDo+Ru+PA=
-                |-- K4V8z3Gy1fY1+MerRBbmN_92d24=
                 |-- lR7ohNWJiwzy1g7pDffKDza2W+E=
                 |-- OhKX8IUmpD_yg5AjLJSPa8yV9Bw=
                 |-- oLC9hPqmLNP+lsPqtpRzYXELCMo=
+                |-- OlSn9Y8t5vdGnEcNz2ud71wt4NU=
                 |-- P8slGLa2NCn_QSM9SkaTRP7WRRo=
+                |-- QtW8I1YgntEmfDBcALR+fNrHLQ4=
                 |-- TA4544J3VvNTlkx+cXALLE8ifbQ=
-                |-- u3NA37FoO_iemMaLdKjS9CGmlHk=
+                |-- ufZLlgZ8oqqUfU_2mVOAOzss9qs=
+                |-- uqx0EQE9lX6Wb8hIoDx5MBHJ50A=
                 |-- V0+5X+uHJty9QpYMTTxpgZRiOmo=
                 |-- VhG+pi78j+5mXsmlmWiDWscgrCM=
                 |-- vq2CUQmtJjW6hz88ofCj9o6ZVa4=
@@ -1471,10 +3011,10 @@
                     |-- flutter
                       |-- plugins
                         |-- GeneratedPluginRegistrant.dex
-                  |-- a4d78d5a7df89f0962b617e140de42685bff83bd1939f5f3780a734ebf1982a6_0.jar
-                  |-- a4d78d5a7df89f0962b617e140de42685bff83bd1939f5f3780a734ebf1982a6_1.jar
-                  |-- a4d78d5a7df89f0962b617e140de42685bff83bd1939f5f3780a734ebf1982a6_2.jar
-                  |-- a4d78d5a7df89f0962b617e140de42685bff83bd1939f5f3780a734ebf1982a6_3.jar
+                  |-- 069f56b094859d0cc5bcc73e688bf79668e19a9059730ccdb08b09068b45a3f9_0.jar
+                  |-- 069f56b094859d0cc5bcc73e688bf79668e19a9059730ccdb08b09068b45a3f9_1.jar
+                  |-- 069f56b094859d0cc5bcc73e688bf79668e19a9059730ccdb08b09068b45a3f9_2.jar
+                  |-- 069f56b094859d0cc5bcc73e688bf79668e19a9059730ccdb08b09068b45a3f9_3.jar
           |-- runtime_symbol_list
             |-- debug
               |-- processDebugResources
@@ -1622,8 +3162,723 @@
                 |-- app_debug.kotlin_module
           |-- packJniLibsflutterBuildDebug
             |-- MANIFEST.MF
+      |-- flutter_plugin_android_lifecycle
+        |-- .transforms
+          |-- b5acf73261aa19b2c94571b98bd49e54
+            |-- transformed
+              |-- classes
+                |-- classes.dex
+            |-- results.bin
+        |-- generated
+          |-- ap_generated_sources
+            |-- debug
+              |-- out
+          |-- res
+            |-- pngs
+              |-- debug
+            |-- resValues
+              |-- debug
+        |-- intermediates
+          |-- aapt_friendly_merged_manifests
+            |-- debug
+              |-- processDebugManifest
+                |-- aapt
+                  |-- AndroidManifest.xml
+                  |-- output-metadata.json
+          |-- aar_libs_directory
+            |-- debug
+              |-- syncDebugLibJars
+                |-- libs
+          |-- aar_main_jar
+            |-- debug
+              |-- syncDebugLibJars
+                |-- classes.jar
+          |-- aar_metadata
+            |-- debug
+              |-- writeDebugAarMetadata
+                |-- aar-metadata.properties
+          |-- annotations_typedef_file
+            |-- debug
+              |-- extractDebugAnnotations
+                |-- typedefs.txt
+          |-- annotations_zip
+            |-- debug
+              |-- extractDebugAnnotations
+          |-- annotation_processor_list
+            |-- debug
+              |-- javaPreCompileDebug
+                |-- annotationProcessors.json
+          |-- compiled_local_resources
+            |-- debug
+              |-- compileDebugLibraryResources
+                |-- out
+          |-- compile_library_classes_jar
+            |-- debug
+              |-- bundleLibCompileToJarDebug
+                |-- classes.jar
+          |-- compile_r_class_jar
+            |-- debug
+              |-- generateDebugRFile
+                |-- R.jar
+          |-- compile_symbol_list
+            |-- debug
+              |-- generateDebugRFile
+                |-- R.txt
+          |-- data_binding_layout_info_type_package
+            |-- debug
+              |-- packageDebugResources
+                |-- out
+          |-- incremental
+            |-- debug
+              |-- packageDebugResources
+                |-- merged.dir
+                |-- stripped.dir
+                |-- compile-file-map.properties
+                |-- merger.xml
+            |-- debug-mergeJavaRes
+              |-- zip-cache
+              |-- merge-state
+            |-- mergeDebugJniLibFolders
+              |-- merger.xml
+            |-- mergeDebugShaders
+              |-- merger.xml
+            |-- packageDebugAssets
+              |-- merger.xml
+          |-- javac
+            |-- debug
+              |-- compileDebugJavaWithJavac
+                |-- classes
+                  |-- io
+                    |-- flutter
+                      |-- embedding
+                        |-- engine
+                          |-- plugins
+                            |-- lifecycle
+                              |-- FlutterLifecycleAdapter.class
+                      |-- plugins
+                        |-- flutter_plugin_android_lifecycle
+                          |-- FlutterAndroidLifecyclePlugin.class
+          |-- library_and_local_jars_jni
+            |-- debug
+              |-- copyDebugJniLibsProjectAndLocalJars
+                |-- jni
+          |-- library_assets
+            |-- debug
+              |-- packageDebugAssets
+                |-- out
+          |-- library_jni
+            |-- debug
+              |-- copyDebugJniLibsProjectOnly
+                |-- jni
+          |-- local_only_symbol_list
+            |-- debug
+              |-- parseDebugLocalResources
+                |-- R-def.txt
+          |-- manifest_merge_blame_file
+            |-- debug
+              |-- processDebugManifest
+                |-- manifest-merger-blame-debug-report.txt
+          |-- merged_consumer_proguard_file
+            |-- debug
+              |-- mergeDebugConsumerProguardFiles
+                |-- proguard.txt
+          |-- merged_java_res
+            |-- debug
+              |-- mergeDebugJavaResource
+                |-- feature-flutter_plugin_android_lifecycle.jar
+          |-- merged_jni_libs
+            |-- debug
+              |-- mergeDebugJniLibFolders
+                |-- out
+          |-- merged_manifest
+            |-- debug
+              |-- processDebugManifest
+                |-- AndroidManifest.xml
+          |-- merged_shaders
+            |-- debug
+              |-- mergeDebugShaders
+                |-- out
+          |-- navigation_json
+            |-- debug
+              |-- extractDeepLinksDebug
+                |-- navigation.json
+          |-- nested_resources_validation_report
+            |-- debug
+              |-- generateDebugResources
+                |-- nestedResourcesValidationReport.txt
+          |-- packaged_res
+            |-- debug
+              |-- packageDebugResources
+          |-- public_res
+            |-- debug
+              |-- packageDebugResources
+          |-- runtime_library_classes_jar
+            |-- debug
+              |-- bundleLibRuntimeToJarDebug
+                |-- classes.jar
+          |-- symbol_list_with_package_name
+            |-- debug
+              |-- generateDebugRFile
+                |-- package-aware-r.txt
+        |-- outputs
+          |-- aar
+            |-- flutter_plugin_android_lifecycle-debug.aar
+          |-- logs
+            |-- manifest-merger-debug-report.txt
+        |-- tmp
+          |-- compileDebugJavaWithJavac
+            |-- previous-compilation-data.bin
+      |-- flutter_secure_storage
+        |-- .transforms
+          |-- 4cd64c44dbc18adafe5d669940a51867
+            |-- transformed
+              |-- classes
+                |-- classes.dex
+            |-- results.bin
+        |-- generated
+          |-- ap_generated_sources
+            |-- debug
+              |-- out
+          |-- res
+            |-- pngs
+              |-- debug
+            |-- resValues
+              |-- debug
+          |-- source
+            |-- buildConfig
+              |-- debug
+                |-- com
+                  |-- it_nomads
+                    |-- fluttersecurestorage
+                      |-- BuildConfig.java
+        |-- intermediates
+          |-- aapt_friendly_merged_manifests
+            |-- debug
+              |-- processDebugManifest
+                |-- aapt
+                  |-- AndroidManifest.xml
+                  |-- output-metadata.json
+          |-- aar_libs_directory
+            |-- debug
+              |-- syncDebugLibJars
+                |-- libs
+          |-- aar_main_jar
+            |-- debug
+              |-- syncDebugLibJars
+                |-- classes.jar
+          |-- aar_metadata
+            |-- debug
+              |-- writeDebugAarMetadata
+                |-- aar-metadata.properties
+          |-- annotations_typedef_file
+            |-- debug
+              |-- extractDebugAnnotations
+                |-- typedefs.txt
+          |-- annotations_zip
+            |-- debug
+              |-- extractDebugAnnotations
+          |-- annotation_processor_list
+            |-- debug
+              |-- javaPreCompileDebug
+                |-- annotationProcessors.json
+          |-- compiled_local_resources
+            |-- debug
+              |-- compileDebugLibraryResources
+                |-- out
+          |-- compile_library_classes_jar
+            |-- debug
+              |-- bundleLibCompileToJarDebug
+                |-- classes.jar
+          |-- compile_r_class_jar
+            |-- debug
+              |-- generateDebugRFile
+                |-- R.jar
+          |-- compile_symbol_list
+            |-- debug
+              |-- generateDebugRFile
+                |-- R.txt
+          |-- data_binding_layout_info_type_package
+            |-- debug
+              |-- packageDebugResources
+                |-- out
+          |-- incremental
+            |-- debug
+              |-- packageDebugResources
+                |-- merged.dir
+                |-- stripped.dir
+                |-- compile-file-map.properties
+                |-- merger.xml
+            |-- debug-mergeJavaRes
+              |-- zip-cache
+              |-- merge-state
+            |-- mergeDebugJniLibFolders
+              |-- merger.xml
+            |-- mergeDebugShaders
+              |-- merger.xml
+            |-- packageDebugAssets
+              |-- merger.xml
+          |-- javac
+            |-- debug
+              |-- compileDebugJavaWithJavac
+                |-- classes
+                  |-- com
+                    |-- it_nomads
+                      |-- fluttersecurestorage
+                        |-- ciphers
+                          |-- KeyCipher.class
+                          |-- KeyCipherAlgorithm.class
+                          |-- KeyCipherFunction.class
+                          |-- RSACipher18Implementation.class
+                          |-- RSACipherOAEPImplementation.class
+                          |-- StorageCipher.class
+                          |-- StorageCipher18Implementation.class
+                          |-- StorageCipherAlgorithm.class
+                          |-- StorageCipherFactory.class
+                          |-- StorageCipherFunction.class
+                          |-- StorageCipherGCMImplementation.class
+                        |-- BuildConfig.class
+                        |-- FlutterSecureStorage.class
+                        |-- FlutterSecureStoragePlugin$MethodResultWrapper.class
+                        |-- FlutterSecureStoragePlugin$MethodRunner.class
+                        |-- FlutterSecureStoragePlugin.class
+          |-- library_and_local_jars_jni
+            |-- debug
+              |-- copyDebugJniLibsProjectAndLocalJars
+                |-- jni
+          |-- library_assets
+            |-- debug
+              |-- packageDebugAssets
+                |-- out
+          |-- library_jni
+            |-- debug
+              |-- copyDebugJniLibsProjectOnly
+                |-- jni
+          |-- local_only_symbol_list
+            |-- debug
+              |-- parseDebugLocalResources
+                |-- R-def.txt
+          |-- manifest_merge_blame_file
+            |-- debug
+              |-- processDebugManifest
+                |-- manifest-merger-blame-debug-report.txt
+          |-- merged_java_res
+            |-- debug
+              |-- mergeDebugJavaResource
+                |-- feature-flutter_secure_storage.jar
+          |-- merged_jni_libs
+            |-- debug
+              |-- mergeDebugJniLibFolders
+                |-- out
+          |-- merged_manifest
+            |-- debug
+              |-- processDebugManifest
+                |-- AndroidManifest.xml
+          |-- merged_shaders
+            |-- debug
+              |-- mergeDebugShaders
+                |-- out
+          |-- navigation_json
+            |-- debug
+              |-- extractDeepLinksDebug
+                |-- navigation.json
+          |-- nested_resources_validation_report
+            |-- debug
+              |-- generateDebugResources
+                |-- nestedResourcesValidationReport.txt
+          |-- packaged_res
+            |-- debug
+              |-- packageDebugResources
+          |-- public_res
+            |-- debug
+              |-- packageDebugResources
+          |-- runtime_library_classes_jar
+            |-- debug
+              |-- bundleLibRuntimeToJarDebug
+                |-- classes.jar
+          |-- symbol_list_with_package_name
+            |-- debug
+              |-- generateDebugRFile
+                |-- package-aware-r.txt
+        |-- outputs
+          |-- aar
+            |-- flutter_secure_storage-debug.aar
+          |-- logs
+            |-- manifest-merger-debug-report.txt
+        |-- tmp
+          |-- compileDebugJavaWithJavac
+            |-- previous-compilation-data.bin
+      |-- image_picker_android
+        |-- .transforms
+          |-- 60c232340723561cd1cdf948bae0b27b
+            |-- transformed
+              |-- classes
+                |-- classes.dex
+            |-- results.bin
+        |-- generated
+          |-- ap_generated_sources
+            |-- debug
+              |-- out
+          |-- res
+            |-- pngs
+              |-- debug
+            |-- resValues
+              |-- debug
+        |-- intermediates
+          |-- aapt_friendly_merged_manifests
+            |-- debug
+              |-- processDebugManifest
+                |-- aapt
+                  |-- AndroidManifest.xml
+                  |-- output-metadata.json
+          |-- aar_libs_directory
+            |-- debug
+              |-- syncDebugLibJars
+                |-- libs
+          |-- aar_main_jar
+            |-- debug
+              |-- syncDebugLibJars
+                |-- classes.jar
+          |-- aar_metadata
+            |-- debug
+              |-- writeDebugAarMetadata
+                |-- aar-metadata.properties
+          |-- annotations_typedef_file
+            |-- debug
+              |-- extractDebugAnnotations
+                |-- typedefs.txt
+          |-- annotations_zip
+            |-- debug
+              |-- extractDebugAnnotations
+          |-- annotation_processor_list
+            |-- debug
+              |-- javaPreCompileDebug
+                |-- annotationProcessors.json
+          |-- compiled_local_resources
+            |-- debug
+              |-- compileDebugLibraryResources
+                |-- out
+                  |-- xml_flutter_image_picker_file_paths.xml.flat
+          |-- compile_library_classes_jar
+            |-- debug
+              |-- bundleLibCompileToJarDebug
+                |-- classes.jar
+          |-- compile_r_class_jar
+            |-- debug
+              |-- generateDebugRFile
+                |-- R.jar
+          |-- compile_symbol_list
+            |-- debug
+              |-- generateDebugRFile
+                |-- R.txt
+          |-- data_binding_layout_info_type_package
+            |-- debug
+              |-- packageDebugResources
+                |-- out
+          |-- incremental
+            |-- debug
+              |-- packageDebugResources
+                |-- merged.dir
+                |-- stripped.dir
+                |-- compile-file-map.properties
+                |-- merger.xml
+            |-- debug-mergeJavaRes
+              |-- zip-cache
+              |-- merge-state
+            |-- mergeDebugJniLibFolders
+              |-- merger.xml
+            |-- mergeDebugShaders
+              |-- merger.xml
+            |-- packageDebugAssets
+              |-- merger.xml
+          |-- javac
+            |-- debug
+              |-- compileDebugJavaWithJavac
+                |-- classes
+                  |-- io
+                    |-- flutter
+                      |-- plugins
+                        |-- imagepicker
+                          |-- ExifDataCopier.class
+                          |-- FileUtils.class
+                          |-- ImagePickerCache$CacheType.class
+                          |-- ImagePickerCache.class
+                          |-- ImagePickerDelegate$1.class
+                          |-- ImagePickerDelegate$2.class
+                          |-- ImagePickerDelegate$CameraDevice.class
+                          |-- ImagePickerDelegate$FileUriResolver.class
+                          |-- ImagePickerDelegate$MediaPath.class
+                          |-- ImagePickerDelegate$OnPathReadyListener.class
+                          |-- ImagePickerDelegate$PendingCallState.class
+                          |-- ImagePickerDelegate$PermissionManager.class
+                          |-- ImagePickerDelegate.class
+                          |-- ImagePickerFileProvider.class
+                          |-- ImagePickerPlugin$1.class
+                          |-- ImagePickerPlugin$ActivityState.class
+                          |-- ImagePickerPlugin$LifeCycleObserver.class
+                          |-- ImagePickerPlugin.class
+                          |-- ImagePickerUtils.class
+                          |-- ImageResizer.class
+                          |-- Messages$CacheRetrievalError$Builder.class
+                          |-- Messages$CacheRetrievalError.class
+                          |-- Messages$CacheRetrievalResult$Builder.class
+                          |-- Messages$CacheRetrievalResult.class
+                          |-- Messages$CacheRetrievalType.class
+                          |-- Messages$CanIgnoreReturnValue.class
+                          |-- Messages$FlutterError.class
+                          |-- Messages$GeneralOptions$Builder.class
+                          |-- Messages$GeneralOptions.class
+                          |-- Messages$ImagePickerApi$1.class
+                          |-- Messages$ImagePickerApi$2.class
+                          |-- Messages$ImagePickerApi$3.class
+                          |-- Messages$ImagePickerApi.class
+                          |-- Messages$ImageSelectionOptions$Builder.class
+                          |-- Messages$ImageSelectionOptions.class
+                          |-- Messages$MediaSelectionOptions$Builder.class
+                          |-- Messages$MediaSelectionOptions.class
+                          |-- Messages$NullableResult.class
+                          |-- Messages$PigeonCodec.class
+                          |-- Messages$Result.class
+                          |-- Messages$SourceCamera.class
+                          |-- Messages$SourceSpecification$Builder.class
+                          |-- Messages$SourceSpecification.class
+                          |-- Messages$SourceType.class
+                          |-- Messages$VideoSelectionOptions$Builder.class
+                          |-- Messages$VideoSelectionOptions.class
+                          |-- Messages$VoidResult.class
+                          |-- Messages.class
+          |-- library_and_local_jars_jni
+            |-- debug
+              |-- copyDebugJniLibsProjectAndLocalJars
+                |-- jni
+          |-- library_assets
+            |-- debug
+              |-- packageDebugAssets
+                |-- out
+          |-- library_jni
+            |-- debug
+              |-- copyDebugJniLibsProjectOnly
+                |-- jni
+          |-- local_only_symbol_list
+            |-- debug
+              |-- parseDebugLocalResources
+                |-- R-def.txt
+          |-- manifest_merge_blame_file
+            |-- debug
+              |-- processDebugManifest
+                |-- manifest-merger-blame-debug-report.txt
+          |-- merged_java_res
+            |-- debug
+              |-- mergeDebugJavaResource
+                |-- feature-image_picker_android.jar
+          |-- merged_jni_libs
+            |-- debug
+              |-- mergeDebugJniLibFolders
+                |-- out
+          |-- merged_manifest
+            |-- debug
+              |-- processDebugManifest
+                |-- AndroidManifest.xml
+          |-- merged_shaders
+            |-- debug
+              |-- mergeDebugShaders
+                |-- out
+          |-- navigation_json
+            |-- debug
+              |-- extractDeepLinksDebug
+                |-- navigation.json
+          |-- nested_resources_validation_report
+            |-- debug
+              |-- generateDebugResources
+                |-- nestedResourcesValidationReport.txt
+          |-- packaged_res
+            |-- debug
+              |-- packageDebugResources
+                |-- xml
+                  |-- flutter_image_picker_file_paths.xml
+          |-- public_res
+            |-- debug
+              |-- packageDebugResources
+          |-- runtime_library_classes_jar
+            |-- debug
+              |-- bundleLibRuntimeToJarDebug
+                |-- classes.jar
+          |-- symbol_list_with_package_name
+            |-- debug
+              |-- generateDebugRFile
+                |-- package-aware-r.txt
+        |-- outputs
+          |-- aar
+            |-- image_picker_android-debug.aar
+          |-- logs
+            |-- manifest-merger-debug-report.txt
+        |-- tmp
+          |-- compileDebugJavaWithJavac
+            |-- previous-compilation-data.bin
       |-- native_assets
         |-- android
+      |-- path_provider_android
+        |-- .transforms
+          |-- 248f8dcb0d6d50ab152b0e6b95e56b38
+            |-- transformed
+              |-- classes
+                |-- classes.dex
+            |-- results.bin
+        |-- generated
+          |-- ap_generated_sources
+            |-- debug
+              |-- out
+          |-- res
+            |-- pngs
+              |-- debug
+            |-- resValues
+              |-- debug
+        |-- intermediates
+          |-- aapt_friendly_merged_manifests
+            |-- debug
+              |-- processDebugManifest
+                |-- aapt
+                  |-- AndroidManifest.xml
+                  |-- output-metadata.json
+          |-- aar_libs_directory
+            |-- debug
+              |-- syncDebugLibJars
+                |-- libs
+          |-- aar_main_jar
+            |-- debug
+              |-- syncDebugLibJars
+                |-- classes.jar
+          |-- aar_metadata
+            |-- debug
+              |-- writeDebugAarMetadata
+                |-- aar-metadata.properties
+          |-- annotations_typedef_file
+            |-- debug
+              |-- extractDebugAnnotations
+                |-- typedefs.txt
+          |-- annotations_zip
+            |-- debug
+              |-- extractDebugAnnotations
+          |-- annotation_processor_list
+            |-- debug
+              |-- javaPreCompileDebug
+                |-- annotationProcessors.json
+          |-- compiled_local_resources
+            |-- debug
+              |-- compileDebugLibraryResources
+                |-- out
+          |-- compile_library_classes_jar
+            |-- debug
+              |-- bundleLibCompileToJarDebug
+                |-- classes.jar
+          |-- compile_r_class_jar
+            |-- debug
+              |-- generateDebugRFile
+                |-- R.jar
+          |-- compile_symbol_list
+            |-- debug
+              |-- generateDebugRFile
+                |-- R.txt
+          |-- data_binding_layout_info_type_package
+            |-- debug
+              |-- packageDebugResources
+                |-- out
+          |-- incremental
+            |-- debug
+              |-- packageDebugResources
+                |-- merged.dir
+                |-- stripped.dir
+                |-- compile-file-map.properties
+                |-- merger.xml
+            |-- debug-mergeJavaRes
+              |-- zip-cache
+              |-- merge-state
+            |-- mergeDebugJniLibFolders
+              |-- merger.xml
+            |-- mergeDebugShaders
+              |-- merger.xml
+            |-- packageDebugAssets
+              |-- merger.xml
+          |-- javac
+            |-- debug
+              |-- compileDebugJavaWithJavac
+                |-- classes
+                  |-- io
+                    |-- flutter
+                      |-- plugins
+                        |-- pathprovider
+                          |-- Messages$FlutterError.class
+                          |-- Messages$PathProviderApi.class
+                          |-- Messages$PigeonCodec.class
+                          |-- Messages$StorageDirectory.class
+                          |-- Messages.class
+                          |-- PathProviderPlugin$1.class
+                          |-- PathProviderPlugin.class
+          |-- library_and_local_jars_jni
+            |-- debug
+              |-- copyDebugJniLibsProjectAndLocalJars
+                |-- jni
+          |-- library_assets
+            |-- debug
+              |-- packageDebugAssets
+                |-- out
+          |-- library_jni
+            |-- debug
+              |-- copyDebugJniLibsProjectOnly
+                |-- jni
+          |-- local_only_symbol_list
+            |-- debug
+              |-- parseDebugLocalResources
+                |-- R-def.txt
+          |-- manifest_merge_blame_file
+            |-- debug
+              |-- processDebugManifest
+                |-- manifest-merger-blame-debug-report.txt
+          |-- merged_java_res
+            |-- debug
+              |-- mergeDebugJavaResource
+                |-- feature-path_provider_android.jar
+          |-- merged_jni_libs
+            |-- debug
+              |-- mergeDebugJniLibFolders
+                |-- out
+          |-- merged_manifest
+            |-- debug
+              |-- processDebugManifest
+                |-- AndroidManifest.xml
+          |-- merged_shaders
+            |-- debug
+              |-- mergeDebugShaders
+                |-- out
+          |-- navigation_json
+            |-- debug
+              |-- extractDeepLinksDebug
+                |-- navigation.json
+          |-- nested_resources_validation_report
+            |-- debug
+              |-- generateDebugResources
+                |-- nestedResourcesValidationReport.txt
+          |-- packaged_res
+            |-- debug
+              |-- packageDebugResources
+          |-- public_res
+            |-- debug
+              |-- packageDebugResources
+          |-- runtime_library_classes_jar
+            |-- debug
+              |-- bundleLibRuntimeToJarDebug
+                |-- classes.jar
+          |-- symbol_list_with_package_name
+            |-- debug
+              |-- generateDebugRFile
+                |-- package-aware-r.txt
+        |-- outputs
+          |-- aar
+            |-- path_provider_android-debug.aar
+          |-- logs
+            |-- manifest-merger-debug-report.txt
+        |-- tmp
+          |-- compileDebugJavaWithJavac
+            |-- previous-compilation-data.bin
       |-- cache.dill.track.dill
     |-- ios
       |-- Flutter
@@ -1703,150 +3958,184 @@
             |-- token_response.g.dart
           |-- providers
             |-- auth_providers.dart
+            |-- auth_providers.freezed.dart
           |-- screens
             |-- login_screen.dart
+          |-- widgets
+        |-- citizen
+          |-- data
+            |-- citizen_report_repository.dart
+          |-- providers
+            |-- citizen_providers.dart
+          |-- report_creation
+            |-- models
+              |-- create_report_dto.dart
+              |-- create_report_dto.freezed.dart
+              |-- create_report_dto.g.dart
+              |-- create_report_state.dart
+              |-- create_report_state.freezed.dart
+            |-- providers
+              |-- create_report_provider.dart
+            |-- screens
+              |-- create_report_shell_screen.dart
+              |-- step1_category_selection_screen.dart
+              |-- step2_details_screen.dart
+              |-- step3_media_screen.dart
+              |-- step4_preview_screen.dart
+          |-- screens
+            |-- about_screen.dart
+            |-- citizen_dashboard_screen.dart
+            |-- citizen_shell_screen.dart
+            |-- profile_screen.dart
+            |-- report_detail_screen.dart
+            |-- report_list_screen.dart
           |-- widgets
         |-- home
         |-- report
       |-- shared
         |-- models
+          |-- department.dart
+          |-- department.freezed.dart
+          |-- department.g.dart
+          |-- paginated_response.dart
+          |-- paginated_response.freezed.dart
+          |-- paginated_response.g.dart
+          |-- report.dart
+          |-- report.freezed.dart
+          |-- report.g.dart
+          |-- report_category.dart
+          |-- report_category.freezed.dart
+          |-- report_category.g.dart
+          |-- report_media.dart
+          |-- report_media.freezed.dart
+          |-- report_media.g.dart
+          |-- user.dart
+          |-- user.freezed.dart
+          |-- user.g.dart
         |-- providers
         |-- utils
         |-- widgets
+      |-- widgets
       |-- app.dart
       |-- main.dart
     |-- linux
       |-- flutter
         |-- ephemeral
           |-- .plugin_symlinks
-            |-- flutter_secure_storage
-              |-- android
-                |-- gradle
-                  |-- wrapper
-                    |-- gradle-wrapper.properties
-                |-- src
-                  |-- main
-                    |-- java
-                      |-- com
-                        |-- it_nomads
-                          |-- fluttersecurestorage
-                            |-- ciphers
-                              |-- RSACipher18Implementation.java
-                              |-- StorageCipher.java
-                              |-- StorageCipher18Implementation.java
-                            |-- FlutterSecureStoragePlugin.java
-                    |-- AndroidManifest.xml
-                |-- build.gradle
-                |-- gradle.properties
-                |-- settings.gradle
+            |-- file_selector_linux
               |-- example
-                |-- android
-                  |-- app
-                    |-- src
-                      |-- main
-                        |-- java
-                          |-- com
-                            |-- it_nomads
-                              |-- fluttersecurestorageexample
-                                |-- MainActivity.java
-                        |-- res
-                          |-- mipmap-hdpi
-                            |-- ic_launcher.png
-                          |-- mipmap-mdpi
-                            |-- ic_launcher.png
-                          |-- mipmap-xhdpi
-                            |-- ic_launcher.png
-                          |-- mipmap-xxhdpi
-                            |-- ic_launcher.png
-                          |-- mipmap-xxxhdpi
-                            |-- ic_launcher.png
-                          |-- xml
-                            |-- my_backup_rules.xml
-                        |-- AndroidManifest.xml
-                    |-- build.gradle
-                  |-- gradle
-                    |-- wrapper
-                      |-- gradle-wrapper.properties
-                  |-- build.gradle
-                  |-- gradle.properties
-                  |-- settings.gradle
-                |-- ios
-                  |-- Flutter
-                    |-- AppFrameworkInfo.plist
-                    |-- Debug.xcconfig
-                    |-- Release.xcconfig
-                  |-- Runner
-                    |-- Assets.xcassets
-                      |-- AppIcon.appiconset
-                        |-- Contents.json
-                        |-- Icon-App-20x20@1x.png
-                        |-- Icon-App-20x20@2x.png
-                        |-- Icon-App-20x20@3x.png
-                        |-- Icon-App-29x29@1x.png
-                        |-- Icon-App-29x29@2x.png
-                        |-- Icon-App-29x29@3x.png
-                        |-- Icon-App-40x40@1x.png
-                        |-- Icon-App-40x40@2x.png
-                        |-- Icon-App-40x40@3x.png
-                        |-- Icon-App-60x60@2x.png
-                        |-- Icon-App-60x60@3x.png
-                        |-- Icon-App-76x76@1x.png
-                        |-- Icon-App-76x76@2x.png
-                        |-- Icon-App-83.5x83.5@2x.png
-                    |-- Base.lproj
-                      |-- LaunchScreen.storyboard
-                      |-- Main.storyboard
-                    |-- AppDelegate.h
-                    |-- AppDelegate.m
-                    |-- Info.plist
-                    |-- main.m
-                  |-- Runner.xcodeproj
-                    |-- project.xcworkspace
-                      |-- contents.xcworkspacedata
-                    |-- xcshareddata
-                      |-- xcschemes
-                        |-- Runner.xcscheme
-                    |-- project.pbxproj
-                  |-- Runner.xcworkspace
-                    |-- xcshareddata
-                      |-- IDEWorkspaceChecks.plist
-                    |-- contents.xcworkspacedata
-                  |-- Podfile
+                |-- lib
+                  |-- get_directory_page.dart
+                  |-- get_multiple_directories_page.dart
+                  |-- home_page.dart
+                  |-- main.dart
+                  |-- open_image_page.dart
+                  |-- open_multiple_images_page.dart
+                  |-- open_text_page.dart
+                  |-- save_text_page.dart
+                |-- linux
+                  |-- flutter
+                    |-- CMakeLists.txt
+                    |-- generated_plugins.cmake
+                  |-- CMakeLists.txt
+                  |-- main.cc
+                  |-- my_application.cc
+                  |-- my_application.h
+                |-- pubspec.yaml
+                |-- README.md
+              |-- lib
+                |-- src
+                  |-- messages.g.dart
+                |-- file_selector_linux.dart
+              |-- linux
+                |-- include
+                  |-- file_selector_linux
+                    |-- file_selector_plugin.h
+                |-- test
+                  |-- file_selector_plugin_test.cc
+                  |-- test_main.cc
+                |-- CMakeLists.txt
+                |-- file_selector_plugin.cc
+                |-- file_selector_plugin_private.h
+                |-- messages.g.cc
+                |-- messages.g.h
+              |-- pigeons
+                |-- copyright.txt
+                |-- messages.dart
+              |-- test
+                |-- file_selector_linux_test.dart
+              |-- AUTHORS
+              |-- CHANGELOG.md
+              |-- LICENSE
+              |-- pubspec.yaml
+              |-- README.md
+            |-- flutter_secure_storage_linux
+              |-- linux
+                |-- include
+                  |-- flutter_secure_storage_linux
+                    |-- flutter_secure_storage_linux_plugin.h
+                  |-- FHashTable.hpp
+                  |-- json.hpp
+                  |-- Secret.hpp
+                |-- CMakeLists.txt
+                |-- flutter_secure_storage_linux_plugin.cc
+              |-- CHANGELOG.md
+              |-- LICENSE
+              |-- pubspec.yaml
+              |-- README.md
+            |-- image_picker_linux
+              |-- example
                 |-- lib
                   |-- main.dart
                 |-- linux
                   |-- flutter
                     |-- CMakeLists.txt
                     |-- generated_plugins.cmake
-                    |-- generated_plugin_registrant.cc
-                    |-- generated_plugin_registrant.h
                   |-- CMakeLists.txt
                   |-- main.cc
                   |-- my_application.cc
                   |-- my_application.h
-                |-- test
-                  |-- widget_test.dart
-                |-- test_driver
-                  |-- app.dart
-                  |-- app_test.dart
                 |-- pubspec.yaml
                 |-- README.md
-              |-- ios
-                |-- Classes
-                  |-- FlutterSecureStoragePlugin.h
-                  |-- FlutterSecureStoragePlugin.m
-                |-- flutter_secure_storage.podspec
               |-- lib
-                |-- flutter_secure_storage.dart
-              |-- linux
-                |-- include
-                  |-- flutter_secure_storage
-                    |-- flutter_secure_storage_plugin.h
-                  |-- FHashTable.hpp
-                  |-- Secret.hpp
-                |-- CMakeLists.txt
-                |-- flutter_secure_storage_plugin.cc
-              |-- analysis_options.yaml
+                |-- image_picker_linux.dart
+              |-- test
+                |-- image_picker_linux_test.dart
+                |-- image_picker_linux_test.mocks.dart
+              |-- AUTHORS
+              |-- CHANGELOG.md
+              |-- LICENSE
+              |-- pubspec.yaml
+              |-- README.md
+            |-- path_provider_linux
+              |-- example
+                |-- integration_test
+                  |-- path_provider_test.dart
+                |-- lib
+                  |-- main.dart
+                |-- linux
+                  |-- flutter
+                    |-- CMakeLists.txt
+                    |-- generated_plugins.cmake
+                  |-- CMakeLists.txt
+                  |-- main.cc
+                  |-- my_application.cc
+                  |-- my_application.h
+                |-- test_driver
+                  |-- integration_test.dart
+                |-- pubspec.yaml
+                |-- README.md
+              |-- lib
+                |-- src
+                  |-- get_application_id.dart
+                  |-- get_application_id_real.dart
+                  |-- get_application_id_stub.dart
+                  |-- path_provider_linux.dart
+                |-- path_provider_linux.dart
+              |-- test
+                |-- get_application_id_test.dart
+                |-- path_provider_linux_test.dart
+              |-- AUTHORS
               |-- CHANGELOG.md
               |-- LICENSE
               |-- pubspec.yaml
@@ -1921,6 +4210,206 @@
       |-- flutter
         |-- ephemeral
           |-- .plugin_symlinks
+            |-- file_selector_windows
+              |-- example
+                |-- lib
+                  |-- get_directory_page.dart
+                  |-- get_multiple_directories_page.dart
+                  |-- home_page.dart
+                  |-- main.dart
+                  |-- open_image_page.dart
+                  |-- open_multiple_images_page.dart
+                  |-- open_text_page.dart
+                  |-- save_text_page.dart
+                |-- windows
+                  |-- flutter
+                    |-- CMakeLists.txt
+                    |-- generated_plugins.cmake
+                  |-- runner
+                    |-- resources
+                      |-- app_icon.ico
+                    |-- CMakeLists.txt
+                    |-- flutter_window.cpp
+                    |-- flutter_window.h
+                    |-- main.cpp
+                    |-- resource.h
+                    |-- runner.exe.manifest
+                    |-- Runner.rc
+                    |-- utils.cpp
+                    |-- utils.h
+                    |-- win32_window.cpp
+                    |-- win32_window.h
+                  |-- CMakeLists.txt
+                |-- pubspec.yaml
+                |-- README.md
+              |-- lib
+                |-- src
+                  |-- messages.g.dart
+                |-- file_selector_windows.dart
+              |-- pigeons
+                |-- copyright.txt
+                |-- messages.dart
+              |-- test
+                |-- file_selector_windows_test.dart
+                |-- file_selector_windows_test.mocks.dart
+                |-- test_api.g.dart
+              |-- windows
+                |-- include
+                  |-- file_selector_windows
+                    |-- file_selector_windows.h
+                |-- test
+                  |-- file_selector_plugin_test.cpp
+                  |-- test_file_dialog_controller.cpp
+                  |-- test_file_dialog_controller.h
+                  |-- test_main.cpp
+                  |-- test_utils.cpp
+                  |-- test_utils.h
+                |-- CMakeLists.txt
+                |-- file_dialog_controller.cpp
+                |-- file_dialog_controller.h
+                |-- file_selector_plugin.cpp
+                |-- file_selector_plugin.h
+                |-- file_selector_windows.cpp
+                |-- messages.g.cpp
+                |-- messages.g.h
+                |-- string_utils.cpp
+                |-- string_utils.h
+              |-- AUTHORS
+              |-- CHANGELOG.md
+              |-- LICENSE
+              |-- pubspec.yaml
+              |-- README.md
+            |-- flutter_secure_storage_windows
+              |-- example
+                |-- integration_test
+                  |-- app_test.dart
+                |-- lib
+                  |-- main.dart
+                |-- windows
+                  |-- flutter
+                    |-- CMakeLists.txt
+                    |-- generated_plugins.cmake
+                    |-- generated_plugin_registrant.cc
+                    |-- generated_plugin_registrant.h
+                  |-- runner
+                    |-- resources
+                      |-- app_icon.ico
+                    |-- CMakeLists.txt
+                    |-- flutter_window.cpp
+                    |-- flutter_window.h
+                    |-- main.cpp
+                    |-- resource.h
+                    |-- runner.exe.manifest
+                    |-- Runner.rc
+                    |-- utils.cpp
+                    |-- utils.h
+                    |-- win32_window.cpp
+                    |-- win32_window.h
+                  |-- CMakeLists.txt
+                |-- analysis_options.yaml
+                |-- pubspec.yaml
+                |-- README.md
+              |-- lib
+                |-- src
+                  |-- flutter_secure_storage_windows_ffi.dart
+                  |-- flutter_secure_storage_windows_stub.dart
+                |-- flutter_secure_storage_windows.dart
+              |-- test
+                |-- unit_test.dart
+              |-- windows
+                |-- include
+                  |-- flutter_secure_storage_windows
+                    |-- flutter_secure_storage_windows_plugin.h
+                |-- CMakeLists.txt
+                |-- flutter_secure_storage_windows_plugin.cpp
+              |-- analysis_options.yaml
+              |-- CHANGELOG.md
+              |-- LICENSE
+              |-- pubspec.yaml
+              |-- README.md
+            |-- image_picker_windows
+              |-- example
+                |-- lib
+                  |-- main.dart
+                |-- windows
+                  |-- flutter
+                    |-- CMakeLists.txt
+                    |-- generated_plugins.cmake
+                  |-- runner
+                    |-- resources
+                      |-- app_icon.ico
+                    |-- CMakeLists.txt
+                    |-- flutter_window.cpp
+                    |-- flutter_window.h
+                    |-- main.cpp
+                    |-- resource.h
+                    |-- runner.exe.manifest
+                    |-- Runner.rc
+                    |-- utils.cpp
+                    |-- utils.h
+                    |-- win32_window.cpp
+                    |-- win32_window.h
+                  |-- CMakeLists.txt
+                |-- pubspec.yaml
+                |-- README.md
+              |-- lib
+                |-- image_picker_windows.dart
+              |-- test
+                |-- image_picker_windows_test.dart
+                |-- image_picker_windows_test.mocks.dart
+              |-- AUTHORS
+              |-- CHANGELOG.md
+              |-- LICENSE
+              |-- pubspec.yaml
+              |-- README.md
+            |-- path_provider_windows
+              |-- example
+                |-- integration_test
+                  |-- path_provider_test.dart
+                |-- lib
+                  |-- main.dart
+                |-- test_driver
+                  |-- integration_test.dart
+                |-- windows
+                  |-- flutter
+                    |-- CMakeLists.txt
+                    |-- generated_plugins.cmake
+                  |-- runner
+                    |-- resources
+                      |-- app_icon.ico
+                    |-- CMakeLists.txt
+                    |-- flutter_window.cpp
+                    |-- flutter_window.h
+                    |-- main.cpp
+                    |-- resource.h
+                    |-- runner.exe.manifest
+                    |-- Runner.rc
+                    |-- run_loop.cpp
+                    |-- run_loop.h
+                    |-- utils.cpp
+                    |-- utils.h
+                    |-- win32_window.cpp
+                    |-- win32_window.h
+                  |-- CMakeLists.txt
+                |-- pubspec.yaml
+                |-- README.md
+              |-- lib
+                |-- src
+                  |-- folders.dart
+                  |-- folders_stub.dart
+                  |-- guid.dart
+                  |-- path_provider_windows_real.dart
+                  |-- path_provider_windows_stub.dart
+                  |-- win32_wrappers.dart
+                |-- path_provider_windows.dart
+              |-- test
+                |-- guid_test.dart
+                |-- path_provider_windows_test.dart
+              |-- AUTHORS
+              |-- CHANGELOG.md
+              |-- LICENSE
+              |-- pubspec.yaml
+              |-- README.md
         |-- CMakeLists.txt
         |-- generated_plugins.cmake
         |-- generated_plugin_registrant.cc
@@ -1947,6 +4436,7 @@
     |-- .gitignore
     |-- .metadata
     |-- analysis_options.yaml
+    |-- build.yaml
     |-- kentnabiz_mobile.iml
     |-- pubspec.lock
     |-- pubspec.yaml
@@ -1961,9 +4451,17 @@
       |-- assets
         |-- lottie
           |-- city-animation.json
+          |-- islahiye_neighborhoods.geojson
           |-- README.md
         |-- react.svg
       |-- components
+        |-- analytics
+          |-- widgets
+            |-- KpiMetricsWidget.tsx
+          |-- AnalyticsFilterBar.tsx
+          |-- KpiCard.tsx
+        |-- common
+          |-- PageLoader.tsx
         |-- dashboard
           |-- ActiveReports.tsx
           |-- Announcements.tsx
@@ -1978,22 +4476,52 @@
           |-- TextField.tsx
         |-- landing
           |-- HeroSection.tsx
+        |-- leader
+          |-- InteractiveTeamMap.tsx
+          |-- ReportCard.tsx
+          |-- ReportDetailPanelForLeader.tsx
+          |-- ReportDetailsPanel.tsx
+          |-- TeamLeaderDashboard.tsx
+          |-- TeamReportsList.tsx
         |-- maps
         |-- supervisor
-          |-- AssignReportModal.tsx
-          |-- AssignToTeamModal.tsx
-          |-- ForwardReportModal.tsx
-          |-- InteractiveReportMap.tsx
-          |-- KPICard.tsx
-          |-- LazyReportMapWrapper.tsx
-          |-- RejectReportModal.tsx
-          |-- ReportActionsMenu.tsx
-          |-- ReportDetailModal.tsx
-          |-- ReportMap.tsx
-          |-- SupervisorReportFilters.tsx
-          |-- SupervisorReportsSection.tsx
-          |-- SupervisorReportTable.tsx
-          |-- ViewAssignmentModal.tsx
+          |-- crud
+            |-- CategoriesManagement.tsx
+            |-- DepartmentsManagement.tsx
+            |-- EmployeesManagement.tsx
+            |-- ExpertiseManagement.tsx
+            |-- index.ts
+            |-- SettingsManagement.tsx
+            |-- TeamsManagement.tsx
+          |-- maps
+            |-- index.ts
+            |-- InteractiveReportMap.tsx
+          |-- modals
+            |-- AssignReportModal.tsx
+            |-- ForwardReportModal.tsx
+            |-- index.ts
+            |-- RejectReportModal.tsx
+            |-- ReportDetailModal.tsx
+            |-- ViewAssignmentModal.tsx
+          |-- sections
+            |-- index.ts
+            |-- QuickStats.tsx
+            |-- ReportsMapSection.tsx
+            |-- ReportsTableSection.tsx
+            |-- StatusFilters.tsx
+          |-- tables
+            |-- index.ts
+            |-- ReportActionsMenu.tsx
+            |-- SupervisorReportTable.tsx
+          |-- EnhancedFilters.tsx
+          |-- index.ts
+          |-- ModalsContainer.tsx
+          |-- QuickStats.tsx
+          |-- README.md
+          |-- ReportsMapSection.tsx
+          |-- ReportsTableSection.tsx
+          |-- StatusFilters.tsx
+          |-- SupervisorLayout.tsx
         |-- ui
           |-- color-mode-button.tsx
           |-- color-mode-icon.tsx
@@ -2007,8 +4535,10 @@
           |-- use-color-mode.tsx
         |-- AnimatedIllustration.tsx
         |-- ErrorBoundary.tsx
+        |-- PageLoader.tsx
         |-- ProtectedRoute.tsx
       |-- config
+        |-- analytics.config.tsx
       |-- contexts
         |-- LoadingContext.ts
         |-- SnackbarContext.ts
@@ -2025,15 +4555,27 @@
         |-- auth
           |-- hooks
       |-- hooks
+        |-- analytics
+          |-- useAnalyticsFilters.ts
+          |-- useCategories.ts
+          |-- useDepartments.ts
+          |-- useKpiData.ts
         |-- useAuthChangeDetection.ts
+        |-- useDashboardStats.ts
         |-- useDepartments.ts
         |-- useDepartmentTeams.ts
         |-- useLoading.ts
+        |-- useMyReports.ts
+        |-- useMyTeamReports.ts
+        |-- useNearbyReports.ts
+        |-- useReportSupport.ts
         |-- useSnackbar.ts
         |-- useStatusCounts.ts
         |-- useSuggestedTeams.ts
         |-- useSupervisorReports.ts
         |-- useSupervisorStats.ts
+        |-- useSupportedReportsCount.ts
+        |-- useTeamLeaderActions.ts
         |-- useTeamMembers.ts
         |-- useTheme.ts
       |-- layouts
@@ -2067,10 +4609,15 @@
           |-- RegisterForm.styles.ts
           |-- RegisterForm.tsx
           |-- RegisterPage.styles.ts
+        |-- AnalyticsPage.tsx
         |-- DashboardPage.tsx
+        |-- DashboardRedirectPage.tsx
         |-- LandingPage.tsx
         |-- LoginPage.tsx
+        |-- MyReportsPage.tsx
+        |-- ReportDetailPage.tsx
         |-- SupervisorDashboardPage.tsx
+        |-- TeamLeaderDashboardPage.tsx
       |-- providers
         |-- LoadingProvider.tsx
         |-- SnackbarProvider.tsx
@@ -2078,7 +4625,9 @@
       |-- routes
         |-- index.tsx
       |-- services
+        |-- analyticsService.ts
         |-- reportService.ts
+        |-- teamLeaderService.ts
       |-- store
         |-- dashboardStore.ts
       |-- styles
@@ -2087,7 +4636,6 @@
             |-- index.ts
       |-- theme
         |-- muiTheme.ts
-      |-- types
       |-- utils
         |-- auth.ts
         |-- color-mode-script.ts
@@ -2095,6 +4643,7 @@
       |-- App.tsx
       |-- index.css
       |-- main.tsx
+      |-- test-categories.js
       |-- vite-env.d.ts
     |-- .env
     |-- .env.example
@@ -2191,6 +4740,7 @@
   |-- KentNabiz_API_Env.postman_environment.json
 |-- scripts
   |-- check-services.js
+  |-- extract-islahiye-coords.js
   |-- fix-nonnull-properties.js
   |-- fix-test-coordinates.sql
   |-- init-postgis.sql
@@ -2200,10 +4750,13 @@
 |-- .gitattributes
 |-- .gitignore
 |-- .prettierrc
+|-- check-database.ps1
+|-- check-db-simple.ps1
 |-- commitlint.config.js
 |-- docker-compose.yml
 |-- eslint.config.js
 |-- git-commit-rules.md
+|-- islahiye-coordinates.json
 |-- jest.config.ts
 |-- package.json
 |-- pnpm-lock.yaml

@@ -416,7 +416,7 @@ export class ReportsService {
     await this.dataSource.getRepository(Report).delete(reportId);
   }
 
-  getStatusCounts(authUser: AuthUser): Promise<Record<string, number>> {
+  async getStatusCounts(authUser: AuthUser): Promise<Record<string, number>> {
     // Bu metot departman bazlı istatistikler döndürür
     let departmentId: number | undefined;
 
@@ -428,28 +428,83 @@ export class ReportsService {
     }
 
     // Basit bir implementasyon - gerçek implementasyon repository'de olabilir
-    return this.dataSource
-      .getRepository(Report)
-      .createQueryBuilder('report')
+    const queryBuilder = this.dataSource.getRepository(Report).createQueryBuilder('report');
+
+    if (departmentId) {
+      queryBuilder.where('report.currentDepartmentId = :departmentId', { departmentId });
+    }
+
+    // Temel durum sayıları
+    const statusResults = await queryBuilder
       .select('report.status', 'status')
       .addSelect('COUNT(*)', 'count')
-      .where(departmentId ? 'report.currentDepartmentId = :departmentId' : '1=1', { departmentId })
       .groupBy('report.status')
-      .getRawMany()
-      .then((results: Array<{ status: string; count: string }>) => {
-        const counts: Record<string, number> = results.reduce(
-          (acc, curr) => {
-            acc[curr.status] = parseInt(curr.count, 10);
-            return acc;
-          },
-          {} as Record<string, number>
-        );
+      .getRawMany();
 
-        const totalCount = Object.values(counts).reduce((sum, count) => sum + count, 0);
-        counts.total = totalCount;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const counts: Record<string, number> = statusResults.reduce(
+      (acc, curr) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
+        acc[curr.status] = parseInt(curr.count, 10);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
-        return counts;
-      });
+    // Enhanced filter sayıları
+    const baseQuery = this.dataSource.getRepository(Report).createQueryBuilder('report');
+    if (departmentId) {
+      baseQuery.where('report.currentDepartmentId = :departmentId', { departmentId });
+    }
+
+    // Atanmamış raporlar (OPEN durumunda ve aktif assignment'ı olmayan)
+    const unassignedCount = await baseQuery
+      .clone()
+      .leftJoin('report.assignments', 'assignment', 'assignment.deleted_at IS NULL')
+      .andWhere('report.status = :status', { status: ReportStatus.OPEN })
+      .andWhere('(assignment.id IS NULL OR assignment.assignment_status = :cancelledStatus)', {
+        cancelledStatus: 'CANCELLED',
+      })
+      .getCount();
+
+    // Onay bekleyen raporlar (subStatus PENDING_APPROVAL olan)
+    const pendingApprovalCount = await baseQuery
+      .clone()
+      .andWhere('report.status = :status', { status: ReportStatus.IN_PROGRESS })
+      .andWhere('report.subStatus = :subStatus', { subStatus: 'PENDING_APPROVAL' })
+      .getCount();
+
+    // Geciken raporlar (IN_PROGRESS durumunda ve createdAt 7 günden eski olan)
+    const overdueCount = await baseQuery
+      .clone()
+      .andWhere('report.status = :status', { status: ReportStatus.IN_PROGRESS })
+      .andWhere('report.createdAt < :sevenDaysAgo', {
+        sevenDaysAgo: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      })
+      .getCount();
+
+    // Yeniden açılan raporlar (status history'den kontrol et)
+    const reopenedCount = await baseQuery
+      .clone()
+      .innerJoin('report.statusHistory', 'history')
+      .andWhere('history.newStatus = :reopenStatus', { reopenStatus: ReportStatus.OPEN })
+      .andWhere('history.previousStatus = :doneStatus', { doneStatus: ReportStatus.DONE })
+      .andWhere('history.changedAt > :lastMonth', {
+        lastMonth: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      })
+      .getCount();
+
+    const totalCount = Object.values(counts).reduce((sum, count) => sum + count, 0);
+
+    return {
+      ...counts,
+      total: totalCount,
+      unassigned: unassignedCount,
+      pendingApproval: pendingApprovalCount,
+      overdue: overdueCount,
+      reopened: reopenedCount,
+    };
   }
 
   async findOneForAuthCheck(reportId: number): Promise<Report> {

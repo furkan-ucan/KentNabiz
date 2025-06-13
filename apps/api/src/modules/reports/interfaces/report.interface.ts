@@ -100,6 +100,11 @@ export interface IReportFindOptions {
     longitude: number;
     radius: number;
   };
+  // Enhanced filters
+  assignment?: 'unassigned' | 'assigned';
+  subStatus?: string;
+  overdue?: boolean;
+  reopened?: boolean;
 }
 
 // API-Internal Spatial Query Result

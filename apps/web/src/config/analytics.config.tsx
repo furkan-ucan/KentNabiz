@@ -45,6 +45,7 @@ export interface KpiDefinition {
   filterKey?: string;
   filterValue?: string;
   description?: string;
+  targetUrl?: string | null;
 }
 
 export const KPI_DEFINITIONS: KpiDefinition[] = [
@@ -55,6 +56,7 @@ export const KPI_DEFINITIONS: KpiDefinition[] = [
     color: 'primary.main',
     formatType: 'number',
     description: 'Sistemdeki toplam rapor sayısı',
+    targetUrl: null,
   },
   {
     id: 'resolutionRate',
@@ -64,6 +66,7 @@ export const KPI_DEFINITIONS: KpiDefinition[] = [
     suffix: '%',
     formatType: 'percentage',
     description: 'Çözülen raporların toplam raporlara oranı',
+    targetUrl: null,
   },
   {
     id: 'avgResolutionDays',
@@ -73,6 +76,7 @@ export const KPI_DEFINITIONS: KpiDefinition[] = [
     suffix: ' Gün',
     formatType: 'duration',
     description: 'Raporların ortalama çözülme süresi',
+    targetUrl: null,
   },
   {
     id: 'avgInterventionHours',
@@ -82,6 +86,7 @@ export const KPI_DEFINITIONS: KpiDefinition[] = [
     suffix: ' Saat',
     formatType: 'duration',
     description: 'Atamadan kabule kadar geçen ortalama süre',
+    targetUrl: null,
   },
   {
     id: 'avgFirstResponseHours',
@@ -92,6 +97,7 @@ export const KPI_DEFINITIONS: KpiDefinition[] = [
     formatType: 'duration',
     description:
       'Raporun oluşturulmasından atanmasına kadar geçen ortalama süre',
+    targetUrl: null,
   },
   {
     id: 'UNASSIGNED',
@@ -103,6 +109,7 @@ export const KPI_DEFINITIONS: KpiDefinition[] = [
     filterKey: 'status',
     filterValue: 'UNASSIGNED',
     description: 'Henüz kimseye atanmamış raporlar',
+    targetUrl: '/supervisor/dashboard?status=OPEN&assignment=unassigned',
   },
   {
     id: 'PENDING_APPROVAL',
@@ -114,6 +121,8 @@ export const KPI_DEFINITIONS: KpiDefinition[] = [
     filterKey: 'status',
     filterValue: 'PENDING_APPROVAL',
     description: 'İnceleme/onay aşamasındaki raporlar',
+    targetUrl:
+      '/supervisor/dashboard?status=IN_PROGRESS&subStatus=PENDING_APPROVAL',
   },
   {
     id: 'IN_PROGRESS',
@@ -125,6 +134,7 @@ export const KPI_DEFINITIONS: KpiDefinition[] = [
     filterKey: 'status',
     filterValue: 'IN_PROGRESS',
     description: 'Şu anda üzerinde çalışılan raporlar',
+    targetUrl: '/supervisor/dashboard?status=IN_PROGRESS',
   },
   {
     id: 'OVERDUE',
@@ -136,7 +146,9 @@ export const KPI_DEFINITIONS: KpiDefinition[] = [
     filterKey: 'status',
     filterValue: 'OVERDUE',
     description: 'Süresi geçmiş raporlar (7 günden eski)',
-  }, // Strategic KPIs
+    targetUrl: '/supervisor/dashboard?status=IN_PROGRESS&overdue=true',
+  },
+  // Strategic KPIs
   {
     id: 'reopenedReports',
     title: 'Yeniden Açılan',
@@ -148,6 +160,7 @@ export const KPI_DEFINITIONS: KpiDefinition[] = [
     filterValue: 'true',
     description:
       'Çözüldükten sonra yeniden açılan raporlar - kalite kontrol metriği',
+    targetUrl: '/supervisor/dashboard?reopened=true',
   },
   {
     id: 'trendingIssue',
@@ -158,6 +171,7 @@ export const KPI_DEFINITIONS: KpiDefinition[] = [
     isClickable: true,
     description:
       'Son 7 günde en çok artan kategori - proaktif planlama metriği',
+    targetUrl: null, // Bu dinamik olarak ayarlanacak
   },
   {
     id: 'citizenInteraction',
@@ -170,6 +184,7 @@ export const KPI_DEFINITIONS: KpiDefinition[] = [
     filterKey: 'hasSupport',
     filterValue: 'true',
     description: 'Toplam vatandaş desteği - önceliklendirme metriği',
+    targetUrl: '/supervisor/dashboard?supported=true',
   },
 ];
 

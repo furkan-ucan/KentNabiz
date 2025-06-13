@@ -9,6 +9,7 @@ export default defineConfig({
   css: {
     postcss: './postcss.config.mjs',
   },
+  assetsInclude: ['**/*.geojson'], // GeoJSON dosyalarını asset olarak dahil et
   resolve: {
     alias: {
       '@kentnabiz/shared': path.resolve(

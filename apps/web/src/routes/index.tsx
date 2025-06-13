@@ -110,46 +110,6 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'categories',
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <div>Categories Management Page</div>
-          </Suspense>
-        ),
-      },
-      {
-        path: 'employees',
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <div>Employees Management Page</div>
-          </Suspense>
-        ),
-      },
-      {
-        path: 'expertise',
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <div>Expertise Management Page</div>
-          </Suspense>
-        ),
-      },
-      {
-        path: 'departments',
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <div>Departments Management Page</div>
-          </Suspense>
-        ),
-      },
-      {
-        path: 'settings',
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <div>Settings Management Page</div>
-          </Suspense>
-        ),
-      },
-      {
         path: 'analytics',
         element: (
           <Suspense fallback={<PageLoader />}>

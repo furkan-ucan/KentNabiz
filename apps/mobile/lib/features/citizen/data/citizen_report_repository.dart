@@ -3,7 +3,7 @@ import 'dart:io'; // For File
 
 import 'package:dio/dio.dart'; // For FormData and MultipartFile
 import 'package:kentnabiz_mobile/core/api/api_client.dart';
-import 'package:kentnabiz_mobile/features/citizen/report_creation/models/create_report_dto.dart';
+// import 'package:kentnabiz_mobile/features/citizen/report_creation/models/create_report_dto.dart'; // Artık kullanılmıyor
 import 'package:kentnabiz_mobile/shared/models/department.dart';
 import 'package:kentnabiz_mobile/shared/models/paginated_response.dart';
 import 'package:kentnabiz_mobile/shared/models/report.dart';
@@ -80,11 +80,11 @@ class CitizenReportRepository {
         .toList();
   }
 
-  // Bu metod artık CreateReportDto alıyor.
-  Future<Report> createReport(CreateReportDto dto) async {
+  // DÜZELTME: Parametre artık CreateReportDto değil, Map<String, dynamic>
+  Future<Report> createReport(Map<String, dynamic> reportData) async {
     final response = await _apiClient.dio.post(
       '/reports',
-      data: dto.toJson(),
+      data: reportData, // Gelen map'i doğrudan gönder
     );
     // API yanıtındaki 'data' nesnesini doğrudan parse et
     return Report.fromJson(response.data['data'] as Map<String, dynamic>);

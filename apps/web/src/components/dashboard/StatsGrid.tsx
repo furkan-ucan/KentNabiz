@@ -57,7 +57,6 @@ export const StatsGrid = ({ stats, loading = false }: StatsGridProps) => {
             value={stats.totalReports}
             icon={BarChart3}
             color="primary"
-            trend={{ value: '+12%', type: 'positive' }}
             delay={0.1}
           />
 
@@ -66,7 +65,6 @@ export const StatsGrid = ({ stats, loading = false }: StatsGridProps) => {
             value={stats.pendingReports}
             icon={Calendar}
             color="warning"
-            trend={{ value: '-5%', type: 'negative' }}
             delay={0.2}
           />
 
@@ -75,7 +73,6 @@ export const StatsGrid = ({ stats, loading = false }: StatsGridProps) => {
             value={stats.resolvedReports}
             icon={CheckCircle}
             color="success"
-            trend={{ value: '+18%', type: 'positive' }}
             delay={0.3}
           />
 

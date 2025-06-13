@@ -78,14 +78,20 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen> {
             TextFormField(
               controller: _descriptionController,
               decoration: const InputDecoration(
-                  labelText: 'Açıklama', border: OutlineInputBorder()),
+                  labelText: 'Açıklama*', border: OutlineInputBorder()),
+              validator: (value) => (value == null || value.isEmpty)
+                  ? 'Açıklama alanı zorunludur.'
+                  : null,
               maxLines: 4,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _addressController,
               decoration: const InputDecoration(
-                  labelText: 'Açık Adres', border: OutlineInputBorder()),
+                  labelText: 'Açık Adres*', border: OutlineInputBorder()),
+              validator: (value) => (value == null || value.isEmpty)
+                  ? 'Adres alanı zorunludur.'
+                  : null,
               maxLines: 2,
             ),
             const SizedBox(height: 24),
