@@ -202,7 +202,7 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
   onReportClick,
   height = 500,
   viewMode = 'cluster',
-  filters: _filters,
+  filters,
   selectedNeighborhood,
   onNeighborhoodSelect,
   onReportView,
@@ -240,16 +240,52 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
       });
   }, []);
 
+  // Filtrelenmiş raporları hesapla
+  const filteredReports = useMemo(() => {
+    if (!filters) return reports;
+
+    return reports.filter(report => {
+      // Kategori filtresi - category.id üzerinden
+      if (filters.categoryId && report.category?.id !== filters.categoryId) {
+        return false;
+      }
+
+      // Durum filtresi
+      if (filters.status && report.status !== filters.status) {
+        return false;
+      }
+
+      // Tarih aralığı filtresi - basit string kontrolü
+      if (filters.startDate && report.createdAt) {
+        const reportDate = new Date(report.createdAt);
+        const startDate = new Date(filters.startDate as string);
+        if (reportDate < startDate) {
+          return false;
+        }
+      }
+
+      if (filters.endDate && report.createdAt) {
+        const reportDate = new Date(report.createdAt);
+        const endDate = new Date(filters.endDate as string);
+        if (reportDate > endDate) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [reports, filters]);
+
   // Status legend için sayımlar
   const statusCounts = useMemo(() => {
-    return reports.reduce(
+    return filteredReports.reduce(
       (acc, report) => {
         acc[report.status] = (acc[report.status] || 0) + 1;
         return acc;
       },
       {} as Record<ReportStatus, number>
     );
-  }, [reports]);
+  }, [filteredReports]);
 
   return (
     <Card
@@ -401,7 +437,7 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
               maxClusterRadius={50}
               disableClusteringAtZoom={16}
             >
-              {reports.map(report => (
+              {filteredReports.map(report => (
                 <Marker
                   key={report.id}
                   position={[
@@ -458,7 +494,7 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
 
               {/* Heatmap Layer */}
               <HeatmapLayer
-                points={reports.map(
+                points={filteredReports.map(
                   report =>
                     ({
                       lat: report.location.coordinates[1],
