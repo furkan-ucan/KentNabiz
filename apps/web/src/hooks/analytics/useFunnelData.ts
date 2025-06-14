@@ -24,18 +24,7 @@ export const useFunnelData = (filters: AnalyticsFilters) => {
   } = useQuery({
     queryKey: ['funnelData', filters],
     queryFn: async () => {
-      console.log('🔍 Fetching funnel data with filters:', filters);
       const result = await analyticsService.getFunnelStats(filters);
-      console.log('📊 Funnel API response:', result);
-
-      // Aynı filtrelerle summary stats da çekelim karşılaştırma için
-      try {
-        const summaryResult = await analyticsService.fetchSummaryStats(filters);
-        console.log('📈 Summary stats for comparison:', summaryResult);
-      } catch (err) {
-        console.log('⚠️ Could not fetch summary stats for comparison:', err);
-      }
-
       return result;
     },
     enabled: true,
@@ -43,9 +32,10 @@ export const useFunnelData = (filters: AnalyticsFilters) => {
     gcTime: 10 * 60 * 1000, // 10 dakika
   });
 
-  console.log('🎯 Hook rawData:', rawData);
-  console.log('⏳ Hook isLoading:', isLoading);
-  console.log('❌ Hook error:', error); // Recharts formatına dönüştürme
+  // Debug: Sadece geliştirme modunda minimal log
+  if (process.env.NODE_ENV === 'development' && error) {
+    console.warn('⚠️ Funnel Data Error:', error);
+  } // Recharts formatına dönüştürme
   const funnelData = useMemo((): FunnelChartData[] => {
     if (!rawData) return []; // Backend response structure: check if data is wrapped
     const hasDataWrapper =
@@ -59,11 +49,16 @@ export const useFunnelData = (filters: AnalyticsFilters) => {
     const assignedReports = Number(actualData.assignedReports) || 0;
     const resolvedReports = Number(actualData.resolvedReports) || 0;
 
-    console.log('🔍 Parsed numbers:', {
-      totalReports,
-      assignedReports,
-      resolvedReports,
-    });
+    // Debug: Sadece beklenmeyen durumlar için log
+    if (
+      process.env.NODE_ENV === 'development' &&
+      totalReports > 0 &&
+      assignedReports === 0
+    ) {
+      console.warn(
+        '⚠️ Funnel Data: No assigned reports despite having total reports'
+      );
+    }
 
     return [
       { name: 'Toplam Gelen', value: totalReports },

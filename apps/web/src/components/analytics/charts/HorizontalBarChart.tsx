@@ -84,15 +84,10 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
   nameKey = 'name',
   dataKey = 'value',
 }) => {
-  // Debug: Chart'a gelen veriyi logla
-  console.log('🎯 HorizontalBarChart received data:', data);
-  console.log('📊 Chart props:', {
-    nameKey,
-    dataKey,
-    height,
-    showGrid,
-    showTooltip,
-  });
+  // Debug: Sadece geliştirme modunda ve veri yoksa log
+  if (process.env.NODE_ENV === 'development' && (!data || data.length === 0)) {
+    console.warn('⚠️ HorizontalBarChart: No data provided');
+  }
 
   // Eğer veri boşsa
   if (!data || data.length === 0) {

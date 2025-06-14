@@ -1,0 +1,379 @@
+﻿# KentNabiz VeritabanÄ± ÅemasÄ±
+OluÅŸturulma: 2025-06-14 10:50:57
+
+Toplam 16 tablo bulundu.
+
+--------------------------------------------------
+  Tablo: assignments
+--------------------------------------------------
+KOLON ADI                 TÄ°P                 NULL?   DEFAULT/LENGTH
+---------                 ---                  -----   --------------
+id                        int4                 HayÄ±r  nextval('assignments_id_seq'::regclass)
+report_id                 int4                 HayÄ±r  
+assignee_type             assignee_type_enum   HayÄ±r  
+assignee_user_id          int4                 Evet    
+assignee_team_id          int4                 Evet    
+assigned_by_user_id       int4                 Evet    
+assignment_status         assignment_status_enum HayÄ±r  'ACTIVE'::assignment_status_enum
+assigned_at               timestamptz          HayÄ±r  now()
+accepted_at               timestamptz          Evet    
+completed_at              timestamptz          Evet    
+rejected_at               timestamptz          Evet    
+cancelled_at              timestamptz          Evet    
+notes                     text                 Evet    
+created_at                timestamptz          HayÄ±r  CURRENT_TIMESTAMP
+updated_at                timestamptz          HayÄ±r  CURRENT_TIMESTAMP
+deleted_at                timestamptz          Evet    
+
+  Foreign Keys:
+     - report_id â†’ reports(id)
+     - assignee_user_id â†’ users(id)
+     - assignee_team_id â†’ teams(id)
+     - assigned_by_user_id â†’ users(id)
+
+  Ä°ndeksler:
+     - PK_assignments_id
+     - UQ_report_active_assignment
+     - IDX_assignments_team_id_status
+
+--------------------------------------------------
+  Tablo: category_specializations
+--------------------------------------------------
+KOLON ADI                 TÄ°P                 NULL?   DEFAULT/LENGTH
+---------                 ---                  -----   --------------
+categoryId                int4                 HayÄ±r  
+specializationId          int4                 HayÄ±r  
+
+  Foreign Keys:
+     - categoryId â†’ report_categories(id)
+     - specializationId â†’ specializations(id)
+
+  Ä°ndeksler:
+     - PK_b9dc3ec8599c7a33b2ff3ed90bd
+
+--------------------------------------------------
+  Tablo: department_history
+--------------------------------------------------
+KOLON ADI                 TÄ°P                 NULL?   DEFAULT/LENGTH
+---------                 ---                  -----   --------------
+id                        int4                 HayÄ±r  nextval('department_history_id_seq'::regclass)
+report_id                 int4                 HayÄ±r  
+previous_department_id    int4                 Evet    
+new_department_id         int4                 HayÄ±r  
+reason                    text                 Evet    
+changed_by_user_id        int4                 Evet    
+changed_at                timestamp            HayÄ±r  now()
+
+  Foreign Keys:
+     - report_id â†’ reports(id)
+     - previous_department_id â†’ departments(id)
+     - new_department_id â†’ departments(id)
+     - changed_by_user_id â†’ users(id)
+
+  Ä°ndeksler:
+     - PK_department_history
+     - IDX_department_history_report_id
+
+--------------------------------------------------
+  Tablo: departments
+--------------------------------------------------
+KOLON ADI                 TÄ°P                 NULL?   DEFAULT/LENGTH
+---------                 ---                  -----   --------------
+id                        int4                 HayÄ±r  nextval('departments_id_seq'::regclass)
+code                      municipality_department_enum HayÄ±r  
+name                      varchar              HayÄ±r  (100)
+description               text                 Evet    
+is_active                 bool                 HayÄ±r  true
+responsible_report_types  jsonb                Evet    
+created_at                timestamp            HayÄ±r  now()
+updated_at                timestamp            HayÄ±r  now()
+
+  Ä°ndeksler:
+     - PK_departments
+     - UQ_departments_code
+     - IDX_departments_code
+     - IDX_departments_active
+
+--------------------------------------------------
+  Tablo: media
+--------------------------------------------------
+KOLON ADI                 TÄ°P                 NULL?   DEFAULT/LENGTH
+---------                 ---                  -----   --------------
+id                        int4                 HayÄ±r  nextval('media_id_seq'::regclass)
+filename                  varchar              HayÄ±r  (255)
+originalname              varchar              HayÄ±r  (255)
+url                       varchar              HayÄ±r  (500)
+mimetype                  varchar              HayÄ±r  (100)
+type                      media_type_enum      HayÄ±r  'other'::media_type_enum
+size                      int4                 HayÄ±r  
+metadata                  jsonb                Evet    
+thumbnail_url             varchar              Evet    (500)
+width                     int4                 Evet    
+height                    int4                 Evet    
+bucket_name               varchar              Evet    (255)
+created_at                timestamp            HayÄ±r  now()
+updated_at                timestamp            HayÄ±r  now()
+
+  Ä°ndeksler:
+     - PK_media
+     - IDX_media_type
+     - IDX_media_created_at
+     - IDX_media_filename
+     - IDX_media_mimetype
+
+--------------------------------------------------
+  Tablo: migrations
+--------------------------------------------------
+KOLON ADI                 TÄ°P                 NULL?   DEFAULT/LENGTH
+---------                 ---                  -----   --------------
+id                        int4                 HayÄ±r  nextval('migrations_id_seq'::regclass)
+timestamp                 int8                 HayÄ±r  
+name                      varchar              HayÄ±r  
+
+  Ä°ndeksler:
+     - PK_8c82d7f526340ab734260ea46be
+
+--------------------------------------------------
+  Tablo: report_categories
+--------------------------------------------------
+KOLON ADI                 TÄ°P                 NULL?   DEFAULT/LENGTH
+---------                 ---                  -----   --------------
+id                        int4                 HayÄ±r  nextval('report_categories_id_seq'::regclass)
+name                      varchar              HayÄ±r  (100)
+code                      varchar              HayÄ±r  (50)
+description               text                 Evet    
+icon                      varchar              Evet    (50)
+parent_id                 int4                 Evet    
+department_id             int4                 HayÄ±r  
+default_report_type       report_type_enum     HayÄ±r  'OTHER'::report_type_enum
+is_active                 bool                 HayÄ±r  true
+sort_order                int4                 HayÄ±r  0
+created_at                timestamp            HayÄ±r  now()
+updated_at                timestamp            HayÄ±r  now()
+
+  Foreign Keys:
+     - parent_id â†’ report_categories(id)
+     - department_id â†’ departments(id)
+
+  Ä°ndeksler:
+     - PK_report_categories_id
+     - UQ_report_categories_code
+     - IDX_report_categories_code
+     - IDX_report_categories_parent_id
+     - IDX_report_categories_department_id
+     - IDX_report_categories_is_active
+
+--------------------------------------------------
+  Tablo: report_medias
+--------------------------------------------------
+KOLON ADI                 TÄ°P                 NULL?   DEFAULT/LENGTH
+---------                 ---                  -----   --------------
+id                        int4                 HayÄ±r  nextval('report_medias_id_seq'::regclass)
+report_id                 int4                 HayÄ±r  
+url                       varchar              HayÄ±r  (255)
+type                      varchar              HayÄ±r  (50)
+created_at                timestamp            HayÄ±r  now()
+updated_at                timestamp            HayÄ±r  now()
+media_context             varchar              HayÄ±r  (50)
+uploaded_by_user_id       int4                 Evet    
+
+  Foreign Keys:
+     - report_id â†’ reports(id)
+     - uploaded_by_user_id â†’ users(id)
+
+  Ä°ndeksler:
+     - PK_report_medias
+     - IDX_report_medias_report_id
+
+--------------------------------------------------
+  Tablo: report_status_history
+--------------------------------------------------
+KOLON ADI                 TÄ°P                 NULL?   DEFAULT/LENGTH
+---------                 ---                  -----   --------------
+id                        int4                 HayÄ±r  nextval('report_status_history_id_seq'::regclass)
+report_id                 int4                 HayÄ±r  
+previous_status           report_status_enum   Evet    
+new_status                report_status_enum   HayÄ±r  
+previous_sub_status       varchar              Evet    (255)
+new_sub_status            varchar              Evet    (255)
+changed_by_user_id        int4                 Evet    
+changed_at                timestamptz          HayÄ±r  now()
+notes                     text                 Evet    
+
+  Foreign Keys:
+     - report_id â†’ reports(id)
+     - changed_by_user_id â†’ users(id)
+
+  Ä°ndeksler:
+     - PK_report_status_history_id
+
+--------------------------------------------------
+  Tablo: report_supports
+--------------------------------------------------
+KOLON ADI                 TÄ°P                 NULL?   DEFAULT/LENGTH
+---------                 ---                  -----   --------------
+id                        int4                 HayÄ±r  nextval('report_supports_id_seq'::regclass)
+report_id                 int4                 HayÄ±r  
+user_id                   int4                 HayÄ±r  
+created_at                timestamp            HayÄ±r  now()
+
+  Foreign Keys:
+     - report_id â†’ reports(id)
+     - user_id â†’ users(id)
+
+  Ä°ndeksler:
+     - report_supports_pkey
+     - UQ_report_supports_report_user
+
+--------------------------------------------------
+  Tablo: reports
+--------------------------------------------------
+KOLON ADI                 TÄ°P                 NULL?   DEFAULT/LENGTH
+---------                 ---                  -----   --------------
+id                        int4                 HayÄ±r  nextval('reports_id_seq'::regclass)
+title                     varchar              HayÄ±r  (100)
+description               text                 HayÄ±r  
+location                  geometry             HayÄ±r  
+address                   varchar              HayÄ±r  (255)
+report_type               report_type_enum     Evet    
+department_code           municipality_department_enum HayÄ±r  
+category_id               int4                 HayÄ±r  
+status                    report_status_enum   HayÄ±r  'OPEN'::report_status_enum
+sub_status                varchar              Evet    (40)
+support_count             int4                 HayÄ±r  0
+current_department_id     int4                 HayÄ±r  
+user_id                   int4                 HayÄ±r  
+closed_by_user_id         int4                 Evet    
+resolution_notes          text                 Evet    
+rejection_reason          text                 Evet    
+resolved_at               timestamp            Evet    
+created_at                timestamp            HayÄ±r  now()
+updated_at                timestamp            HayÄ±r  now()
+deleted_at                timestamptz          Evet    
+
+  Foreign Keys:
+     - category_id â†’ report_categories(id)
+     - current_department_id â†’ departments(id)
+     - user_id â†’ users(id)
+     - closed_by_user_id â†’ users(id)
+
+  Ä°ndeksler:
+     - PK_reports
+     - IDX_reports_report_type
+     - IDX_reports_department_code
+     - IDX_reports_category_id
+     - IDX_reports_current_department_id
+     - IDX_reports_user_id
+     - IDX_reports_location
+     - IDX_reports_department_id_status
+     - IDX_reports_location_gist
+
+--------------------------------------------------
+  Tablo: specializations
+--------------------------------------------------
+KOLON ADI                 TÄ°P                 NULL?   DEFAULT/LENGTH
+---------                 ---                  -----   --------------
+id                        int4                 HayÄ±r  nextval('specializations_id_seq'::regclass)
+code                      varchar              HayÄ±r  (100)
+name                      varchar              HayÄ±r  (255)
+description               text                 Evet    
+typical_department_code   varchar              Evet    (100)
+example_source            varchar              Evet    (255)
+
+  Ä°ndeksler:
+     - PK_specializations_id
+     - UQ_specializations_code
+
+--------------------------------------------------
+  Tablo: team_membership_history
+--------------------------------------------------
+KOLON ADI                 TÄ°P                 NULL?   DEFAULT/LENGTH
+---------                 ---                  -----   --------------
+id                        int4                 HayÄ±r  nextval('team_membership_history_id_seq'::regclass)
+user_id                   int4                 HayÄ±r  
+team_id                   int4                 HayÄ±r  
+joined_at                 timestamptz          HayÄ±r  now()
+left_at                   timestamptz          Evet    
+role_in_team              varchar              Evet    (100)
+
+  Foreign Keys:
+     - user_id â†’ users(id)
+     - team_id â†’ teams(id)
+
+  Ä°ndeksler:
+     - PK_team_membership_history_id
+
+--------------------------------------------------
+  Tablo: team_specializations
+--------------------------------------------------
+KOLON ADI                 TÄ°P                 NULL?   DEFAULT/LENGTH
+---------                 ---                  -----   --------------
+team_id                   int4                 HayÄ±r  
+specialization_id         int4                 HayÄ±r  
+
+  Foreign Keys:
+     - team_id â†’ teams(id)
+     - specialization_id â†’ specializations(id)
+
+  Ä°ndeksler:
+     - PK_team_specializations
+
+--------------------------------------------------
+  Tablo: teams
+--------------------------------------------------
+KOLON ADI                 TÄ°P                 NULL?   DEFAULT/LENGTH
+---------                 ---                  -----   --------------
+id                        int4                 HayÄ±r  nextval('teams_id_seq'::regclass)
+name                      varchar              HayÄ±r  (255)
+department_id             int4                 HayÄ±r  
+team_leader_id            int4                 Evet    
+status                    team_status_enum     HayÄ±r  'AVAILABLE'::team_status_enum
+base_location             geometry             Evet    
+current_location          geometry             Evet    
+last_location_update      timestamptz          Evet    
+deleted_at                timestamptz          Evet    
+created_at                timestamptz          HayÄ±r  CURRENT_TIMESTAMP
+updated_at                timestamptz          HayÄ±r  CURRENT_TIMESTAMP
+
+  Foreign Keys:
+     - department_id â†’ departments(id)
+     - team_leader_id â†’ users(id)
+
+  Ä°ndeksler:
+     - PK_teams_id
+     - IDX_teams_base_location
+     - IDX_teams_current_location
+     - IDX_teams_base_location_gist
+     - IDX_teams_current_location_gist
+
+--------------------------------------------------
+  Tablo: users
+--------------------------------------------------
+KOLON ADI                 TÄ°P                 NULL?   DEFAULT/LENGTH
+---------                 ---                  -----   --------------
+id                        int4                 HayÄ±r  nextval('users_id_seq'::regclass)
+email                     varchar              HayÄ±r  (255)
+full_name                 varchar              HayÄ±r  (100)
+phone_number              varchar              Evet    (20)
+avatar                    varchar              Evet    (255)
+roles                     _user_roles_enum     HayÄ±r  '{CITIZEN}'::user_roles_enum[]
+is_email_verified         bool                 HayÄ±r  false
+password                  varchar              HayÄ±r  (255)
+email_verification_token  varchar              Evet    (255)
+password_reset_token      varchar              Evet    (255)
+password_reset_expires    timestamp            Evet    
+department_id             int4                 Evet    
+active_team_id            int4                 Evet    
+created_at                timestamp            HayÄ±r  now()
+updated_at                timestamp            HayÄ±r  now()
+last_login_at             timestamp            Evet    
+deleted_at                timestamptz          Evet    
+
+  Foreign Keys:
+     - department_id â†’ departments(id)
+     - active_team_id â†’ teams(id)
+
+  Ä°ndeksler:
+     - PK_users_id
+     - UQ_users_email
+     - IDX_users_email

@@ -8,6 +8,8 @@ export interface AnalyticsFilters {
   departmentId: string | null;
   categoryId: string | null;
   status: string | null;
+  neighborhoodName: string | null;
+  bbox?: string | null; // Alan seçimi için
 }
 
 const DEFAULT_FILTERS: AnalyticsFilters = {
@@ -16,6 +18,8 @@ const DEFAULT_FILTERS: AnalyticsFilters = {
   departmentId: null,
   categoryId: null,
   status: null,
+  neighborhoodName: null,
+  bbox: null,
 };
 
 export const useAnalyticsFilters = () => {
@@ -28,6 +32,8 @@ export const useAnalyticsFilters = () => {
     const departmentId = searchParams.get('departmentId');
     const categoryId = searchParams.get('categoryId');
     const status = searchParams.get('status');
+    const neighborhoodName = searchParams.get('neighborhoodName');
+    const bbox = searchParams.get('bbox');
 
     return {
       startDate: startDate || DEFAULT_FILTERS.startDate,
@@ -35,11 +41,13 @@ export const useAnalyticsFilters = () => {
       departmentId: departmentId || DEFAULT_FILTERS.departmentId,
       categoryId: categoryId || DEFAULT_FILTERS.categoryId,
       status: status || DEFAULT_FILTERS.status,
+      neighborhoodName: neighborhoodName || DEFAULT_FILTERS.neighborhoodName,
+      bbox: bbox || DEFAULT_FILTERS.bbox,
     };
   }, [searchParams]);
 
   // Debug log for filters
-  console.log('🔧 Analytics filters parsed:', filters);
+  // Parse URL parameters for filters
 
   // Filtreleri güncelle (URL'e yaz)
   const setFilters = useCallback(

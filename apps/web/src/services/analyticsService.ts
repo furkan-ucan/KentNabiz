@@ -1,6 +1,7 @@
 // apps/web/src/services/analyticsService.ts
 import { api } from '@/lib/api';
 import { AnalyticsFilters } from '@/hooks/analytics/useAnalyticsFilters';
+import { SharedReport } from '@kentnabiz/shared';
 
 export interface SummaryStatsResponse {
   avgResolutionDays: number;
@@ -15,6 +16,11 @@ export interface CountsResponse {
     count: number;
     reportIds: number[];
   };
+}
+
+export interface SpatialDistributionResponse {
+  reports: SharedReport[];
+  totalCount: number;
 }
 
 export interface ApiResponse<T> {
@@ -160,6 +166,12 @@ export const analyticsService = {
       ...(filters.departmentId && {
         departmentId: filters.departmentId.toString(),
       }),
+      ...(filters.categoryId && {
+        categoryId: filters.categoryId.toString(),
+      }),
+      ...(filters.status && {
+        status: filters.status,
+      }),
     };
 
     const response = await api.get<
@@ -182,6 +194,18 @@ export const analyticsService = {
     }
 
     return [];
+  },
+
+  // Get spatial distribution (reports with location data)
+  async getSpatialDistribution(
+    filters: AnalyticsFilters
+  ): Promise<SpatialDistributionResponse> {
+    const params = buildQueryParams(filters);
+    const response = await api.get<ApiResponse<SpatialDistributionResponse>>(
+      '/report-analytics/spatial-distribution',
+      { params }
+    );
+    return response.data.data;
   },
 };
 
@@ -229,6 +253,8 @@ export interface TemporalDistributionFilters {
   startDate: string;
   endDate: string;
   departmentId?: number;
+  categoryId?: number;
+  status?: string;
 }
 
 export interface TemporalDistributionResponse {

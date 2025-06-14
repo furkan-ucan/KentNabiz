@@ -29,6 +29,7 @@ import { CitizenSummaryDto } from '../dto/citizen-summary.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
 import { RequestWithUser } from '../../auth/interfaces/jwt-payload.interface';
 import { UserRole } from '@kentnabiz/shared';
+import { Report } from '../../reports/entities/report.entity';
 
 @ApiTags('Report Analytics')
 @Controller('report-analytics')
@@ -358,6 +359,7 @@ export class ReportAnalyticsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('departmentId') departmentId?: number,
+    @Query('categoryId') categoryId?: string,
     @Req() req?: RequestWithUser
   ): Promise<FunnelStatsResult> {
     const authUser = req?.user;
@@ -371,7 +373,13 @@ export class ReportAnalyticsController {
       throw new BadRequestException('Invalid date format');
     }
 
-    return await this.funnelAnalyticsService.getFunnelStats(start, end, departmentId, authUser);
+    return await this.funnelAnalyticsService.getFunnelStats(
+      start,
+      end,
+      departmentId,
+      categoryId,
+      authUser
+    );
   }
 
   @Get('category-distribution')
@@ -490,6 +498,18 @@ export class ReportAnalyticsController {
     type: Number,
     required: false,
   })
+  @ApiQuery({
+    name: 'categoryId',
+    description: 'Category ID for filtering (optional)',
+    type: Number,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'status',
+    description: 'Status for filtering (optional)',
+    type: String,
+    required: false,
+  })
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved temporal distribution data',
@@ -504,6 +524,8 @@ export class ReportAnalyticsController {
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
     @Query('departmentId') departmentId?: number,
+    @Query('categoryId') categoryId?: number,
+    @Query('status') status?: string,
     @Req() req?: RequestWithUser
   ): Promise<TemporalDataPoint[]> {
     // Gerekli parametreleri kontrol et
@@ -534,9 +556,69 @@ export class ReportAnalyticsController {
       startDate,
       endDate,
       departmentId,
+      categoryId,
+      status,
     };
 
     const authUser = req?.user;
     return await this.temporalAnalyticsService.getTemporalDistribution(filters, authUser);
+  }
+
+  @Get('spatial-distribution')
+  @ApiOperation({
+    summary: 'Get spatial distribution of reports',
+    description: 'Returns reports with their geographic locations for map visualization',
+  })
+  @ApiQuery({ name: 'startDate', required: true, type: String })
+  @ApiQuery({ name: 'endDate', required: true, type: String })
+  @ApiQuery({ name: 'departmentId', required: false, type: Number })
+  @ApiQuery({ name: 'categoryId', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false, type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Reports with spatial data successfully retrieved',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid parameters',
+  })
+  async getSpatialDistribution(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('departmentId') departmentId?: number,
+    @Query('categoryId') categoryId?: number,
+    @Query('status') status?: string,
+    @Req() req?: RequestWithUser
+  ): Promise<{
+    reports: Report[];
+    totalCount: number;
+  }> {
+    // Gerekli parametreleri kontrol et
+    if (!startDate || !endDate) {
+      throw new BadRequestException('startDate and endDate are required');
+    }
+
+    // Tarih validasyonu
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new BadRequestException('Invalid date format');
+    }
+
+    if (start >= end) {
+      throw new BadRequestException('Start date must be before end date');
+    }
+
+    const filters = {
+      startDate,
+      endDate,
+      departmentId,
+      categoryId,
+      status,
+    };
+
+    const authUser = req?.user;
+    return await this.reportAnalyticsService.getSpatialDistribution(filters, authUser);
   }
 }

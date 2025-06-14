@@ -22,11 +22,28 @@ export const KpiMetricsWidget: React.FC<KpiMetricsWidgetProps> = ({
 }) => {
   const { data, isLoading, isError, error } = useKpiData(filters);
 
+  // Backend veri kalitesi kontrolü
+  const hasDataQualityIssue =
+    !isLoading &&
+    !isError &&
+    filters.categoryId &&
+    data?.totalReportCount === 0;
+
   if (isError) {
     return (
       <Alert severity="error">
         KPI verileri yüklenirken bir hata oluştu:{' '}
         {error?.message || 'Bilinmeyen hata'}
+      </Alert>
+    );
+  }
+
+  // Backend veri kalitesi uyarısı
+  if (hasDataQualityIssue) {
+    return (
+      <Alert severity="warning">
+        KPI verileri kategoriye göre filtrelenirken bir sorun oluştu. Backend
+        filtre desteğini kontrol edin.
       </Alert>
     );
   }

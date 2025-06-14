@@ -18,6 +18,9 @@ export default defineConfig({
       ),
     },
   },
+  optimizeDeps: {
+    include: ['react-leaflet-heatmap-layer-v3'],
+  },
   build: {
     // Performance optimizations
     rollupOptions: {

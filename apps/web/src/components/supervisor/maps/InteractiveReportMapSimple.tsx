@@ -1,9 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, GeoJSON } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
-import * as HeatmapLayerPackage from 'react-leaflet-heatmap-layer-v3';
-// @ts-expect-error TODO: Kütüphane tipleri güncellendiğinde veya daha iyi bir çözüm bulunduğunda kaldırılacak.
-const { HeatmapLayer } = HeatmapLayerPackage;
 import L from 'leaflet';
 import {
   Box,
@@ -13,17 +10,7 @@ import {
   Skeleton,
   Tooltip,
   Badge,
-  Button,
-  Divider,
-  Chip,
 } from '@mui/material';
-import {
-  Visibility,
-  Share,
-  LocationOn,
-  Schedule,
-  Person,
-} from '@mui/icons-material';
 import { SharedReport, ReportStatus } from '@kentnabiz/shared';
 import type { FeatureCollection } from 'geojson';
 import 'leaflet/dist/leaflet.css';
@@ -47,11 +34,13 @@ interface InteractiveReportMapProps {
   filters?: Record<string, unknown>;
   selectedNeighborhood?: string | null;
   onNeighborhoodSelect?: (neighborhoodName: string | null) => void;
+  showDrawTools?: boolean;
+  onBboxCreate?: (bbox: string) => void;
+  onBboxClear?: () => void;
   onReportView?: (reportId: number) => void;
   onReportShare?: (reportId: number) => void;
 }
 
-// Status based color and icon configuration
 const statusConfig: Record<
   ReportStatus,
   { color: string; icon: string; label: string }
@@ -79,147 +68,18 @@ const ISLAHIYE_BOUNDS: [[number, number], [number, number]] = [
   [37.225638, 36.831124],
 ];
 
-// Enhanced Popup Component (inline)
-const EnhancedPopup: React.FC<{
-  report: SharedReport;
-  onViewDetails?: (reportId: number) => void;
-  onShareReport?: (reportId: number) => void;
-}> = ({ report, onViewDetails, onShareReport }) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('tr-TR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const statusConfig = {
-    OPEN: { color: '#f44336', label: 'Açık' },
-    IN_REVIEW: { color: '#ff9800', label: 'İncelemede' },
-    IN_PROGRESS: { color: '#2196f3', label: 'İşlemde' },
-    DONE: { color: '#4caf50', label: 'Tamamlandı' },
-    REJECTED: { color: '#9e9e9e', label: 'Reddedildi' },
-    CANCELLED: { color: '#9e9e9e', label: 'İptal Edildi' },
-  };
-
-  return (
-    <Box sx={{ minWidth: 280, maxWidth: 320 }}>
-      {/* Header */}
-      <Box sx={{ mb: 2 }}>
-        <Typography
-          variant="h6"
-          sx={{ fontWeight: 'bold', color: '#1976d2', mb: 0.5 }}
-        >
-          {report.title}
-        </Typography>
-        <Chip
-          label={
-            statusConfig[report.status as keyof typeof statusConfig]?.label ||
-            report.status
-          }
-          size="small"
-          sx={{
-            backgroundColor:
-              statusConfig[report.status as keyof typeof statusConfig]?.color ||
-              '#666',
-            color: 'white',
-            fontWeight: 'bold',
-          }}
-        />
-      </Box>
-
-      <Divider sx={{ my: 1 }} />
-
-      {/* Content */}
-      <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <LocationOn sx={{ fontSize: 16, color: '#666' }} />
-          <Typography variant="body2" color="text.secondary">
-            {report.address || 'Adres bilgisi yok'}
-          </Typography>
-        </Box>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Schedule sx={{ fontSize: 16, color: '#666' }} />
-          <Typography variant="body2" color="text.secondary">
-            {formatDate(report.createdAt.toString())}
-          </Typography>
-        </Box>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Person sx={{ fontSize: 16, color: '#666' }} />
-          <Typography variant="body2" color="text.secondary">
-            {(report as unknown as { reporterName?: string }).reporterName ||
-              'Anonim'}
-          </Typography>
-        </Box>
-      </Box>
-
-      {report.description && (
-        <>
-          <Divider sx={{ my: 1 }} />
-          <Typography variant="body2" sx={{ mb: 2, fontStyle: 'italic' }}>
-            {report.description.length > 100
-              ? `${report.description.substring(0, 100)}...`
-              : report.description}
-          </Typography>
-        </>
-      )}
-
-      {/* Actions */}
-      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'space-between' }}>
-        <Button
-          size="small"
-          startIcon={<Visibility />}
-          onClick={() => onViewDetails?.(report.id)}
-          sx={{ flex: 1 }}
-        >
-          Detay
-        </Button>
-        <Button
-          size="small"
-          startIcon={<Share />}
-          onClick={() => onShareReport?.(report.id)}
-          sx={{ flex: 1 }}
-        >
-          Paylaş
-        </Button>
-      </Box>
-    </Box>
-  );
-};
-
-interface HeatmapPoint {
-  lat: number;
-  lng: number;
-  value: number;
-}
-
 export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
   reports,
   onReportClick,
   height = 500,
   viewMode = 'cluster',
-  filters: _filters,
   selectedNeighborhood,
   onNeighborhoodSelect,
-  onReportView,
-  onReportShare,
 }) => {
   const [isMapReady, setIsMapReady] = useState(false);
   const [islahiyeData, setIslahiyeData] = useState<FeatureCollection | null>(
     null
   );
-
-  useEffect(() => {
-    // console.log('HeatmapLayerPackage:', HeatmapLayerPackage);
-    // if (HeatmapLayerPackage) {
-    //   console.log('HeatmapLayer from package:', HeatmapLayerPackage.HeatmapLayer);
-    //   console.log('Default from package:', HeatmapLayerPackage.default);
-    // }
-  }, []);
 
   // İslahiye sınırlarını yükle
   useEffect(() => {
@@ -231,12 +91,10 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
         return response.json();
       })
       .then(data => {
-        // İslahiye mahalle verileri başarıyla yüklendi
         setIslahiyeData(data);
       })
       .catch(error => {
         console.warn('❌ İslahiye sınırları yüklenemedi:', error);
-        // Fallback olarak useNeighborhoods hook'unu kullanabiliriz
       });
   }, []);
 
@@ -323,7 +181,7 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
           {/* İslahiye Sınırları */}
           {islahiyeData && (
             <GeoJSON
-              key={`neighborhoods-${selectedNeighborhood || 'none'}`} // Force re-render when selection changes
+              key={`neighborhoods-${selectedNeighborhood || 'none'}`}
               data={islahiyeData}
               style={feature => {
                 const neighborhoodName = feature?.properties?.name;
@@ -341,7 +199,6 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
               onEachFeature={(feature, layer) => {
                 const neighborhoodName = feature.properties?.name;
                 if (neighborhoodName) {
-                  // Popup bilgileri
                   layer.bindPopup(
                     `<div style="text-align: center; padding: 8px;">
                        <strong style="font-size: 16px; color: #1976d2;">${neighborhoodName}</strong><br/>
@@ -350,7 +207,6 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
                      </div>`
                   );
 
-                  // Event handlers
                   layer.on({
                     mouseover: e => {
                       const layer = e.target;
@@ -374,14 +230,12 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
                       });
                     },
                     click: e => {
-                      // Toggle mahalle seçimi
                       const newSelection =
                         neighborhoodName === selectedNeighborhood
                           ? null
                           : neighborhoodName;
                       onNeighborhoodSelect?.(newSelection);
 
-                      // Haritayı seçili mahalleye odakla
                       if (newSelection) {
                         e.target._map.fitBounds(e.target.getBounds(), {
                           padding: [20, 20],
@@ -414,22 +268,20 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
                   }}
                 >
                   <Popup>
-                    <EnhancedPopup
-                      report={report}
-                      onViewDetails={onReportView}
-                      onShareReport={onReportShare}
-                    />
+                    <Typography variant="subtitle2">{report.title}</Typography>
+                    <Typography variant="body2">
+                      {statusConfig[report.status].label}
+                    </Typography>
                   </Popup>
                 </Marker>
               ))}
             </MarkerClusterGroup>
           )}
 
-          {/* Heat View with Heatmap Layer */}
-          {viewMode === 'heat' && HeatmapLayer && (
+          {/* Heat View - Individual markers with heat-style colors */}
+          {viewMode === 'heat' && (
             <>
-              {/* Individual markers for heat view - these can be removed if heatmap is sufficient */}
-              {/* {reports.map(report => (
+              {reports.map(report => (
                 <Marker
                   key={report.id}
                   position={[
@@ -447,36 +299,17 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
                   }}
                 >
                   <Popup>
-                    <EnhancedPopup
-                      report={report}
-                      onViewDetails={onReportView}
-                      onShareReport={onReportShare}
-                    />
+                    <Typography variant="subtitle2">{report.title}</Typography>
+                    <Typography variant="body2">
+                      {statusConfig[report.status].label}
+                    </Typography>
                   </Popup>
                 </Marker>
-              ))} */}
-
-              {/* Heatmap Layer */}
-              <HeatmapLayer
-                points={reports.map(
-                  report =>
-                    ({
-                      lat: report.location.coordinates[1],
-                      lng: report.location.coordinates[0],
-                      value: 50, // Default intensity value
-                    }) as HeatmapPoint // Type assertion
-                )}
-                longitudeExtractor={(point: HeatmapPoint) => point.lng}
-                latitudeExtractor={(point: HeatmapPoint) => point.lat}
-                intensityExtractor={(point: HeatmapPoint) => point.value}
-                radius={25} // Increased radius for better visibility
-                blur={15}
-                maxZoom={18} // Adjusted maxZoom
-                minOpacity={0.3} // Added minOpacity for better blending
-              />
+              ))}
             </>
           )}
         </MapContainer>
+
         {/* Status Legend */}
         <Box
           sx={{

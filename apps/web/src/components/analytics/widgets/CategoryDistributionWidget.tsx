@@ -81,8 +81,6 @@ const CategoryDistributionWidget: React.FC<CategoryDistributionWidgetProps> = ({
   onCategoryClick,
   limit = 10,
 }) => {
-  console.log('🔧 CategoryDistributionWidget render, filters:', filters);
-
   // Hook ile veri çekme
   const {
     data: chartData,
@@ -92,20 +90,10 @@ const CategoryDistributionWidget: React.FC<CategoryDistributionWidgetProps> = ({
     maxValue,
     isEmpty,
   } = useCategoryDistribution(filters, limit);
-  // Veri kontrolü (debug)
-  console.log('📊 Widget received data:', {
-    chartData,
-    isLoading,
-    error,
-    totalReports,
-    maxValue,
-    isEmpty,
-    dataCount: chartData?.length,
-  });
 
-  // DEBUG: Chart'a gönderilen veriyi de logla
-  if (chartData && chartData.length > 0) {
-    console.log('🚀 Sending data to HorizontalBarChart:', chartData);
+  // Debug: Sadece hata durumlarında log
+  if (process.env.NODE_ENV === 'development' && error) {
+    console.warn('⚠️ CategoryDistributionWidget Error:', error);
   }
 
   // Bar'a tıklama olayı (drill-down)

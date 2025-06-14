@@ -9,17 +9,19 @@ import {
   Chip,
   Typography,
   Grid,
-  Stack,
 } from '@mui/material';
 import {
   FilterList as FilterIcon,
   Clear as ClearIcon,
 } from '@mui/icons-material';
+import { useState } from 'react';
 import { AnalyticsFilters } from '@/hooks/analytics/useAnalyticsFilters';
 import { useCategories } from '@/hooks/analytics/useCategories';
 import { useDepartments } from '@/hooks/analytics/useDepartments';
 import { hasRole, getCurrentUser } from '@/utils/auth';
 import { UserRole } from '@kentnabiz/shared';
+import { useScrollDirection } from '@/hooks/useScrollDirection';
+import { format, subDays } from 'date-fns';
 
 interface AnalyticsFilterBarProps {
   filters: AnalyticsFilters;
@@ -43,20 +45,18 @@ export const AnalyticsFilterBar = ({
   onFiltersChange,
   onResetFilters,
 }: AnalyticsFilterBarProps) => {
+  // Hover state için
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Scroll direction hook - auto-hiding için
+  const scrollDirection = useScrollDirection({
+    threshold: 10,
+    debounceMs: 100,
+  });
+
   // Kullanıcı rollerini kontrol et
   const isSystemAdmin = hasRole(UserRole.SYSTEM_ADMIN);
   const isDepartmentSupervisor = hasRole(UserRole.DEPARTMENT_SUPERVISOR);
-
-  // Default tarih değerleri
-  const getDefaultStartDate = () => {
-    const date = new Date();
-    date.setFullYear(date.getFullYear() - 1); // 1 yıl önce
-    return date.toISOString().split('T')[0];
-  };
-
-  const getDefaultEndDate = () => {
-    return new Date().toISOString().split('T')[0]; // Bugün
-  };
 
   // Departmanları backend'den çek (sadece sistem yöneticisi için)
   const { departments, loading: departmentsLoading } = useDepartments();
@@ -102,48 +102,69 @@ export const AnalyticsFilterBar = ({
     }
   };
 
-  // Hızlı tarih seçim fonksiyonları
-  const handleQuickDateFilter = (days: number) => {
-    const endDate = new Date().toISOString().split('T')[0]; // Bugün
-    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split('T')[0]; // N gün önce
-
-    onFiltersChange({
-      ...filters,
-      startDate,
-      endDate,
-    });
+  // Default tarih değerlerini ayarla (eğer boşsa)
+  const getDefaultStartDate = () => {
+    return filters.startDate || format(subDays(new Date(), 30), 'yyyy-MM-dd');
   };
 
-  // Aktif tarih aralığını kontrol et
-  const isQuickDateActive = (days: number) => {
-    const currentEndDate = filters.endDate || getDefaultEndDate();
-    const currentStartDate = filters.startDate || getDefaultStartDate();
-    const expectedEndDate = new Date().toISOString().split('T')[0];
-    const expectedStartDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split('T')[0];
-
-    return (
-      currentStartDate === expectedStartDate &&
-      currentEndDate === expectedEndDate
-    );
+  const getDefaultEndDate = () => {
+    return filters.endDate || format(new Date(), 'yyyy-MM-dd');
   };
+
+  // Bar'ın görünür olup olmayacağını belirle
+  // Hover durumunda veya yukarı scroll'da görünür olacak
+  const shouldShowBar = isHovered || scrollDirection !== 'down';
+
   return (
-    <Card elevation={2}>
+    <Card
+      elevation={2}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      sx={{
+        position: 'sticky',
+        top: shouldShowBar ? 0 : -100, // Hover veya yukarı scroll'da göster
+        zIndex: 1000,
+        transition: 'top 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)', // Smooth transition
+        backgroundColor: 'background.paper',
+        borderRadius: 2,
+        mb: 2,
+      }}
+    >
       <CardContent>
-        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-          <FilterIcon color="primary" />
-          <Typography variant="h6" component="h2">
-            Filtreler
-          </Typography>
+        <Box
+          sx={{
+            mb: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            justifyContent: 'space-between',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <FilterIcon color="primary" />
+            <Typography variant="h6" component="h2">
+              Filtreler
+            </Typography>
+            {activeFilterCount > 0 && (
+              <Chip
+                label={`${activeFilterCount} filtre aktif`}
+                color="primary"
+                size="small"
+              />
+            )}
+          </Box>
+
+          {/* Filtreleri Temizle Butonu - Sağ üstte */}
           {activeFilterCount > 0 && (
-            <Chip
-              label={`${activeFilterCount} filtre aktif`}
-              color="primary"
+            <Button
+              variant="outlined"
+              color="secondary"
+              startIcon={<ClearIcon />}
+              onClick={onResetFilters}
               size="small"
-            />
+            >
+              Filtreleri Temizle
+            </Button>
           )}
         </Box>
 
@@ -155,10 +176,9 @@ export const AnalyticsFilterBar = ({
               fullWidth
               size="small"
               label="Başlangıç Tarihi"
-              value={filters.startDate || getDefaultStartDate()}
+              value={getDefaultStartDate()}
               onChange={e => handleFilterChange('startDate', e.target.value)}
               InputLabelProps={{ shrink: true }}
-              helperText="1 yıl öncesinden başlayarak"
             />
           </Grid>
           {/* Bitiş Tarihi */}
@@ -168,68 +188,15 @@ export const AnalyticsFilterBar = ({
               fullWidth
               size="small"
               label="Bitiş Tarihi"
-              value={filters.endDate || getDefaultEndDate()}
+              value={getDefaultEndDate()}
               onChange={e => handleFilterChange('endDate', e.target.value)}
               InputLabelProps={{ shrink: true }}
-              helperText="Bugüne kadar"
             />
           </Grid>
-          {/* Hızlı Tarih Seçim Butonları */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              Hızlı Seçim:
-            </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              <Button
-                size="small"
-                variant={isQuickDateActive(7) ? 'contained' : 'outlined'}
-                color={isQuickDateActive(7) ? 'primary' : 'inherit'}
-                onClick={() => handleQuickDateFilter(7)}
-                sx={{ minWidth: 'auto' }}
-              >
-                Son 7 Gün
-              </Button>
-              <Button
-                size="small"
-                variant={isQuickDateActive(14) ? 'contained' : 'outlined'}
-                color={isQuickDateActive(14) ? 'primary' : 'inherit'}
-                onClick={() => handleQuickDateFilter(14)}
-                sx={{ minWidth: 'auto' }}
-              >
-                Son 14 Gün
-              </Button>
-              <Button
-                size="small"
-                variant={isQuickDateActive(30) ? 'contained' : 'outlined'}
-                color={isQuickDateActive(30) ? 'primary' : 'inherit'}
-                onClick={() => handleQuickDateFilter(30)}
-                sx={{ minWidth: 'auto' }}
-              >
-                Son 30 Gün
-              </Button>
-              <Button
-                size="small"
-                variant={isQuickDateActive(90) ? 'contained' : 'outlined'}
-                color={isQuickDateActive(90) ? 'primary' : 'inherit'}
-                onClick={() => handleQuickDateFilter(90)}
-                sx={{ minWidth: 'auto' }}
-              >
-                Son 3 Ay
-              </Button>
-              <Button
-                size="small"
-                variant={isQuickDateActive(365) ? 'contained' : 'outlined'}
-                color={isQuickDateActive(365) ? 'primary' : 'inherit'}
-                onClick={() => handleQuickDateFilter(365)}
-                sx={{ minWidth: 'auto' }}
-              >
-                Son 1 Yıl
-              </Button>
-            </Stack>
-          </Grid>{' '}
           {/* Departman Filtresi - Sadece Sistem Yöneticisi için */}
           {isSystemAdmin && (
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+              {' '}
               <TextField
                 select
                 fullWidth
@@ -254,27 +221,33 @@ export const AnalyticsFilterBar = ({
             </Grid>
           )}{' '}
           {/* Kategori Filtresi */}
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
             <TextField
               select
               fullWidth
               size="small"
               label="Kategori"
-              value={filters.categoryId || ''}
+              value={
+                categoriesLoading ||
+                !Array.isArray(categories) ||
+                !categories.find(c => c.id.toString() === filters.categoryId)
+                  ? ''
+                  : filters.categoryId || ''
+              }
               onChange={e => handleFilterChange('categoryId', e.target.value)}
               disabled={categoriesLoading}
             >
               <MenuItem value="">Tümü</MenuItem>
               {Array.isArray(categories) &&
                 categories.map(category => (
-                  <MenuItem key={category.id} value={category.code}>
+                  <MenuItem key={category.id} value={category.id.toString()}>
                     {category.name}
                   </MenuItem>
                 ))}
             </TextField>
           </Grid>
           {/* Durum Filtresi */}
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
             <TextField
               select
               fullWidth
@@ -291,21 +264,6 @@ export const AnalyticsFilterBar = ({
             </TextField>
           </Grid>
         </Grid>
-
-        {/* Filtre Sıfırlama */}
-        {activeFilterCount > 0 && (
-          <Stack direction="row" justifyContent="flex-end" sx={{ mt: 2 }}>
-            <Button
-              variant="outlined"
-              color="secondary"
-              startIcon={<ClearIcon />}
-              onClick={onResetFilters}
-              size="small"
-            >
-              Filtreleri Temizle
-            </Button>
-          </Stack>
-        )}
       </CardContent>
     </Card>
   );

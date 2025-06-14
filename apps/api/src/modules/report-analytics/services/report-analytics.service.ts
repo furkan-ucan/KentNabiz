@@ -58,20 +58,6 @@ export interface CitizenInteractionResult {
   totalSupports: number;
 }
 
-// Temporal Trend Chart için interface'ler
-export interface TemporalQueryDto {
-  granularity: 'daily' | 'weekly' | 'monthly';
-  startDate: string;
-  endDate: string;
-  departmentId?: number;
-}
-
-export interface TemporalDataPoint {
-  date: string;
-  createdCount: number;
-  resolvedCount: number;
-}
-
 // Debug fonksiyonu için veri tip tanımları
 interface DebugReportData {
   total_reports: string;
@@ -573,16 +559,20 @@ export class ReportAnalyticsService {
     status?: string;
   }): { sql: string; params: (string | number)[] } {
     const conditions = ['created_at >= $1', 'created_at <= $2'];
-    const params = [filters.startDate, filters.endDate];
+    const params: (string | number)[] = [filters.startDate, filters.endDate];
 
     if (filters.departmentId) {
       conditions.push(`department_id = $${params.length + 1}`);
-      params.push(filters.departmentId.toString());
+      params.push(filters.departmentId);
     }
 
+    // categoryId düzeltmesi: sayısal ID olarak işle
     if (filters.categoryId) {
-      conditions.push(`category_code = $${params.length + 1}`);
-      params.push(filters.categoryId);
+      const categoryIdNum = parseInt(filters.categoryId, 10);
+      if (!isNaN(categoryIdNum)) {
+        conditions.push(`category_id = $${params.length + 1}`);
+        params.push(categoryIdNum);
+      }
     }
 
     if (filters.status) {
@@ -645,14 +635,14 @@ export class ReportAnalyticsService {
       paramIndex++;
     }
 
-    // Kategori filtresi
+    // Kategori filtresi - sayısal ID olarak işle
     if (filters.categoryId) {
-      baseQuery += ` AND EXISTS (
-        SELECT 1 FROM report_categories rc
-        WHERE rc.id = r.category_id AND rc.code = $${paramIndex}
-      )`;
-      params.push(filters.categoryId);
-      paramIndex++;
+      const categoryIdNum = parseInt(filters.categoryId, 10);
+      if (!isNaN(categoryIdNum)) {
+        baseQuery += ` AND r.category_id = $${paramIndex}`;
+        params.push(categoryIdNum);
+        paramIndex++;
+      }
     }
 
     try {
@@ -661,6 +651,7 @@ export class ReportAnalyticsService {
         report_ids: number[];
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const result = await this.dataSource.query(baseQuery, params);
 
       if (result && Array.isArray(result) && result.length > 0) {
@@ -707,21 +698,21 @@ export class ReportAnalyticsService {
     let baseQuery = `
       WITH current_period AS (
         SELECT
-          category_code,
+          category_id,
           COUNT(*) as current_count
         FROM report_analytics_mv
         WHERE created_at BETWEEN $1 AND $2
-          AND category_code IS NOT NULL
+          AND category_id IS NOT NULL
     `;
 
     let previousPeriodQuery = `
       ), previous_period AS (
         SELECT
-          category_code,
+          category_id,
           COUNT(*) as previous_count
         FROM report_analytics_mv
         WHERE created_at BETWEEN $3 AND $4
-          AND category_code IS NOT NULL
+          AND category_id IS NOT NULL
     `;
 
     const params: (string | number)[] = [
@@ -741,22 +732,25 @@ export class ReportAnalyticsService {
       paramIndex++;
     }
 
-    // Kategori filtresi (belirli bir kategori seçilmişse o kategoriyi dikkate al)
+    // Kategori filtresi - sayısal ID olarak işle
     if (filters.categoryId) {
-      const categoryFilter = ` AND category_code = $${paramIndex}`;
-      baseQuery += categoryFilter;
-      previousPeriodQuery += categoryFilter;
-      params.push(filters.categoryId);
+      const categoryIdNum = parseInt(filters.categoryId, 10);
+      if (!isNaN(categoryIdNum)) {
+        const categoryFilter = ` AND category_id = $${paramIndex}`;
+        baseQuery += categoryFilter;
+        previousPeriodQuery += categoryFilter;
+        params.push(categoryIdNum);
+      }
     }
 
     const fullQuery = `
       ${baseQuery}
-        GROUP BY category_code
+        GROUP BY category_id
       ${previousPeriodQuery}
-        GROUP BY category_code
+        GROUP BY category_id
       )
       SELECT
-        COALESCE(c.category_code, p.category_code) as category_code,
+        COALESCE(c.category_id, p.category_id) as category_id,
         COALESCE(c.current_count, 0) as current_count,
         COALESCE(p.previous_count, 0) as previous_count,
         CASE
@@ -766,7 +760,7 @@ export class ReportAnalyticsService {
             ROUND(((COALESCE(c.current_count, 0) - COALESCE(p.previous_count, 0))::NUMERIC / p.previous_count) * 100, 2)
         END as percentage_increase
       FROM current_period c
-      FULL OUTER JOIN previous_period p ON c.category_code = p.category_code
+      FULL OUTER JOIN previous_period p ON c.category_id = p.category_id
       WHERE COALESCE(c.current_count, 0) > COALESCE(p.previous_count, 0)  -- SADECE ARTAN KATEGORILER
       ORDER BY percentage_increase DESC
       LIMIT 1;
@@ -774,19 +768,20 @@ export class ReportAnalyticsService {
 
     try {
       interface TrendingQueryResult {
-        category_code: string;
+        category_id: number;
         current_count: string;
         previous_count: string;
         percentage_increase: string;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const result = await this.dataSource.query(fullQuery, params);
 
       if (result && Array.isArray(result) && result.length > 0) {
         const row = result[0] as TrendingQueryResult;
         return {
-          categoryName: row.category_code || null, // TODO: Category name mapping
-          categoryCode: row.category_code || null,
+          categoryName: `Category ${row.category_id}`, // TODO: Category name'i almak için join ekle
+          categoryCode: row.category_id?.toString() || null,
           percentageIncrease: parseFloat(row.percentage_increase) || 0,
           currentPeriodCount: parseInt(row.current_count, 10) || 0,
           previousPeriodCount: parseInt(row.previous_count, 10) || 0,
@@ -847,10 +842,13 @@ export class ReportAnalyticsService {
       paramIndex++;
     }
 
-    // Kategori filtresi
+    // Kategori filtresi - sayısal ID olarak işle
     if (filters.categoryId) {
-      baseQuery += ` AND category_code = $${paramIndex}`;
-      params.push(filters.categoryId);
+      const categoryIdNum = parseInt(filters.categoryId, 10);
+      if (!isNaN(categoryIdNum)) {
+        baseQuery += ` AND category_id = $${paramIndex}`;
+        params.push(categoryIdNum);
+      }
     }
 
     try {
@@ -858,6 +856,7 @@ export class ReportAnalyticsService {
         total_supports: string;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const result = await this.dataSource.query(baseQuery, params);
 
       if (result && Array.isArray(result) && result.length > 0) {
@@ -873,5 +872,72 @@ export class ReportAnalyticsService {
       // Fallback: support_count kolonu yoksa 0 döndür
       return { totalSupports: 0 };
     }
+  }
+
+  /**
+   * Get spatial distribution of reports for map visualization
+   */
+  async getSpatialDistribution(
+    filters: {
+      startDate: string;
+      endDate: string;
+      departmentId?: number;
+      categoryId?: number;
+      status?: string;
+    },
+    authUser?: AuthUser
+  ): Promise<{
+    reports: Report[];
+    totalCount: number;
+  }> {
+    // Admin kontrolü - SYSTEM_ADMIN tüm raporları görebilir
+    const isAdmin = authUser?.roles?.includes(UserRole.SYSTEM_ADMIN);
+
+    // Admin değilse, kendi departmanı ile sınırla
+    let departmentId = filters.departmentId;
+    if (!isAdmin && authUser?.departmentId) {
+      departmentId = authUser.departmentId;
+    }
+
+    // Base query builder
+    const queryBuilder = this.reportRepository
+      .createQueryBuilder('report')
+      .leftJoinAndSelect('report.user', 'user')
+      .leftJoinAndSelect('report.category', 'category')
+      .leftJoinAndSelect('report.currentDepartment', 'department')
+      .where('report.createdAt BETWEEN :startDate AND :endDate', {
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+      })
+      .andWhere('report.location IS NOT NULL') // Sadece konum verisi olan raporları al
+      .orderBy('report.createdAt', 'DESC');
+
+    // Apply department filter for non-admin users or when specifically requested
+    if (departmentId) {
+      queryBuilder.andWhere('report.currentDepartmentId = :departmentId', {
+        departmentId: departmentId,
+      });
+    }
+
+    // Apply other filters
+    if (filters.categoryId) {
+      queryBuilder.andWhere('report.categoryId = :categoryId', {
+        categoryId: filters.categoryId,
+      });
+    }
+
+    if (filters.status) {
+      queryBuilder.andWhere('report.status = :status', {
+        status: filters.status,
+      });
+    }
+
+    // Get both reports and total count
+    const [reports, totalCount] = await queryBuilder.getManyAndCount();
+
+    return {
+      reports,
+      totalCount,
+    };
   }
 }

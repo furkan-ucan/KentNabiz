@@ -6,7 +6,8 @@ import { AnalyticsFilterBar } from '@/components/analytics/AnalyticsFilterBar';
 import { KpiMetricsWidget } from '@/components/analytics/widgets/KpiMetricsWidget';
 import { FunnelChartWidget } from '@/components/analytics/widgets/FunnelChartWidget';
 import CategoryDistributionWidget from '@/components/analytics/widgets/CategoryDistributionWidget';
-import { TemporalTrendWidget } from '@/components/analytics/widgets/TemporalTrendWidget';
+import TemporalTrendWidget from '@/components/analytics/widgets/TemporalTrendWidget';
+import { AdvancedAnalyticsMapWidget } from '@/components/analytics/widgets/AdvancedAnalyticsMapWidget';
 import { useAnalyticsFilters } from '@/hooks/analytics/useAnalyticsFilters';
 import { api } from '@/lib/api';
 
@@ -105,14 +106,12 @@ export const AnalyticsPage = () => {
         </Button>
       </Box>
 
-      {/* BÖLÜM 1.5: FİLTRE BARI */}
-      <Box sx={{ mt: 2 }}>
-        <AnalyticsFilterBar
-          filters={filters}
-          onFiltersChange={setFilters}
-          onResetFilters={resetFilters}
-        />
-      </Box>
+      {/* BÖLÜM 1.5: FİLTRE BARI - Auto-Hiding */}
+      <AnalyticsFilterBar
+        filters={filters}
+        onFiltersChange={setFilters}
+        onResetFilters={resetFilters}
+      />
 
       {/* BÖLÜM 2: KPI KOKPİTİ (ÖZET KARTLAR) */}
       <Box>
@@ -120,13 +119,15 @@ export const AnalyticsPage = () => {
       </Box>
       {/* BÖLÜM 3: DETAYLI ANALİZ WIDGET'LARI (GRID) */}
       <Grid container spacing={3}>
+        {/* --- GRAFİK KOKPİTİ: 3 Widget Yan Yana --- */}
+
         {/* Funnel Chart Widget - İş Akışı Hunisi */}
-        <Grid size={{ xs: 12, lg: 6 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
           <FunnelChartWidget filters={filters} />
         </Grid>
 
-        {/* Gelecekte eklenecek diğer widget'lar */}
-        <Grid size={{ xs: 12, lg: 6 }}>
+        {/* Category Distribution Widget - En Sorunlu Kategoriler */}
+        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
           <CategoryDistributionWidget
             filters={filters}
             onCategoryClick={handleCategoryClick}
@@ -134,29 +135,17 @@ export const AnalyticsPage = () => {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, lg: 6 }}>
+        {/* Temporal Trend Widget - Rapor Akış Trendi */}
+        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
           <TemporalTrendWidget filters={filters} />
         </Grid>
 
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <Box
-            sx={{
-              p: 3,
-              border: '2px dashed #ccc',
-              borderRadius: 2,
-              textAlign: 'center',
-              color: 'text.secondary',
-              height: 400,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-            }}
-          >
-            <Typography variant="h6">Coğrafi Dağılım</Typography>
-            <Typography variant="body2">
-              Harita tabanlı bölgesel analiz widget&apos;ı
-            </Typography>
-          </Box>
+        {/* --- COĞRAFİ ANALİZ TUVALİ: Tam Genişlik --- */}
+        <Grid size={{ xs: 12 }}>
+          <AdvancedAnalyticsMapWidget
+            filters={filters}
+            onFiltersChange={setFilters}
+          />
         </Grid>
       </Grid>
 

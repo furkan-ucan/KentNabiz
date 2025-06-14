@@ -58,17 +58,12 @@ export const FunnelChartWidget: React.FC<FunnelChartWidgetProps> = ({
   filters,
   className,
 }) => {
-  const { data, rawData, conversionRates, isLoading, error } =
-    useFunnelData(filters);
+  const { data, conversionRates, isLoading, error } = useFunnelData(filters);
 
-  // Debug logs
-  console.log('🔥 Widget Debug Info:');
-  console.log('📝 Filters:', filters);
-  console.log('📊 Data from hook:', data);
-  console.log('🎯 Raw data from hook:', rawData);
-  console.log('📈 Conversion rates:', conversionRates);
-  console.log('⏳ Is loading:', isLoading);
-  console.log('❌ Error:', error);
+  // Debug: Sadece hata durumlarında log
+  if (process.env.NODE_ENV === 'development' && error) {
+    console.warn('⚠️ FunnelChartWidget Error:', error);
+  }
 
   // Loading state
   if (isLoading) {

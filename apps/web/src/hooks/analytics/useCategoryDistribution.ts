@@ -31,17 +31,10 @@ export const useCategoryDistribution = (
   } = useQuery({
     queryKey: ['categoryDistribution', filters, limit],
     queryFn: async () => {
-      console.log(
-        '🔍 CategoryDistribution: Fetching with filters:',
-        filters,
-        'limit:',
-        limit
-      );
       const result = await analyticsService.getCategoryDistribution({
         ...filters,
         limit,
       });
-      console.log('📊 CategoryDistribution: API result:', result);
       return result;
     },
     enabled: true,

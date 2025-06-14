@@ -9,6 +9,8 @@ export interface TemporalFilters {
   startDate: string;
   endDate: string;
   departmentId?: number;
+  categoryId?: number;
+  status?: string;
 }
 
 export interface TemporalDataPoint {

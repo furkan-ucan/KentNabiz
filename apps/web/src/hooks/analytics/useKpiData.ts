@@ -43,7 +43,8 @@ export const useKpiData = (filters: AnalyticsFilters) => {
     startDate: filters.startDate || getDefaultStartDate(),
     endDate: filters.endDate || getDefaultEndDate(),
     departmentId: filters.departmentId,
-    categoryId: filters.categoryId,
+    categoryId: filters.categoryId, // EKLENDİ
+    neighborhoodName: filters.neighborhoodName,
     status: null, // Status HARİÇ - genel performansı gösterir
   };
 
@@ -53,7 +54,8 @@ export const useKpiData = (filters: AnalyticsFilters) => {
     startDate: filters.startDate || getDefaultStartDate(),
     endDate: filters.endDate || getDefaultEndDate(),
     departmentId: filters.departmentId,
-    categoryId: filters.categoryId,
+    categoryId: filters.categoryId, // EKLENDİ
+    neighborhoodName: filters.neighborhoodName,
     status: null, // Status HARİÇ - tüm durumları gösterir
   };
 
@@ -64,6 +66,7 @@ export const useKpiData = (filters: AnalyticsFilters) => {
     endDate: filters.endDate || getDefaultEndDate(),
     departmentId: filters.departmentId,
     categoryId: filters.categoryId,
+    neighborhoodName: filters.neighborhoodName,
     status: filters.status, // Status DAHİL - filtreli analiz
   };
   const results = useQueries({
@@ -130,16 +133,17 @@ export const useKpiData = (filters: AnalyticsFilters) => {
   const isError =
     summaryQuery.isError || countsQuery.isError || strategicKpisQuery.isError;
 
-  // Debug log KPI data
-  console.log('🎯 KPI Data Debug:', {
-    combinedData: data,
-    totalReportCount: data?.totalReportCount,
-    summaryData: summaryQuery.data,
-    countsData: countsQuery.data,
-    isLoading,
-    isError,
-    filters,
-  });
+  // Debug: Sadece sorun durumlarında log
+  if (
+    process.env.NODE_ENV === 'development' &&
+    !isLoading &&
+    data?.totalReportCount === 0 &&
+    filters.categoryId
+  ) {
+    console.warn(
+      '⚠️ KPI Data: Backend may not be processing categoryId filter correctly for summary-stats'
+    );
+  }
 
   return {
     data,

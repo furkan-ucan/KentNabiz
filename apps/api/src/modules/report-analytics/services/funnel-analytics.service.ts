@@ -29,6 +29,7 @@ export class FunnelAnalyticsService {
     startDate?: Date,
     endDate?: Date,
     departmentId?: number,
+    categoryId?: string,
     authUser?: AuthUser
   ): Promise<FunnelStatsResult> {
     try {
@@ -56,6 +57,16 @@ export class FunnelAnalyticsService {
         baseQuery += ` AND department_id = $${paramIndex}`;
         params.push(departmentId);
         paramIndex++;
+      }
+
+      // Kategori filtresi - sayısal ID olarak işle
+      if (categoryId) {
+        const categoryIdNum = parseInt(categoryId, 10);
+        if (!isNaN(categoryIdNum)) {
+          baseQuery += ` AND category_id = $${paramIndex}`;
+          params.push(categoryIdNum);
+          paramIndex++;
+        }
       } // Kullanıcı rolü bazlı filtreleme
       if (authUser?.roles?.includes(UserRole.CITIZEN)) {
         baseQuery += ` AND user_id = $${paramIndex}`;
@@ -68,6 +79,7 @@ export class FunnelAnalyticsService {
         paramIndex++;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const result = await this.dataSource.query(baseQuery, params);
 
       if (result && Array.isArray(result) && result.length > 0) {
