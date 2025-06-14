@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Container,
@@ -17,25 +17,7 @@ import {
   Announcements,
   FloatingActionButton,
 } from '../components/dashboard';
-
-// Mock data interfaces
-interface StatsData {
-  totalReports: number;
-  pendingReports: number;
-  resolvedReports: number;
-  myReports: number;
-  newTasks: number;
-}
-
-interface Report {
-  id: string;
-  title: string;
-  description: string;
-  status: 'pending' | 'in-progress' | 'resolved' | 'rejected';
-  category: string;
-  location: string;
-  createdAt: string;
-}
+import { useDashboardStats } from '../hooks/useDashboardStats';
 
 interface Announcement {
   id: string;
@@ -45,45 +27,7 @@ interface Announcement {
   date: string;
 }
 
-// Mock data
-const mockStats: StatsData = {
-  totalReports: 1247,
-  pendingReports: 89,
-  resolvedReports: 1158,
-  myReports: 23,
-  newTasks: 5,
-};
-
-const mockActiveReports: Report[] = [
-  {
-    id: '1',
-    title: 'Kırık Yol İşareti',
-    description: 'Atatürk Bulvarı üzerindeki trafik levhası hasarlı durumda',
-    status: 'pending',
-    category: 'Ulaşım',
-    location: 'Atatürk Bulvarı, Çankaya',
-    createdAt: '2024-01-15T10:30:00Z',
-  },
-  {
-    id: '2',
-    title: 'Kaldırım Onarımı',
-    description: 'Kırık kaldırım taşları yaya güvenliğini tehdit ediyor',
-    status: 'in-progress',
-    category: 'Altyapı',
-    location: 'Kızılay Meydanı',
-    createdAt: '2024-01-14T14:15:00Z',
-  },
-  {
-    id: '3',
-    title: 'Çöp Konteyneri Eksik',
-    description: 'Park alanında çöp konteyneri bulunmuyor',
-    status: 'pending',
-    category: 'Temizlik',
-    location: 'Kuğulu Park',
-    createdAt: '2024-01-13T09:20:00Z',
-  },
-];
-
+// Mock announcements data
 const mockAnnouncements: Announcement[] = [
   {
     id: '1',
@@ -104,19 +48,14 @@ const mockAnnouncements: Announcement[] = [
 
 export const DashboardPage: React.FC = () => {
   const theme = useTheme();
-  const [loading, setLoading] = useState(true);
-  const [stats] = useState(mockStats);
-  const [activeReports] = useState(mockActiveReports);
+  const { stats, isLoading } = useDashboardStats();
   const [announcements] = useState(mockAnnouncements);
 
-  // Simulate loading
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1500);
+  // Loading state
+  const loading = isLoading;
 
-    return () => clearTimeout(timer);
-  }, []);
+  // Debug stats
+  console.log('🎯 DashboardPage stats:', stats, 'loading:', loading);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -172,6 +111,7 @@ export const DashboardPage: React.FC = () => {
                   WebkitTextFillColor: 'transparent',
                   mb: 1,
                   fontSize: { xs: '2rem', md: '3rem' },
+                  fontDisplay: 'swap',
                 }}
               >
                 Kent Nabız
@@ -190,7 +130,20 @@ export const DashboardPage: React.FC = () => {
           </motion.div>
           {/* Stats Grid */}
           <motion.div variants={itemVariants}>
-            <StatsGrid stats={stats} loading={loading} />
+            {stats ? (
+              <StatsGrid stats={stats} loading={loading} />
+            ) : (
+              <StatsGrid
+                stats={{
+                  totalReports: 0,
+                  pendingReports: 0,
+                  resolvedReports: 0,
+                  myReports: 0,
+                  averageResolutionTime: 0,
+                }}
+                loading={loading}
+              />
+            )}
           </motion.div>{' '}
           {/* Main Content Grid */}
           <Box
@@ -240,10 +193,7 @@ export const DashboardPage: React.FC = () => {
                         />
                       </Box>
                     ) : (
-                      <ActiveReports
-                        reports={activeReports}
-                        loading={loading}
-                      />
+                      <ActiveReports loading={loading} />
                     )}
                   </Paper>
                 </Fade>

@@ -123,7 +123,7 @@ export const LoginForm = () => {
       const payload = parseJwtPayload(accessToken);
 
       if (payload?.roles?.includes(UserRole.DEPARTMENT_SUPERVISOR)) {
-        navigate('/dashboard/supervisor', { replace: true });
+        navigate('/supervisor', { replace: true });
       } else {
         navigate('/dashboard', { replace: true });
       }

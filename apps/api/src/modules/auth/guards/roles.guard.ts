@@ -2,14 +2,14 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { UserRole } from '@kentnabiz/shared';
-// import { RequestWithUser } from '../interfaces/request-with-user.interface'; // Geçici olarak yorumlandı
+import { RequestWithUser } from '../interfaces/jwt-payload.interface';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest<any>(); // Tip geçici olarak any yapıldı
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
     const user = request.user;
     const handler = context.getHandler().name; // Metod adı
     const controller = context.getClass().name; // Controller adı

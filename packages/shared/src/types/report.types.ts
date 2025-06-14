@@ -1,6 +1,9 @@
 // packages/shared/src/types/report.types.ts
 import { Point } from 'geojson';
 
+// Report types'da SharedAssignment'ı import et
+import type { SharedAssignment } from './assignment.types';
+
 // UPDATED Report Statuses (in English)
 export enum ReportStatus {
   OPEN = 'OPEN',
@@ -10,6 +13,14 @@ export enum ReportStatus {
   REJECTED = 'REJECTED',
   CANCELLED = 'CANCELLED',
 }
+
+// Report Sub-Status (for more granular status tracking)
+export enum ReportSubStatus {
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  FORWARDED = 'FORWARDED',
+}
+
+export type SubStatus = ReportSubStatus | null;
 
 /**
  * Defines the possible types/categories of a report for Turkish municipalities.
@@ -240,6 +251,7 @@ export interface SharedReport {
   title: string;
   description: string;
   status: ReportStatus;
+  subStatus?: SubStatus;
   location: Point;
   address: string;
 
@@ -253,6 +265,9 @@ export interface SharedReport {
   reportMedias?: ReportMedia[];
   statusHistory?: ReportStatusHistory[];
   departmentHistory?: ReportDepartmentHistory[];
+
+  // Assignments
+  assignments?: SharedAssignment[];
 
   // Support and engagement metrics
   supportCount?: number;

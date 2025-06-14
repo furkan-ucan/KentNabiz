@@ -40,9 +40,9 @@ const Step2_Location: React.FC = () => {
     }
   };
 
-  // Default coordinates (Istanbul city center)
-  const defaultLat = latitude || 41.0082;
-  const defaultLng = longitude || 28.9784;
+  // Default coordinates (İslahiye/Gaziantep)
+  const defaultLat = latitude || 37.025638;
+  const defaultLng = longitude || 36.631124;
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto' }}>

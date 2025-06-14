@@ -183,6 +183,13 @@ export class ReportAnalyticsService {
       // Check for undefined explicitly if 0 is a valid ID
       whereClause.categoryId = filter.categoryId;
     }
+    // Add neighborhood filtering using address field
+    if (filter.neighborhoodName) {
+      // Use Raw to filter by neighborhood name in address field
+      whereClause.address = Raw(alias => `${alias} ILIKE :neighborhoodName`, {
+        neighborhoodName: `%${filter.neighborhoodName}%`,
+      });
+    }
     // Add other direct filters here...
 
     // NOTE: Region filter (if implemented) would need QueryBuilder and ST_DWithin,
@@ -510,6 +517,11 @@ export class ReportAnalyticsService {
           whereConditions.push('report.category_id = $' + (parameters.length + 1));
           parameters.push(filter.categoryId);
         }
+
+        if (filter.neighborhoodName) {
+          whereConditions.push('report.address ILIKE $' + (parameters.length + 1));
+          parameters.push(`%${filter.neighborhoodName}%`);
+        }
       }
 
       const whereClause = whereConditions.join(' AND ');
@@ -753,6 +765,12 @@ export class ReportAnalyticsService {
 
     if (filter.categoryId !== undefined) {
       qb.andWhere('report.categoryId = :categoryId', { categoryId: filter.categoryId });
+    }
+
+    if (filter.neighborhoodName) {
+      qb.andWhere('report.address ILIKE :neighborhoodName', {
+        neighborhoodName: `%${filter.neighborhoodName}%`,
+      });
     }
   }
 }

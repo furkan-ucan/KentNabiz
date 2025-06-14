@@ -6,8 +6,7 @@ import { DepartmentRepository } from '../repositories/department.repository';
 import { DepartmentDto } from '../dto/department.dto';
 import { Report } from '../entities/report.entity';
 import { DepartmentHistory } from '../entities/department-history.entity';
-import { ForwardReportDto } from '../dto/forward-report.dto';
-import { MunicipalityDepartment, ReportStatus, ReportType } from '@kentnabiz/shared';
+import { MunicipalityDepartment, ReportType } from '@kentnabiz/shared';
 
 @Injectable()
 export class DepartmentService {
@@ -117,91 +116,6 @@ export class DepartmentService {
   async delete(id: number): Promise<void> {
     await this.findById(id);
     await this.departmentRepository.delete(id);
-  }
-
-  async forwardReport(
-    reportId: number,
-    forwardDto: ForwardReportDto,
-    changedByUserId: number
-  ): Promise<Report> {
-    const queryRunner = this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const report = await queryRunner.manager.findOne(Report, {
-        where: { id: reportId },
-      });
-
-      if (!report) {
-        throw new NotFoundException(`Rapor ID ${reportId} bulunamadı`);
-      }
-
-      const newDepartmentEntity = await this.findByCode(forwardDto.newDepartment);
-
-      if (report.currentDepartmentId === newDepartmentEntity.id) {
-        throw new BadRequestException(`Rapor zaten ${newDepartmentEntity.name} biriminde`);
-      }
-
-      const oldDepartmentId = report.currentDepartmentId;
-
-      const departmentHistoryEntry = queryRunner.manager.create(DepartmentHistory, {
-        reportId: report.id,
-        previousDepartmentId: oldDepartmentId,
-        newDepartmentId: newDepartmentEntity.id,
-        reason: forwardDto.reason,
-        changedByUserId: changedByUserId,
-      });
-
-      report.currentDepartmentId = newDepartmentEntity.id;
-      report.currentDepartment = newDepartmentEntity;
-      report.status = ReportStatus.IN_REVIEW;
-
-      await queryRunner.manager.save(DepartmentHistory, departmentHistoryEntry);
-      await queryRunner.manager.save(Report, report);
-
-      await queryRunner.commitTransaction();
-
-      return this.reportRepository.findOneOrFail({
-        where: { id: reportId },
-        relations: [
-          'currentDepartment',
-          'user',
-          'reportMedias',
-          'assignedEmployee',
-          'category',
-          'departmentHistory',
-          'departmentHistory.previousDepartment',
-          'departmentHistory.newDepartment',
-          'departmentHistory.changedByUser',
-        ],
-      });
-    } catch (error: unknown) {
-      // Changed Error to unknown
-      await queryRunner.rollbackTransaction();
-      let errorMessage = `Error during forwardReport for reportId ${reportId}`;
-      let errorStack;
-
-      if (error instanceof Error) {
-        errorMessage += `: ${error.message}`;
-        errorStack = error.stack;
-      } else if (typeof error === 'string') {
-        errorMessage += `: ${error}`;
-      } else {
-        errorMessage += ': Unknown error occurred';
-      }
-
-      this.logger.error(errorMessage, errorStack);
-      // Re-throw the original error or a new custom error as appropriate
-      // If you re-throw 'error', its type is 'unknown'.
-      // If you want to throw an Error instance, you might need to wrap it.
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error(errorMessage); // Or a more specific error type
-    } finally {
-      await queryRunner.release();
-    }
   }
 
   async getReportDepartmentHistory(reportId: number): Promise<DepartmentHistory[]> {

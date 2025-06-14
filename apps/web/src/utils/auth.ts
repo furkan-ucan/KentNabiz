@@ -90,6 +90,10 @@ export const isSystemAdmin = (): boolean => {
 export const clearAuth = (): void => {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
+  localStorage.removeItem('rememberMe');
+
+  // Custom event dispatch et ki diğer componentler anlasın
+  window.dispatchEvent(new CustomEvent('authCleared'));
 };
 
 /**
@@ -103,4 +107,7 @@ export const setAuthTokens = (
   if (refreshToken) {
     localStorage.setItem('refreshToken', refreshToken);
   }
+
+  // Custom event dispatch et ki diğer componentler anlasın
+  window.dispatchEvent(new CustomEvent('authSet'));
 };

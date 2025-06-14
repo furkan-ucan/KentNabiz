@@ -1,6 +1,5 @@
 import { api } from '../lib/api';
-import type { SharedReport } from '@kentnabiz/shared';
-import { ReportStatus } from '@kentnabiz/shared';
+import type { SharedReport, ReportStatus } from '@kentnabiz/shared';
 
 export interface ReportFilters {
   status?: ReportStatus | ReportStatus[];
@@ -10,6 +9,11 @@ export interface ReportFilters {
   dateFrom?: string;
   dateTo?: string;
   search?: string;
+  supported?: boolean;
+  subStatus?: string;
+  assignment?: 'unassigned' | 'assigned';
+  overdue?: boolean;
+  reopened?: boolean;
 }
 
 export interface PaginationParams {
@@ -38,15 +42,20 @@ export interface ReportStats {
   statusDistribution: Array<{ status: string; count: number }>;
 }
 
-// Status sayıları için özel interface
 export interface StatusCounts {
-  [ReportStatus.OPEN]: number;
-  [ReportStatus.IN_REVIEW]: number;
-  [ReportStatus.IN_PROGRESS]: number;
-  [ReportStatus.DONE]: number;
-  [ReportStatus.REJECTED]: number;
-  [ReportStatus.CANCELLED]: number;
-  total: number;
+  [key: string]: number | undefined;
+  OPEN?: number;
+  IN_REVIEW?: number;
+  IN_PROGRESS?: number;
+  DONE?: number;
+  REJECTED?: number;
+  CANCELLED?: number;
+  total?: number;
+  // Yeni enhanced filtreler için
+  unassigned?: number;
+  pendingApproval?: number;
+  overdue?: number;
+  reopened?: number;
 }
 
 export const reportService = {
@@ -73,6 +82,18 @@ export const reportService = {
     if (queryParams.dateFrom) params.append('dateFrom', queryParams.dateFrom);
     if (queryParams.dateTo) params.append('dateTo', queryParams.dateTo);
     if (queryParams.search) params.append('search', queryParams.search);
+    if (queryParams.supported !== undefined)
+      params.append('supported', queryParams.supported.toString());
+
+    // Yeni filtreler
+    if (queryParams.subStatus)
+      params.append('subStatus', queryParams.subStatus);
+    if (queryParams.assignment)
+      params.append('assignment', queryParams.assignment);
+    if (queryParams.overdue !== undefined)
+      params.append('overdue', queryParams.overdue.toString());
+    if (queryParams.reopened !== undefined)
+      params.append('reopened', queryParams.reopened.toString());
 
     // Sayfalama
     if (queryParams.page) params.append('page', queryParams.page.toString());
@@ -124,54 +145,6 @@ export const reportService = {
       statusDistribution: backendData.statusDistribution || [],
     };
   },
-
-  // Status sayıları için özel API çağrısı (filtresiz)
-  async getStatusCounts(): Promise<StatusCounts> {
-    try {
-      // Önce yeni endpoint'i dene
-      const response = await api.get('/reports/status-counts');
-      const data = response.data.data || response.data;
-
-      return {
-        [ReportStatus.OPEN]: data[ReportStatus.OPEN] || 0,
-        [ReportStatus.IN_REVIEW]: data[ReportStatus.IN_REVIEW] || 0,
-        [ReportStatus.IN_PROGRESS]: data[ReportStatus.IN_PROGRESS] || 0,
-        [ReportStatus.DONE]: data[ReportStatus.DONE] || 0,
-        [ReportStatus.REJECTED]: data[ReportStatus.REJECTED] || 0,
-        [ReportStatus.CANCELLED]: data[ReportStatus.CANCELLED] || 0,
-        total: data.total || 0,
-      };
-    } catch {
-      // Eğer endpoint yoksa, fallback to existing method
-      console.warn(
-        'Status counts endpoint not available, falling back to full data fetch'
-      );
-
-      // Mevcut API endpoint'lerini kullanarak status sayılarını hesapla
-      // Büyük limit ile tüm departman raporlarını çek (filtresiz)
-      const allReports = await this.getSupervisorReports({ limit: 1000 });
-
-      const counts: StatusCounts = {
-        [ReportStatus.OPEN]: 0,
-        [ReportStatus.IN_REVIEW]: 0,
-        [ReportStatus.IN_PROGRESS]: 0,
-        [ReportStatus.DONE]: 0,
-        [ReportStatus.REJECTED]: 0,
-        [ReportStatus.CANCELLED]: 0,
-        total: allReports.meta.total,
-      };
-
-      // Her raporu kontrol et ve ilgili status sayısını artır
-      allReports.data.forEach(report => {
-        if (report.status in counts) {
-          counts[report.status]++;
-        }
-      });
-
-      return counts;
-    }
-  },
-
   // Rapor detayını getir
   async getReport(id: number): Promise<SharedReport> {
     const response = await api.get(`/reports/${id}`);
@@ -191,6 +164,44 @@ export const reportService = {
   // Raporu departman ekibine ata
   async assignReport(id: number, assigneeId: number): Promise<SharedReport> {
     const response = await api.patch(`/reports/${id}/assign`, { assigneeId });
+    return response.data;
+  },
+
+  // Durum sayılarını getir
+  async getStatusCounts(): Promise<StatusCounts> {
+    const response = await api.get('/reports/status-counts');
+    // API'den gelen veri {data: {OPEN: 0, ...}} formatında olduğu için data.data'ya erişiyoruz
+    return response.data.data || response.data;
+  },
+
+  // Raporu onayla (sadece departman sorumlusu)
+  async approveReport(id: number, notes?: string): Promise<SharedReport> {
+    const response = await api.patch(`/reports/${id}/approve`, { notes });
+    return response.data;
+  },
+
+  // Raporu reddet (sadece departman sorumlusu)
+  async rejectReport(id: number, reason: string): Promise<SharedReport> {
+    const response = await api.patch(`/reports/${id}/reject`, { reason });
+    return response.data;
+  },
+
+  // Raporu başka departmana yönlendir
+  async forwardReport(
+    id: number,
+    departmentId: number,
+    reason: string
+  ): Promise<{ success: boolean; message: string; reportId: number }> {
+    const response = await api.patch(`/reports/${id}/forward`, {
+      departmentId,
+      reason,
+    });
+    return response.data;
+  },
+
+  // Desteklenen rapor sayısını getir
+  async getSupportedReportsCount(): Promise<{ count: number }> {
+    const response = await api.get('/reports/supported-count');
     return response.data;
   },
 };

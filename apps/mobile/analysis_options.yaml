@@ -1,0 +1,12 @@
+# apps/mobile/analysis_options.yaml
+
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    # build_runner çalışana kadar bu hatayı görmezden gelmesini söylüyoruz.
+    invalid_annotation_target: ignore
+
+linter:
+  rules:
+    # Proje ilerledikçe buraya ek kurallar koyabiliriz.

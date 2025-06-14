@@ -56,4 +56,12 @@ export class QueryReportsDto {
   @IsOptional()
   @IsEnum(MunicipalityDepartment)
   departmentCode?: MunicipalityDepartment;
+
+  @ApiPropertyOptional({
+    description: 'Spatial bounding box filter in format: minLng,minLat,maxLng,maxLat',
+    example: '28.9,41.0,29.1,41.1',
+    type: String,
+  })
+  @IsOptional()
+  bbox?: string;
 }

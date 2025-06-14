@@ -136,7 +136,7 @@ export class AbilityFactory {
       });
       can(Action.Reject, Report, {
         currentDepartmentId: user.departmentId,
-        status: { $in: [ReportStatus.IN_REVIEW, ReportStatus.IN_PROGRESS] },
+        status: { $in: [ReportStatus.OPEN, ReportStatus.IN_REVIEW, ReportStatus.IN_PROGRESS] },
       });
       can(Action.Forward, Report, { currentDepartmentId: user.departmentId });
       can(Action.Reopen, Report, {

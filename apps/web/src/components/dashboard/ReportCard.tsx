@@ -1,5 +1,6 @@
 // apps/web/src/components/dashboard/ReportCard.tsx
 
+import React from 'react';
 import {
   Box,
   Card,
@@ -15,58 +16,60 @@ import {
   MoreVert as MoreIcon,
   Schedule as ScheduleIcon,
 } from '@mui/icons-material';
+import { SharedReport, ReportStatus } from '@kentnabiz/shared';
 
-interface Report {
+export interface Report {
   id: string;
   title: string;
   description: string;
-  status: 'pending' | 'in-progress' | 'resolved' | 'rejected';
+  status: 'pending' | 'in-progress' | 'done' | 'rejected';
   category: string;
   location: string;
   createdAt: string;
+  isSupportedByCurrentUser?: boolean;
 }
 
 interface ReportCardProps {
-  report: Report;
-  onClick?: (report: Report) => void;
+  report: SharedReport;
+  onClick?: (report: SharedReport) => void;
 }
 
 export const ReportCard: React.FC<ReportCardProps> = ({ report, onClick }) => {
   const theme = useTheme();
 
-  const getStatusColor = (status: Report['status']) => {
+  const getStatusColor = (status: ReportStatus) => {
     switch (status) {
-      case 'pending':
+      case ReportStatus.OPEN:
         return theme.palette.warning.main;
-      case 'in-progress':
+      case ReportStatus.IN_PROGRESS:
         return theme.palette.primary.main;
-      case 'resolved':
+      case ReportStatus.DONE:
         return theme.palette.success.main;
-      case 'rejected':
+      case ReportStatus.REJECTED:
         return theme.palette.error.main;
       default:
         return theme.palette.grey[500];
     }
   };
 
-  const getStatusLabel = (status: Report['status']) => {
+  const getStatusLabel = (status: ReportStatus) => {
     switch (status) {
-      case 'pending':
+      case ReportStatus.OPEN:
         return 'Bekliyor';
-      case 'in-progress':
+      case ReportStatus.IN_PROGRESS:
         return 'İşlemde';
-      case 'resolved':
-        return 'Çözüldü';
-      case 'rejected':
+      case ReportStatus.DONE:
+        return 'Tamamlandı';
+      case ReportStatus.REJECTED:
         return 'Reddedildi';
       default:
         return status;
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('tr-TR', {
+  const formatDate = (date: Date | string) => {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    return dateObj.toLocaleDateString('tr-TR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -147,7 +150,7 @@ export const ReportCard: React.FC<ReportCardProps> = ({ report, onClick }) => {
                 fontSize: '0.75rem',
               }}
             >
-              {report.category}
+              {report.category?.name || 'Kategori belirtilmemiş'}
             </Typography>
           </Box>
 
@@ -184,7 +187,7 @@ export const ReportCard: React.FC<ReportCardProps> = ({ report, onClick }) => {
                 fontWeight: 500,
               }}
             >
-              {report.location}
+              {report.address || 'Konum belirtilmemiş'}
             </Typography>
           </Box>
 

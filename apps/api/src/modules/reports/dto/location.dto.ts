@@ -62,4 +62,30 @@ export class RadiusSearchDto extends LocationDto {
     return undefined;
   })
   status?: ReportStatus[];
+
+  @ApiProperty({
+    description: 'Page number for pagination',
+    example: 1,
+    minimum: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Type(() => Number)
+  page?: number;
+
+  @ApiProperty({
+    description: 'Number of items per page',
+    example: 10,
+    minimum: 1,
+    maximum: 100,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  @Type(() => Number)
+  limit?: number;
 }

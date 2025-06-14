@@ -104,7 +104,15 @@ export class MinioService implements OnModuleInit {
     expiresIn: number = 3600
   ): Promise<string> {
     try {
-      return await this.client.presignedGetObject(bucketName, objectName, expiresIn);
+      let presignedUrl = await this.client.presignedGetObject(bucketName, objectName, expiresIn);
+
+      // Replace localhost with external IP for mobile access
+      const externalIp = this.configService.get<string>('EXTERNAL_IP', '192.168.56.89');
+      if (presignedUrl.includes('localhost')) {
+        presignedUrl = presignedUrl.replace('localhost', externalIp);
+      }
+
+      return presignedUrl;
     } catch (error) {
       this.logger.error(`Error generating presigned URL:`, error);
       throw error;
@@ -131,6 +139,15 @@ export class MinioService implements OnModuleInit {
       });
     } catch (error) {
       this.logger.error(`Error getting object from MinIO:`, error);
+      throw error;
+    }
+  }
+
+  async getFileBuffer(bucketName: string, filename: string): Promise<Buffer> {
+    try {
+      return await this.getObject(bucketName, filename);
+    } catch (error) {
+      this.logger.error(`Error getting file buffer:`, error);
       throw error;
     }
   }

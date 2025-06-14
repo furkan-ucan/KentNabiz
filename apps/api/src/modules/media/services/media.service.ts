@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Media, MediaType } from '../entities/media.entity';
@@ -170,6 +170,24 @@ export class MediaService {
     }
   }
 
+  async getPresignedUrlByBucketKey(bucket: string, key: string, expiresIn = 3600): Promise<string> {
+    try {
+      return await this.minioService.getPresignedUrl(bucket, key, expiresIn);
+    } catch (error) {
+      this.logger.error(
+        `Error generating presigned URL for bucket: ${bucket}, key: ${key}: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw new BadRequestException(
+        `Could not generate download URL: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  }
+
   async remove(id: number): Promise<void> {
     const media = await this.findOne(id); // findOne already throws if not found
 
@@ -218,6 +236,39 @@ export class MediaService {
       throw new BadRequestException(
         `Failed to remove media: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
+    }
+  }
+
+  async getPrivateFileBuffer(filename: string): Promise<Buffer> {
+    try {
+      const bucketName = this.minioService.getBucketName(false); // private bucket
+      return await this.minioService.getFileBuffer(bucketName, filename);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      this.logger.error(
+        `Error getting private file buffer for ${filename}: ${errorMessage}`,
+        errorStack
+      );
+      // Change to NotFoundException for better semantics
+      throw new NotFoundException(
+        `File not found or error retrieving file: ${filename}. Detail: ${errorMessage}`
+      );
+    }
+  }
+
+  async findByFilename(filename: string): Promise<Media | null> {
+    try {
+      return await this.mediaRepository.findOne({
+        where: { filename },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Error finding media by filename ${filename}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      return null;
     }
   }
 

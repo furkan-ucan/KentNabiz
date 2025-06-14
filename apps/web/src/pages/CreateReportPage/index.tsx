@@ -4,6 +4,7 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Stepper,
@@ -89,6 +90,7 @@ const steps = [
 export function CreateReportPage() {
   const theme = useTheme();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [activeStep, setActiveStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -104,8 +106,8 @@ export function CreateReportPage() {
       title: '',
       description: '',
       location: {
-        latitude: 41.0082, // İstanbul merkez
-        longitude: 28.9784,
+        latitude: 37.025638, // İslahiye/Gaziantep merkez
+        longitude: 36.631124,
         address: '',
       },
       departmentCode: '',
@@ -170,6 +172,10 @@ export function CreateReportPage() {
       };
 
       await reportService.createReport(requestData);
+
+      // Cache'i invalidate et ki dashboard güncellensin
+      queryClient.invalidateQueries({ queryKey: ['myReports'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
 
       setSnackbarSeverity('success');
       setSnackbarMessage(

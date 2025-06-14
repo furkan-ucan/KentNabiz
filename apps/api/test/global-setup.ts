@@ -1,7 +1,6 @@
 import { DataSource } from 'typeorm';
 import TestMigrationDataSource from '../src/config/test-migration-data-source';
 import TestDataSource from '../src/config/test-data-source';
-import { seedTestData } from './seed-test-data';
 
 export default async (): Promise<void> => {
   console.log('🌍 Global E2E Setup - Running migrations and seeding data...');
@@ -43,16 +42,13 @@ export default async (): Promise<void> => {
       await migrationRunnerSource.destroy();
     }
 
-    // Initialize test data source for seeding
+    // Initialize test data source
     testDataSource = TestDataSource;
     if (!testDataSource.isInitialized) {
       await testDataSource.initialize();
     }
 
-    // Seed test data once
-    console.log('🌱 Seeding test data globally...');
-    await seedTestData(testDataSource);
-    console.log('✅ Global test data seeded successfully.');
+    console.log('✅ Test data source initialized.');
 
     // Close test data source
     if (testDataSource && testDataSource.isInitialized) {
@@ -71,6 +67,6 @@ export default async (): Promise<void> => {
       await testDataSource.destroy();
     }
 
-    throw error;
+    throw new Error(error instanceof Error ? error.message : 'Unknown error during global setup');
   }
 };

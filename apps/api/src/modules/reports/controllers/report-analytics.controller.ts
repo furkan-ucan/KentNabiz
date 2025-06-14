@@ -37,6 +37,12 @@ export class ReportAnalyticsController {
   @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
   @ApiQuery({ name: 'type', required: false, enum: ReportType })
   @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({
+    name: 'neighborhoodName',
+    required: false,
+    type: String,
+    description: 'Mahalle adı ile filtreleme',
+  })
   @ApiQuery({ name: 'last7Days', required: false, type: Boolean })
   @ApiQuery({ name: 'last30Days', required: false, type: Boolean })
   @ApiQuery({ name: 'lastQuarter', required: false, type: Boolean })
@@ -54,6 +60,18 @@ export class ReportAnalyticsController {
     summary: 'Toplam rapor sayısını getir',
     description: 'Belirtilen filtrelere göre toplam rapor sayısını getirir',
   })
+  @ApiQuery({ name: 'startDate', required: false, type: Date })
+  @ApiQuery({ name: 'endDate', required: false, type: Date })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({
+    name: 'neighborhoodName',
+    required: false,
+    type: String,
+    description: 'Mahalle adı ile filtreleme',
+  })
   @ApiResponse({ status: 200, description: 'Toplam rapor sayısı başarıyla getirildi' })
   async getTotalReports(@Query() filter?: IAnalyticsFilter): Promise<{ total: number }> {
     const total = await this.reportAnalyticsService.getTotalReports(filter);
@@ -65,6 +83,18 @@ export class ReportAnalyticsController {
     summary: 'Duruma göre rapor dağılımını getir',
     description: 'Rapor durumlarına göre dağılım istatistiklerini getirir',
   })
+  @ApiQuery({ name: 'startDate', required: false, type: Date })
+  @ApiQuery({ name: 'endDate', required: false, type: Date })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({
+    name: 'neighborhoodName',
+    required: false,
+    type: String,
+    description: 'Mahalle adı ile filtreleme',
+  })
   @ApiResponse({ status: 200, description: 'Durum dağılımı başarıyla getirildi' })
   async getStatusDistribution(@Query() filter?: IAnalyticsFilter): Promise<IStatusCount[]> {
     return this.reportAnalyticsService.getStatusDistribution(filter);
@@ -74,6 +104,18 @@ export class ReportAnalyticsController {
   @ApiOperation({
     summary: 'Departmana göre rapor dağılımını getir',
     description: 'Departmanlara göre rapor dağılım istatistiklerini getirir',
+  })
+  @ApiQuery({ name: 'startDate', required: false, type: Date })
+  @ApiQuery({ name: 'endDate', required: false, type: Date })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({
+    name: 'neighborhoodName',
+    required: false,
+    type: String,
+    description: 'Mahalle adı ile filtreleme',
   })
   @ApiResponse({ status: 200, description: 'Departman dağılımı başarıyla getirildi' })
   async getDepartmentDistribution(@Query() filter?: IAnalyticsFilter): Promise<IDepartmentCount[]> {
@@ -85,6 +127,18 @@ export class ReportAnalyticsController {
     summary: 'Türe göre rapor dağılımını getir',
     description: 'Rapor türlerine göre dağılım istatistiklerini getirir',
   })
+  @ApiQuery({ name: 'startDate', required: false, type: Date })
+  @ApiQuery({ name: 'endDate', required: false, type: Date })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({
+    name: 'neighborhoodName',
+    required: false,
+    type: String,
+    description: 'Mahalle adı ile filtreleme',
+  })
   @ApiResponse({ status: 200, description: 'Tür dağılımı başarıyla getirildi' })
   async getTypeDistribution(@Query() filter?: IAnalyticsFilter): Promise<ITypeCount[]> {
     return this.reportAnalyticsService.getTypeDistribution(filter);
@@ -94,6 +148,18 @@ export class ReportAnalyticsController {
   @ApiOperation({
     summary: 'Günlük rapor sayılarını getir',
     description: 'Günlere göre rapor sayılarını getirir',
+  })
+  @ApiQuery({ name: 'startDate', required: false, type: Date })
+  @ApiQuery({ name: 'endDate', required: false, type: Date })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({
+    name: 'neighborhoodName',
+    required: false,
+    type: String,
+    description: 'Mahalle adı ile filtreleme',
   })
   @ApiResponse({ status: 200, description: 'Günlük rapor sayıları başarıyla getirildi' })
   async getDailyReportCounts(@Query() filter?: IAnalyticsFilter): Promise<IDailyCount[]> {
@@ -105,6 +171,18 @@ export class ReportAnalyticsController {
     summary: 'Haftalık rapor sayılarını getir',
     description: 'Haftalara göre rapor sayılarını getirir',
   })
+  @ApiQuery({ name: 'startDate', required: false, type: Date })
+  @ApiQuery({ name: 'endDate', required: false, type: Date })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({
+    name: 'neighborhoodName',
+    required: false,
+    type: String,
+    description: 'Mahalle adı ile filtreleme',
+  })
   @ApiResponse({ status: 200, description: 'Haftalık rapor sayıları başarıyla getirildi' })
   async getWeeklyReportCounts(@Query() filter?: IAnalyticsFilter): Promise<IWeeklyCount[]> {
     return this.reportAnalyticsService.getWeeklyReportCounts(filter);
@@ -115,6 +193,18 @@ export class ReportAnalyticsController {
     summary: 'Aylık rapor sayılarını getir',
     description: 'Aylara göre rapor sayılarını getirir',
   })
+  @ApiQuery({ name: 'startDate', required: false, type: Date })
+  @ApiQuery({ name: 'endDate', required: false, type: Date })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({
+    name: 'neighborhoodName',
+    required: false,
+    type: String,
+    description: 'Mahalle adı ile filtreleme',
+  })
   @ApiResponse({ status: 200, description: 'Aylık rapor sayıları başarıyla getirildi' })
   async getMonthlyReportCounts(@Query() filter?: IAnalyticsFilter): Promise<IMonthlyCount[]> {
     return this.reportAnalyticsService.getMonthlyReportCounts(filter);
@@ -124,6 +214,18 @@ export class ReportAnalyticsController {
   @ApiOperation({
     summary: 'Departmana göre çözülme sürelerini getir',
     description: 'Departmanlara göre ortalama, minimum ve maksimum çözülme sürelerini getirir',
+  })
+  @ApiQuery({ name: 'startDate', required: false, type: Date })
+  @ApiQuery({ name: 'endDate', required: false, type: Date })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({
+    name: 'neighborhoodName',
+    required: false,
+    type: String,
+    description: 'Mahalle adı ile filtreleme',
   })
   @ApiResponse({ status: 200, description: 'Çözülme süreleri başarıyla getirildi' })
   async getResolutionTimeByDepartment(
@@ -137,6 +239,18 @@ export class ReportAnalyticsController {
     summary: 'Bölgesel rapor yoğunluğunu getir',
     description: 'Coğrafi konumlara göre rapor yoğunluğunu kümelenmiş şekilde getirir',
   })
+  @ApiQuery({ name: 'startDate', required: false, type: Date })
+  @ApiQuery({ name: 'endDate', required: false, type: Date })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({
+    name: 'neighborhoodName',
+    required: false,
+    type: String,
+    description: 'Mahalle adı ile filtreleme',
+  })
   @ApiResponse({ status: 200, description: 'Bölgesel yoğunluk başarıyla getirildi' })
   async getRegionalDensity(@Query() filter?: IAnalyticsFilter): Promise<IRegionalDensity[]> {
     return this.reportAnalyticsService.getRegionalDensity(filter);
@@ -146,6 +260,18 @@ export class ReportAnalyticsController {
   @ApiOperation({
     summary: 'En çok rapor edilen bölgeleri getir',
     description: 'Semtlere/mahallelere göre en çok rapor edilen bölgeleri getirir',
+  })
+  @ApiQuery({ name: 'startDate', required: false, type: Date })
+  @ApiQuery({ name: 'endDate', required: false, type: Date })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({
+    name: 'neighborhoodName',
+    required: false,
+    type: String,
+    description: 'Mahalle adı ile filtreleme',
   })
   @ApiQuery({
     name: 'limit',
@@ -167,6 +293,18 @@ export class ReportAnalyticsController {
     summary: '30 günden fazla çözülmemiş raporları getir',
     description: '30 günden uzun süredir çözülmemiş açık raporları getirir',
   })
+  @ApiQuery({ name: 'startDate', required: false, type: Date })
+  @ApiQuery({ name: 'endDate', required: false, type: Date })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({
+    name: 'neighborhoodName',
+    required: false,
+    type: String,
+    description: 'Mahalle adı ile filtreleme',
+  })
   @ApiResponse({ status: 200, description: 'Uzun süredir bekleyen raporlar başarıyla getirildi' })
   async getLongPendingReports(@Query() filter?: IAnalyticsFilter) {
     return this.reportAnalyticsService.getLongPendingReports(filter);
@@ -177,6 +315,18 @@ export class ReportAnalyticsController {
     summary: 'Departman değişim analizlerini getir',
     description: 'Raporların departmanlar arası transfer istatistiklerini ve detaylarını getirir',
   })
+  @ApiQuery({ name: 'startDate', required: false, type: Date })
+  @ApiQuery({ name: 'endDate', required: false, type: Date })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({
+    name: 'neighborhoodName',
+    required: false,
+    type: String,
+    description: 'Mahalle adı ile filtreleme',
+  })
   @ApiResponse({ status: 200, description: 'Departman değişim analizi başarıyla getirildi' })
   async getDepartmentChangeAnalytics(@Query() filter?: IAnalyticsFilter) {
     return this.reportAnalyticsService.getDepartmentChangeAnalytics(filter);
@@ -186,6 +336,18 @@ export class ReportAnalyticsController {
   @ApiOperation({
     summary: 'Departman performans analizini getir',
     description: 'Departmanların çözüm hızı, performans skoru ve iş yükü dağılımını analiz eder',
+  })
+  @ApiQuery({ name: 'startDate', required: false, type: Date })
+  @ApiQuery({ name: 'endDate', required: false, type: Date })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({
+    name: 'neighborhoodName',
+    required: false,
+    type: String,
+    description: 'Mahalle adı ile filtreleme',
   })
   @ApiResponse({ status: 200, description: 'Departman performans analizi başarıyla getirildi' })
   async getDepartmentPerformance(@Query() filter?: IAnalyticsFilter) {
@@ -246,6 +408,18 @@ export class ReportAnalyticsController {
     summary: 'Ortalama çözüm süresini analiz et',
     description: 'Kategori, departman ve zaman bazlı ortalama çözüm süresi analizi sağlar',
   })
+  @ApiQuery({ name: 'startDate', required: false, type: Date })
+  @ApiQuery({ name: 'endDate', required: false, type: Date })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({
+    name: 'neighborhoodName',
+    required: false,
+    type: String,
+    description: 'Mahalle adı ile filtreleme',
+  })
   @ApiResponse({ status: 200, description: 'Çözüm süresi analizi başarıyla getirildi' })
   async getTimeToResolutionAnalysis(@Query() filter?: IAnalyticsFilter) {
     // Departman bazlı çözüm sürelerini analiz edelim
@@ -297,6 +471,18 @@ export class ReportAnalyticsController {
   @ApiOperation({
     summary: 'Bölgesel analiz verilerini getir',
     description: 'Bölge bazlı rapor yoğunluğu ve dağılım analizini sağlar',
+  })
+  @ApiQuery({ name: 'startDate', required: false, type: Date })
+  @ApiQuery({ name: 'endDate', required: false, type: Date })
+  @ApiQuery({ name: 'department', required: false, enum: MunicipalityDepartment })
+  @ApiQuery({ name: 'status', required: false, enum: ReportStatus })
+  @ApiQuery({ name: 'type', required: false, enum: ReportType })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({
+    name: 'neighborhoodName',
+    required: false,
+    type: String,
+    description: 'Mahalle adı ile filtreleme',
   })
   @ApiResponse({ status: 200, description: 'Bölgesel analiz başarıyla getirildi' })
   async getRegionalAnalysis(@Query() filter?: IAnalyticsFilter) {

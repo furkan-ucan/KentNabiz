@@ -1,0 +1,77 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Merkez Mahallesi",
+        "population": 5420,
+        "area": 2.3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [36.620, 36.615],
+          [36.625, 36.615],
+          [36.625, 36.620],
+          [36.620, 36.620],
+          [36.620, 36.615]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Atatürk Mahallesi",
+        "population": 3850,
+        "area": 1.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [36.625, 36.615],
+          [36.630, 36.615],
+          [36.630, 36.620],
+          [36.625, 36.620],
+          [36.625, 36.615]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cumhuriyet Mahallesi",
+        "population": 4200,
+        "area": 2.1
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [36.620, 36.620],
+          [36.625, 36.620],
+          [36.625, 36.625],
+          [36.620, 36.625],
+          [36.620, 36.620]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Yeni Mahalle",
+        "population": 2950,
+        "area": 1.5
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [36.625, 36.620],
+          [36.630, 36.620],
+          [36.630, 36.625],
+          [36.625, 36.625],
+          [36.625, 36.620]
+        ]]
+      }
+    }
+  ]
+}
