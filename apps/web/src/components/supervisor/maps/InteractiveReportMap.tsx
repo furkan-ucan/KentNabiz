@@ -26,6 +26,8 @@ import {
 } from '@mui/icons-material';
 import { SharedReport, ReportStatus } from '@kentnabiz/shared';
 import type { FeatureCollection } from 'geojson';
+import DrawControlWrapper from '../../maps/DrawControlWrapper';
+import MapStateSync from '../../maps/MapStateSync';
 import 'leaflet/dist/leaflet.css';
 
 // Leaflet default icon fix
@@ -49,6 +51,8 @@ interface InteractiveReportMapProps {
   onNeighborhoodSelect?: (neighborhoodName: string | null) => void;
   onReportView?: (reportId: number) => void;
   onReportShare?: (reportId: number) => void;
+  onBboxCreate?: (bbox: string) => void;
+  onBboxClear?: () => void;
 }
 
 // Status based color and icon configuration
@@ -207,6 +211,8 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
   onNeighborhoodSelect,
   onReportView,
   onReportShare,
+  onBboxCreate,
+  onBboxClear,
 }) => {
   const [isMapReady, setIsMapReady] = useState(false);
   const [islahiyeData, setIslahiyeData] = useState<FeatureCollection | null>(
@@ -355,6 +361,17 @@ export const InteractiveReportMap: React.FC<InteractiveReportMapProps> = ({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             errorTileUrl="https://via.placeholder.com/256x256/ff0000/ffffff?text=Tile+Error"
           />
+
+          {/* URL State Synchronization */}
+          <MapStateSync defaultCenter={ISLAHIYE_CENTER} defaultZoom={9} />
+
+          {/* Area Selection Tool */}
+          {onBboxCreate && onBboxClear && (
+            <DrawControlWrapper
+              onBboxCreate={onBboxCreate}
+              onBboxClear={onBboxClear}
+            />
+          )}
 
           {/* İslahiye Sınırları */}
           {islahiyeData && (

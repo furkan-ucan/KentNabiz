@@ -121,8 +121,11 @@ class PointToLocationConverter
     if (json == null) return null;
     final coords = json['coordinates'] as List?;
     if (coords != null && coords.length >= 2) {
-      return Location(
-          latitude: coords[1] as double, longitude: coords[0] as double);
+      // Koordinatları güvenli bir şekilde double'a dönüştür
+      final longitude = (coords[0] as num?)?.toDouble() ?? 0.0;
+      final latitude = (coords[1] as num?)?.toDouble() ?? 0.0;
+
+      return Location(latitude: latitude, longitude: longitude);
     }
     return null;
   }

@@ -5,6 +5,7 @@ import {
   analyticsService,
   SummaryStatsResponse,
   StrategicKpisResponse,
+  CountsResponse,
 } from '@/services/analyticsService';
 import { AnalyticsFilters } from './useAnalyticsFilters';
 
@@ -76,6 +77,9 @@ export const useKpiData = (filters: AnalyticsFilters) => {
         queryFn: () => analyticsService.fetchSummaryStats(performanceFilters),
         staleTime: 1000 * 60 * 5, // 5 minutes
         gcTime: 1000 * 60 * 10, // 10 minutes
+        refetchOnWindowFocus: false,
+        placeholderData: (previousData: SummaryStatsResponse | undefined) =>
+          previousData,
       },
       {
         queryKey: ['analytics', 'counts', statusCountFilters],
@@ -90,12 +94,18 @@ export const useKpiData = (filters: AnalyticsFilters) => {
           ]),
         staleTime: 1000 * 60 * 5, // 5 minutes
         gcTime: 1000 * 60 * 10, // 10 minutes
+        refetchOnWindowFocus: false,
+        placeholderData: (previousData: CountsResponse | undefined) =>
+          previousData,
       },
       {
         queryKey: ['analytics', 'strategic-kpis', strategicFilters],
         queryFn: () => analyticsService.fetchStrategicKpis(strategicFilters),
         staleTime: 1000 * 60 * 5, // 5 minutes
         gcTime: 1000 * 60 * 10, // 10 minutes
+        refetchOnWindowFocus: false,
+        placeholderData: (previousData: StrategicKpisResponse | undefined) =>
+          previousData,
       },
     ],
   });

@@ -11,6 +11,10 @@ export const useSpatialDistribution = (filters: AnalyticsFilters) => {
     queryFn: () => analyticsService.getSpatialDistribution(filters),
     staleTime: 5 * 60 * 1000, // 5 dakika
     gcTime: 10 * 60 * 1000, // 10 dakika
+    refetchOnWindowFocus: false, // Pencere odaklandığında yeniden fetch yapma
+    placeholderData: (previousData: SpatialDistributionResponse | undefined) =>
+      previousData, // Önceki veriyi placeholder olarak kullan
+    // Bu sayede yeni veri gelene kadar eski veri ekranda kalır, loading göstermez
   });
 };
 

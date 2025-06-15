@@ -40,6 +40,10 @@ export const useCategoryDistribution = (
     enabled: true,
     staleTime: 5 * 60 * 1000, // 5 dakika
     gcTime: 10 * 60 * 1000, // 10 dakika
+    refetchOnWindowFocus: false,
+    placeholderData: (
+      previousData: CategoryDistributionResponse[] | undefined
+    ) => previousData,
   }); // Chart formatına dönüştürme
   const chartData = useMemo((): CategoryChartData[] => {
     if (!rawData || !Array.isArray(rawData)) {

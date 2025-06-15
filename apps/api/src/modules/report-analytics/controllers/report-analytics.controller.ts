@@ -125,6 +125,12 @@ export class ReportAnalyticsController {
     type: String,
     required: false,
   })
+  @ApiQuery({
+    name: 'bbox',
+    description: 'Bounding box filter in format: west,south,east,north',
+    type: String,
+    required: false,
+  })
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved dashboard counts',
@@ -144,22 +150,30 @@ export class ReportAnalyticsController {
     @Query('departmentId') departmentId?: string,
     @Query('categoryId') categoryId?: string,
     @Query('status') status?: string,
+    @Query('bbox') bbox?: string,
     @Req() req?: RequestWithUser
   ): Promise<CountsResponse> {
     if (!types || !startDate || !endDate) {
       throw new BadRequestException('types, startDate, and endDate are required');
     }
 
+    // Parse and validate type array
     const typeArray = types.split(',').map(t => t.trim());
+    if (typeArray.length === 0) {
+      throw new BadRequestException('At least one type must be specified');
+    }
+
     const filters = {
+      types,
       startDate,
       endDate,
       departmentId: departmentId ? parseInt(departmentId, 10) : undefined,
-      categoryId,
+      categoryId: categoryId ? parseInt(categoryId, 10) : undefined,
       status,
+      bbox,
     };
 
-    return this.reportAnalyticsService.getDashboardCounts(filters, typeArray, req!.user);
+    return this.reportAnalyticsService.getDashboardCounts(filters, req!.user);
   }
 
   @Get('summary-stats')
@@ -228,7 +242,7 @@ export class ReportAnalyticsController {
       startDate,
       endDate,
       departmentId: departmentId ? parseInt(departmentId, 10) : undefined,
-      categoryId,
+      categoryId: categoryId ? parseInt(categoryId, 10) : undefined,
       status,
     };
 
@@ -308,7 +322,22 @@ export class ReportAnalyticsController {
       startDate,
       endDate,
       departmentId: departmentId ? parseInt(departmentId, 10) : undefined,
-      categoryId,
+      categoryId: categoryId ? parseInt(categoryId, 10) : undefined,
+    };
+
+    // Calculate previous period for trending analysis
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+    const periodLength = endDateObj.getTime() - startDateObj.getTime();
+    const previousPeriodEnd = new Date(startDateObj.getTime() - 1); // 1ms before current period
+    const previousPeriodStart = new Date(previousPeriodEnd.getTime() - periodLength);
+
+    const trendingFilters = {
+      currentPeriodStart: startDate,
+      currentPeriodEnd: endDate,
+      previousPeriodStart: previousPeriodStart.toISOString().split('T')[0],
+      previousPeriodEnd: previousPeriodEnd.toISOString().split('T')[0],
+      departmentId: departmentId ? parseInt(departmentId, 10) : undefined,
     };
 
     const authUser = req?.user;
@@ -320,7 +349,7 @@ export class ReportAnalyticsController {
     // Üç ayrı servis metodunu paralel olarak çağır
     const [reopened, trending, interaction] = await Promise.all([
       this.reportAnalyticsService.getReopenedReportsCount(filters, authUser),
-      this.reportAnalyticsService.getTrendingIssue(filters, authUser),
+      this.reportAnalyticsService.getTrendingIssue(trendingFilters, authUser),
       this.reportAnalyticsService.getCitizenInteractionScore(filters, authUser),
     ]);
 
@@ -547,8 +576,8 @@ export class ReportAnalyticsController {
       throw new BadRequestException('Invalid date format');
     }
 
-    if (start >= end) {
-      throw new BadRequestException('Start date must be before end date');
+    if (start > end) {
+      throw new BadRequestException('Start date must be before or equal to end date');
     }
 
     const filters: TemporalQueryDto = {
@@ -574,6 +603,13 @@ export class ReportAnalyticsController {
   @ApiQuery({ name: 'departmentId', required: false, type: Number })
   @ApiQuery({ name: 'categoryId', required: false, type: Number })
   @ApiQuery({ name: 'status', required: false, type: String })
+  @ApiQuery({
+    name: 'bbox',
+    required: false,
+    type: String,
+    description:
+      'Bounding box filter in format: west,south,east,north (e.g., 36.631,37.025,36.831,37.225)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Reports with spatial data successfully retrieved',
@@ -588,6 +624,7 @@ export class ReportAnalyticsController {
     @Query('departmentId') departmentId?: number,
     @Query('categoryId') categoryId?: number,
     @Query('status') status?: string,
+    @Query('bbox') bbox?: string,
     @Req() req?: RequestWithUser
   ): Promise<{
     reports: Report[];
@@ -606,8 +643,16 @@ export class ReportAnalyticsController {
       throw new BadRequestException('Invalid date format');
     }
 
-    if (start >= end) {
-      throw new BadRequestException('Start date must be before end date');
+    if (start > end) {
+      throw new BadRequestException('Start date must be before or equal to end date');
+    }
+
+    // Bbox validasyonu
+    if (bbox) {
+      const bboxParts = bbox.split(',');
+      if (bboxParts.length !== 4 || bboxParts.some(part => isNaN(parseFloat(part)))) {
+        throw new BadRequestException('Invalid bbox format. Expected: west,south,east,north');
+      }
     }
 
     const filters = {
@@ -616,9 +661,44 @@ export class ReportAnalyticsController {
       departmentId,
       categoryId,
       status,
+      bbox,
     };
 
     const authUser = req?.user;
     return await this.reportAnalyticsService.getSpatialDistribution(filters, authUser);
+  }
+
+  @Post('etl/trigger')
+  @ApiOperation({
+    summary: 'Trigger ETL process to populate fact_reports table',
+    description:
+      'Manually triggers the ETL process to populate the fact_reports table from clean_reports_vw. Only accessible by admin users.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'ETL process completed successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'ETL process failed',
+  })
+  async triggerETL(@Req() req: RequestWithUser): Promise<{ success: boolean; message: string }> {
+    // Sadece admin kullanıcılar ETL'i tetikleyebilir
+    if (!req.user || !req.user.roles?.includes(UserRole.SYSTEM_ADMIN)) {
+      throw new ForbiddenException('Admin access required');
+    }
+
+    return await this.reportAnalyticsService.triggerManualETL();
   }
 }

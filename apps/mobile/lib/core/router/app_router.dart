@@ -8,6 +8,7 @@ import 'package:kentnabiz_mobile/features/auth/screens/login_screen.dart';
 import 'package:kentnabiz_mobile/features/citizen/screens/about_screen.dart';
 import 'package:kentnabiz_mobile/features/citizen/screens/citizen_dashboard_screen.dart';
 import 'package:kentnabiz_mobile/features/citizen/screens/citizen_shell_screen.dart';
+import 'package:kentnabiz_mobile/features/citizen/screens/nearby_reports_list_screen.dart';
 import 'package:kentnabiz_mobile/features/citizen/screens/profile_screen.dart';
 import 'package:kentnabiz_mobile/features/citizen/screens/report_list_screen.dart';
 import 'package:kentnabiz_mobile/features/citizen/screens/report_detail_screen.dart';
@@ -16,6 +17,8 @@ import 'package:kentnabiz_mobile/features/citizen/report_creation/screens/step1_
 import 'package:kentnabiz_mobile/features/citizen/report_creation/screens/step2_details_screen.dart';
 import 'package:kentnabiz_mobile/features/citizen/report_creation/screens/step3_media_screen.dart';
 import 'package:kentnabiz_mobile/features/citizen/report_creation/screens/step4_preview_screen.dart';
+import 'package:kentnabiz_mobile/features/team/screens/team_leader_dashboard_screen.dart';
+import 'package:kentnabiz_mobile/features/team/screens/team_report_detail_screen.dart';
 
 // --- ÖRNEK EKİP ÜYESİ EKRANI ---
 class TeamMemberHomeScreen extends ConsumerWidget {
@@ -57,7 +60,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (role == UserRole.citizen) {
           targetRoute = '/citizen/dashboard';
         } else if (role == UserRole.teamMember) {
-          targetRoute = '/team/home';
+          targetRoute =
+              '/team/dashboard'; // Takım üyesi takım dashboard'una gitsin
         } else {
           targetRoute = '/login'; // Bilinmeyen rol, login'e gönder
         }
@@ -127,6 +131,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             GoRoute(
               path: '/citizen/dashboard',
               builder: (context, state) => const CitizenDashboardScreen(),
+              routes: [
+                // Yakındaki raporlar liste görünümü
+                GoRoute(
+                  path: 'nearby-list',
+                  name: 'nearbyReportsList',
+                  builder: (context, state) => const NearbyReportsListScreen(),
+                ),
+              ],
             ),
           ]),
           // 2. Dal: Başvurularım ve Detayı
@@ -168,11 +180,29 @@ final routerProvider = Provider<GoRouter>((ref) {
           ]),
         ],
       ),
-      // Ekip üyesi için rota
+      // Takım üyesi için rota
       GoRoute(
         path: '/team/home',
         name: 'teamHome',
         builder: (context, state) => const TeamMemberHomeScreen(),
+      ),
+
+      // Takım lideri için rota
+      // Takım lideri için rota
+      GoRoute(
+        path: '/team/dashboard',
+        name: 'teamDashboard',
+        builder: (context, state) => const TeamLeaderDashboardScreen(),
+        routes: [
+          GoRoute(
+            path: 'report-detail/:reportId',
+            name: 'teamReportDetail',
+            builder: (context, state) {
+              final reportId = state.pathParameters['reportId']!;
+              return TeamReportDetailScreen(reportId: reportId);
+            },
+          ),
+        ],
       ),
     ],
   );

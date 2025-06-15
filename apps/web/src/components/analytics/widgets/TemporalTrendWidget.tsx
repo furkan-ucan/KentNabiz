@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   Card,
   CardHeader,
   CardContent,
-  ToggleButtonGroup,
-  ToggleButton,
   Typography,
   Box,
   useTheme,
   Skeleton,
   Alert,
   Chip,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   LineChart,
@@ -18,12 +18,13 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   Legend,
   ResponsiveContainer,
+  Brush,
 } from 'recharts';
-import { TrendingUp, Activity, Calendar } from 'lucide-react';
-import { format, subDays } from 'date-fns';
+import { TrendingUp, Activity, Calendar, ZoomOut } from 'lucide-react';
+import { format } from 'date-fns';
 import { useTemporalDistribution } from '@/hooks/analytics/useTemporalDistribution';
 import { AnalyticsFilters } from '@/hooks/analytics/useAnalyticsFilters';
 
@@ -40,14 +41,50 @@ export const TemporalTrendWidget: React.FC<TemporalTrendWidgetProps> = ({
   className,
 }) => {
   const theme = useTheme();
-  const [granularity, setGranularity] = useState<
-    'daily' | 'weekly' | 'monthly'
-  >('daily');
+  // Sabit granularity - kullanıcı seçimi kaldırıldı
+  const granularity = 'daily';
+
+  // Zoom state için
+  const [brushIndexes, setBrushIndexes] = useState<{
+    startIndex?: number;
+    endIndex?: number;
+  }>({});
+
+  // Zoom reset fonksiyonu - optimize edildi
+  const handleResetZoom = useCallback(() => {
+    setBrushIndexes({});
+  }, []);
+
+  // Brush değişiklik fonksiyonu - optimize edildi
+  const handleBrushChange = useCallback(
+    (brushData: { startIndex?: number; endIndex?: number } | null) => {
+      if (
+        brushData &&
+        brushData.startIndex !== undefined &&
+        brushData.endIndex !== undefined
+      ) {
+        setBrushIndexes({
+          startIndex: brushData.startIndex,
+          endIndex: brushData.endIndex,
+        });
+      }
+    },
+    []
+  );
 
   // Ana filtre çubuğundan gelen tarih aralığını kullan
-  const startDate =
-    filters.startDate || format(subDays(new Date(), 30), 'yyyy-MM-dd');
-  const endDate = filters.endDate || format(new Date(), 'yyyy-MM-dd');
+  // KPI widgets ile aynı default tarih aralığı (1 yıl)
+  const getDefaultStartDate = () => {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - 1);
+    return date.toISOString().split('T')[0];
+  };
+  const getDefaultEndDate = () => {
+    return new Date().toISOString().split('T')[0];
+  };
+
+  const startDate = filters.startDate || getDefaultStartDate();
+  const endDate = filters.endDate || getDefaultEndDate();
 
   // Temporal distribution verilerini çek
   const { data, isLoading, error } = useTemporalDistribution({
@@ -63,37 +100,48 @@ export const TemporalTrendWidget: React.FC<TemporalTrendWidgetProps> = ({
     status: filters.status || undefined,
   });
 
-  // Granularity değişikliği
-  const handleGranularityChange = (
-    _event: React.MouseEvent<HTMLElement>,
-    newGranularity: 'daily' | 'weekly' | 'monthly'
-  ) => {
-    if (newGranularity !== null) {
-      setGranularity(newGranularity);
-    }
-  };
-
-  // Tarih formatı
+  // Tarih formatı - sabit günlük format
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    switch (granularity) {
-      case 'daily':
-        return format(date, 'dd/MM');
-      case 'weekly':
-        return `${format(date, 'dd/MM')} Haftası`;
-      case 'monthly':
-        return format(date, 'yyyy/MM');
-      default:
-        return dateStr;
-    }
+    return format(date, 'dd/MM');
   };
 
-  // İstatistik hesaplamaları
-  const totalCreated =
-    data?.reduce((sum, item) => sum + item.createdCount, 0) || 0;
-  const totalResolved =
-    data?.reduce((sum, item) => sum + item.resolvedCount, 0) || 0;
-  const maxCreated = Math.max(...(data?.map(item => item.createdCount) || [0]));
+  // İstatistik hesaplamaları - zoom durumuna göre - optimize edildi
+  const displayedData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+
+    // Zoom aktifse filtrelenmiş veriyi döndür
+    if (
+      brushIndexes.startIndex !== undefined &&
+      brushIndexes.endIndex !== undefined
+    ) {
+      return data.slice(brushIndexes.startIndex, brushIndexes.endIndex + 1);
+    }
+
+    // Zoom aktif değilse tüm veriyi döndür
+    return data;
+  }, [data, brushIndexes.startIndex, brushIndexes.endIndex]);
+
+  // İstatistikler - zoom'a göre güncellenecek - optimize edildi
+  const { totalCreated, totalResolved, maxCreated } = useMemo(() => {
+    const created = displayedData.reduce(
+      (sum, item) => sum + item.createdCount,
+      0
+    );
+    const resolved = displayedData.reduce(
+      (sum, item) => sum + item.resolvedCount,
+      0
+    );
+    const maxDaily = Math.max(
+      ...(displayedData.map(item => item.createdCount) || [0])
+    );
+
+    return {
+      totalCreated: created,
+      totalResolved: resolved,
+      maxCreated: maxDaily === -Infinity ? 0 : maxDaily,
+    };
+  }, [displayedData]);
 
   // Tooltip formatı
   interface TooltipPayload {
@@ -156,27 +204,6 @@ export const TemporalTrendWidget: React.FC<TemporalTrendWidgetProps> = ({
     return null;
   };
 
-  // Granularity toggle bileşeni
-  const GranularityToggle = (
-    <ToggleButtonGroup
-      value={granularity}
-      exclusive
-      onChange={handleGranularityChange}
-      size="small"
-      aria-label="Zaman aralığı"
-    >
-      <ToggleButton value="daily" aria-label="Günlük">
-        Günlük
-      </ToggleButton>
-      <ToggleButton value="weekly" aria-label="Haftalık">
-        Haftalık
-      </ToggleButton>
-      <ToggleButton value="monthly" aria-label="Aylık">
-        Aylık
-      </ToggleButton>
-    </ToggleButtonGroup>
-  );
-
   // Loading state
   if (isLoading) {
     return (
@@ -185,7 +212,6 @@ export const TemporalTrendWidget: React.FC<TemporalTrendWidgetProps> = ({
           avatar={<Activity size={24} color="#1976d2" />}
           title="Rapor Akış Trendi"
           subheader="Zaman bazlı rapor oluşturma ve çözme trendi"
-          action={<Skeleton variant="rectangular" width={200} height={40} />}
         />
         <CardContent>
           <Skeleton variant="rectangular" height={350} />
@@ -227,7 +253,16 @@ export const TemporalTrendWidget: React.FC<TemporalTrendWidgetProps> = ({
         avatar={<TrendingUp size={24} color="#1976d2" />}
         title="Rapor Akış Trendi"
         subheader="Zaman bazlı rapor oluşturma ve çözme trendi"
-        action={GranularityToggle}
+        action={
+          (brushIndexes.startIndex !== undefined ||
+            brushIndexes.endIndex !== undefined) && (
+            <Tooltip title="Zoom'u Sıfırla">
+              <IconButton onClick={handleResetZoom} size="small">
+                <ZoomOut size={18} />
+              </IconButton>
+            </Tooltip>
+          )
+        }
       />
       <CardContent>
         {/* İstatistikler */}
@@ -280,16 +315,17 @@ export const TemporalTrendWidget: React.FC<TemporalTrendWidgetProps> = ({
             </Typography>
           </Box>
         ) : (
-          <Box sx={{ height: 350 }}>
-            <ResponsiveContainer width="100%" height="100%">
+          <Box sx={{ height: 400 }}>
+            <ResponsiveContainer width="100%" height="100%" debounce={1}>
               <LineChart
                 data={data}
                 margin={{
                   top: 20,
                   right: 30,
                   left: 20,
-                  bottom: 5,
+                  bottom: 60, // Brush için ekstra alan
                 }}
+                syncId="anyId" // Sync ile performans iyileştirmesi
               >
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis
@@ -304,7 +340,7 @@ export const TemporalTrendWidget: React.FC<TemporalTrendWidgetProps> = ({
                   tickLine={{ stroke: theme.palette.divider }}
                   axisLine={{ stroke: theme.palette.divider }}
                 />
-                <Tooltip content={<CustomTooltip />} />
+                <RechartsTooltip content={<CustomTooltip />} />
                 <Legend />
                 <Line
                   type="monotone"
@@ -312,12 +348,14 @@ export const TemporalTrendWidget: React.FC<TemporalTrendWidgetProps> = ({
                   name="Yeni Gelen"
                   stroke={theme.palette.error.main}
                   strokeWidth={2}
-                  dot={{ fill: theme.palette.error.main, strokeWidth: 2, r: 4 }}
+                  dot={false}
                   activeDot={{
                     r: 6,
                     stroke: theme.palette.error.main,
                     strokeWidth: 2,
+                    fill: theme.palette.error.main,
                   }}
+                  connectNulls={false}
                 />
                 <Line
                   type="monotone"
@@ -325,16 +363,27 @@ export const TemporalTrendWidget: React.FC<TemporalTrendWidgetProps> = ({
                   name="Çözülen"
                   stroke={theme.palette.success.main}
                   strokeWidth={2}
-                  dot={{
-                    fill: theme.palette.success.main,
-                    strokeWidth: 2,
-                    r: 4,
-                  }}
+                  dot={false}
                   activeDot={{
                     r: 6,
                     stroke: theme.palette.success.main,
                     strokeWidth: 2,
+                    fill: theme.palette.success.main,
                   }}
+                  connectNulls={false}
+                />
+                {/* Zoom/Pan özelliği için Brush component - optimize edildi */}
+                <Brush
+                  dataKey="date"
+                  height={30}
+                  stroke={theme.palette.primary.main}
+                  fill={`${theme.palette.primary.main}15`}
+                  tickFormatter={formatDate}
+                  onChange={handleBrushChange}
+                  startIndex={brushIndexes.startIndex}
+                  endIndex={brushIndexes.endIndex}
+                  travellerWidth={10}
+                  gap={2}
                 />
               </LineChart>
             </ResponsiveContainer>

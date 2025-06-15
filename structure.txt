@@ -18,6 +18,7 @@
   |-- pre-commit
 |-- .vscode
   |-- launch.json
+  |-- mcp.json
 |-- apps
   |-- api
     |-- src
@@ -138,7 +139,10 @@
           |-- dto
             |-- citizen-summary.dto.ts
           |-- services
+            |-- category-analytics.service.ts
+            |-- funnel-analytics.service.ts
             |-- report-analytics.service.ts
+            |-- temporal-analytics.service.ts
           |-- report-analytics.module.ts
         |-- reports
           |-- constants
@@ -345,6 +349,10 @@
           |-- characters
             |-- lib
               |-- src
+                |-- grapheme_clusters
+                  |-- breaks.dart.transitive_digest
+                  |-- constants.dart.transitive_digest
+                  |-- table.dart.transitive_digest
                 |-- characters.dart.transitive_digest
                 |-- characters_impl.dart.transitive_digest
                 |-- extensions.dart.transitive_digest
@@ -354,6 +362,8 @@
               |-- src
                 |-- clock.dart.transitive_digest
                 |-- default.dart.transitive_digest
+                |-- stopwatch.dart.transitive_digest
+                |-- utils.dart.transitive_digest
               |-- clock.dart.transitive_digest
           |-- collection
             |-- lib
@@ -387,6 +397,7 @@
             |-- lib
               |-- src
                 |-- types
+                  |-- base.dart.transitive_digest
                   |-- interface.dart.transitive_digest
                 |-- x_file.dart.transitive_digest
               |-- cross_file.dart.transitive_digest
@@ -398,6 +409,8 @@
               |-- src
                 |-- adapters
                   |-- io_adapter.dart.transitive_digest
+                |-- compute
+                  |-- compute.dart.transitive_digest
                 |-- dio
                   |-- dio_for_native.dart.transitive_digest
                 |-- interceptors
@@ -410,6 +423,9 @@
                 |-- response
                   |-- response_stream_handler.dart.transitive_digest
                 |-- transformers
+                  |-- util
+                    |-- consolidate_bytes.dart.transitive_digest
+                    |-- transform_empty_to_null.dart.transitive_digest
                   |-- background_transformer.dart.transitive_digest
                   |-- fused_transformer.dart.transitive_digest
                   |-- sync_transformer.dart.transitive_digest
@@ -793,7 +809,16 @@
                   |-- text_scaler.dart.transitive_digest
                   |-- text_span.dart.transitive_digest
                   |-- text_style.dart.transitive_digest
+                  |-- _network_image_io.dart.transitive_digest
                   |-- _web_image_info_io.dart.transitive_digest
+                |-- physics
+                  |-- clamped_simulation.dart.transitive_digest
+                  |-- friction_simulation.dart.transitive_digest
+                  |-- gravity_simulation.dart.transitive_digest
+                  |-- simulation.dart.transitive_digest
+                  |-- spring_simulation.dart.transitive_digest
+                  |-- tolerance.dart.transitive_digest
+                  |-- utils.dart.transitive_digest
                 |-- rendering
                   |-- animated_size.dart.transitive_digest
                   |-- binding.dart.transitive_digest
@@ -1093,6 +1118,7 @@
                   |-- crs.dart.transitive_digest
                   |-- latlng_bounds.dart.transitive_digest
                 |-- gestures
+                  |-- compound_animations.dart.transitive_digest
                   |-- interactive_flag.dart.transitive_digest
                   |-- latlng_tween.dart.transitive_digest
                   |-- map_events.dart.transitive_digest
@@ -1143,6 +1169,7 @@
                     |-- line_patterns
                       |-- pixel_hiker.dart.transitive_digest
                       |-- stroke_pattern.dart.transitive_digest
+                      |-- visible_segment.dart.transitive_digest
                     |-- feature_layer_utils.dart.transitive_digest
                     |-- mobile_layer_transformer.dart.transitive_digest
                     |-- translucent_pointer.dart.transitive_digest
@@ -1165,9 +1192,11 @@
                     |-- tile_error_evict_callback.dart.transitive_digest
                     |-- tile_image.dart.transitive_digest
                     |-- tile_image_manager.dart.transitive_digest
+                    |-- tile_image_view.dart.transitive_digest
                     |-- tile_layer.dart.transitive_digest
                     |-- tile_range.dart.transitive_digest
                     |-- tile_range_calculator.dart.transitive_digest
+                    |-- tile_renderer.dart.transitive_digest
                     |-- tile_scale_calculator.dart.transitive_digest
                     |-- tile_update_event.dart.transitive_digest
                     |-- tile_update_transformer.dart.transitive_digest
@@ -1188,6 +1217,7 @@
                   |-- inherited_model.dart.transitive_digest
                   |-- widget.dart.transitive_digest
                 |-- misc
+                  |-- bounds.dart.transitive_digest
                   |-- extensions.dart.transitive_digest
                   |-- move_and_rotate_result.dart.transitive_digest
                   |-- offsets.dart.transitive_digest
@@ -1279,6 +1309,7 @@
             |-- lib
               |-- src
                 |-- chunked_coding
+                  |-- charcodes.dart.transitive_digest
                   |-- decoder.dart.transitive_digest
                   |-- encoder.dart.transitive_digest
                 |-- authentication_challenge.dart.transitive_digest
@@ -1301,7 +1332,9 @@
                   |-- image_picker_platform.dart.transitive_digest
                 |-- types
                   |-- picked_file
+                    |-- lost_data.dart.transitive_digest
                     |-- picked_file.dart.transitive_digest
+                    |-- unsupported.dart.transitive_digest
                   |-- camera_delegate.dart.transitive_digest
                   |-- camera_device.dart.transitive_digest
                   |-- image_options.dart.transitive_digest
@@ -1524,6 +1557,7 @@
                 |-- path_map.dart.transitive_digest
                 |-- path_set.dart.transitive_digest
                 |-- style.dart.transitive_digest
+                |-- utils.dart.transitive_digest
               |-- path.dart.transitive_digest
           |-- plugin_platform_interface
             |-- lib
@@ -1546,12 +1580,50 @@
                   |-- proj_params.dart.transitive_digest
                 |-- common
                   |-- datum_transform.dart.transitive_digest
+                  |-- datum_utils.dart.transitive_digest
+                  |-- derive_constants.dart.transitive_digest
                   |-- utils.dart.transitive_digest
                 |-- constants
+                  |-- datums.dart.transitive_digest
                   |-- initializers.dart.transitive_digest
+                  |-- prime_meridians.dart.transitive_digest
+                  |-- units.dart.transitive_digest
                   |-- values.dart.transitive_digest
                 |-- globals
+                  |-- nadgrid_store.dart.transitive_digest
                   |-- projection_store.dart.transitive_digest
+                |-- projections
+                  |-- aea.dart.transitive_digest
+                  |-- aeqd.dart.transitive_digest
+                  |-- cass.dart.transitive_digest
+                  |-- cea.dart.transitive_digest
+                  |-- eqc.dart.transitive_digest
+                  |-- eqdc.dart.transitive_digest
+                  |-- etmerc.dart.transitive_digest
+                  |-- gauss.dart.transitive_digest
+                  |-- geocent.dart.transitive_digest
+                  |-- gnom.dart.transitive_digest
+                  |-- gstmerc.dart.transitive_digest
+                  |-- krovak.dart.transitive_digest
+                  |-- laea.dart.transitive_digest
+                  |-- lcc.dart.transitive_digest
+                  |-- longlat.dart.transitive_digest
+                  |-- merc.dart.transitive_digest
+                  |-- mill.dart.transitive_digest
+                  |-- moll.dart.transitive_digest
+                  |-- nzmg.dart.transitive_digest
+                  |-- omerc.dart.transitive_digest
+                  |-- ortho.dart.transitive_digest
+                  |-- poly.dart.transitive_digest
+                  |-- qsc.dart.transitive_digest
+                  |-- robin.dart.transitive_digest
+                  |-- sinu.dart.transitive_digest
+                  |-- somerc.dart.transitive_digest
+                  |-- stere.dart.transitive_digest
+                  |-- sterea.dart.transitive_digest
+                  |-- tmerc.dart.transitive_digest
+                  |-- utm.dart.transitive_digest
+                  |-- vandg.dart.transitive_digest
               |-- proj4dart.dart.transitive_digest
           |-- riverpod
             |-- lib
@@ -1625,6 +1697,8 @@
           |-- source_span
             |-- lib
               |-- src
+                |-- charcode.dart.transitive_digest
+                |-- colors.dart.transitive_digest
                 |-- file.dart.transitive_digest
                 |-- highlighter.dart.transitive_digest
                 |-- location.dart.transitive_digest
@@ -1640,8 +1714,13 @@
               |-- src
                 |-- chain.dart.transitive_digest
                 |-- frame.dart.transitive_digest
+                |-- lazy_chain.dart.transitive_digest
+                |-- lazy_trace.dart.transitive_digest
+                |-- stack_zone_specification.dart.transitive_digest
                 |-- trace.dart.transitive_digest
                 |-- unparsed_frame.dart.transitive_digest
+                |-- utils.dart.transitive_digest
+                |-- vm_trace.dart.transitive_digest
               |-- stack_trace.dart.transitive_digest
           |-- state_notifier
             |-- lib
@@ -1670,6 +1749,7 @@
           |-- typed_data
             |-- lib
               |-- src
+                |-- typed_buffer.dart.transitive_digest
                 |-- typed_queue.dart.transitive_digest
               |-- typed_buffers.dart.transitive_digest
               |-- typed_data.dart.transitive_digest
@@ -1718,8 +1798,26 @@
         |-- sdk.sum.deps
       |-- dartpad
         |-- web_plugin_registrant.dart
+      |-- extension_discovery
+        |-- vs_code.json
       |-- flutter_build
         |-- 289f96a695729450576dc2c388dc2c0d
+          |-- .filecache
+          |-- app.dill
+          |-- dart_build.d
+          |-- dart_build.stamp
+          |-- dart_build_result.json
+          |-- debug_android_application.stamp
+          |-- flutter_assets.d
+          |-- gen_dart_plugin_registrant.stamp
+          |-- gen_localizations.stamp
+          |-- install_code_assets.d
+          |-- install_code_assets.stamp
+          |-- kernel_snapshot_program.d
+          |-- kernel_snapshot_program.stamp
+          |-- native_assets.json
+          |-- outputs.json
+        |-- 685746e07a47896a4a70c0c7307d4059
           |-- .filecache
           |-- app.dill
           |-- dart_build.d
@@ -2307,21 +2405,69 @@
                     |-- build_model.json
                     |-- generate_cxx_metadata_1192_timing.txt
                     |-- generate_cxx_metadata_1360_timing.txt
+                    |-- generate_cxx_metadata_1486_timing.txt
+                    |-- generate_cxx_metadata_1609_timing.txt
+                    |-- generate_cxx_metadata_1714_timing.txt
+                    |-- generate_cxx_metadata_1822_timing.txt
+                    |-- generate_cxx_metadata_1941_timing.txt
+                    |-- generate_cxx_metadata_2051_timing.txt
+                    |-- generate_cxx_metadata_2174_timing.txt
+                    |-- generate_cxx_metadata_2291_timing.txt
+                    |-- generate_cxx_metadata_2414_timing.txt
+                    |-- generate_cxx_metadata_2520_timing.txt
+                    |-- generate_cxx_metadata_2624_timing.txt
+                    |-- generate_cxx_metadata_2738_timing.txt
                     |-- metadata_generation_record.json
                   |-- armeabi-v7a
                     |-- build_model.json
                     |-- generate_cxx_metadata_1193_timing.txt
                     |-- generate_cxx_metadata_1360_timing.txt
+                    |-- generate_cxx_metadata_1486_timing.txt
+                    |-- generate_cxx_metadata_1609_timing.txt
+                    |-- generate_cxx_metadata_1714_timing.txt
+                    |-- generate_cxx_metadata_1822_timing.txt
+                    |-- generate_cxx_metadata_1944_timing.txt
+                    |-- generate_cxx_metadata_2051_timing.txt
+                    |-- generate_cxx_metadata_2170_timing.txt
+                    |-- generate_cxx_metadata_2291_timing.txt
+                    |-- generate_cxx_metadata_2414_timing.txt
+                    |-- generate_cxx_metadata_2520_timing.txt
+                    |-- generate_cxx_metadata_2625_timing.txt
+                    |-- generate_cxx_metadata_2734_timing.txt
                     |-- metadata_generation_record.json
                   |-- x86
                     |-- build_model.json
                     |-- generate_cxx_metadata_1193_timing.txt
                     |-- generate_cxx_metadata_1360_timing.txt
+                    |-- generate_cxx_metadata_1486_timing.txt
+                    |-- generate_cxx_metadata_1607_timing.txt
+                    |-- generate_cxx_metadata_1714_timing.txt
+                    |-- generate_cxx_metadata_1822_timing.txt
+                    |-- generate_cxx_metadata_1944_timing.txt
+                    |-- generate_cxx_metadata_2052_timing.txt
+                    |-- generate_cxx_metadata_2170_timing.txt
+                    |-- generate_cxx_metadata_2291_timing.txt
+                    |-- generate_cxx_metadata_2417_timing.txt
+                    |-- generate_cxx_metadata_2517_timing.txt
+                    |-- generate_cxx_metadata_2625_timing.txt
+                    |-- generate_cxx_metadata_2734_timing.txt
                     |-- metadata_generation_record.json
                   |-- x86_64
                     |-- build_model.json
                     |-- generate_cxx_metadata_1193_timing.txt
                     |-- generate_cxx_metadata_1360_timing.txt
+                    |-- generate_cxx_metadata_1486_timing.txt
+                    |-- generate_cxx_metadata_1609_timing.txt
+                    |-- generate_cxx_metadata_1714_timing.txt
+                    |-- generate_cxx_metadata_1822_timing.txt
+                    |-- generate_cxx_metadata_1942_timing.txt
+                    |-- generate_cxx_metadata_2051_timing.txt
+                    |-- generate_cxx_metadata_2171_timing.txt
+                    |-- generate_cxx_metadata_2291_timing.txt
+                    |-- generate_cxx_metadata_2417_timing.txt
+                    |-- generate_cxx_metadata_2518_timing.txt
+                    |-- generate_cxx_metadata_2625_timing.txt
+                    |-- generate_cxx_metadata_2734_timing.txt
                     |-- metadata_generation_record.json
                 |-- obj
                   |-- arm64-v8a
@@ -2650,6 +2796,9 @@
                 |-- 27YB3AHka8o_FcZPrLNadOhFYk8=
                 |-- 2kqHwaQQuhWu7wmOm0BhSNAmj+U=
                 |-- 3FoIRIzYGCJ_D7fTwB51tbUNVv8=
+                |-- 5Q4Te44pJd6QOkTejY0zeI8EdEo=
+                |-- 5vGtCWJiUn9hUtqhVuX7cVMLftU=
+                |-- 5Z0y+hqXi5ChrdHyiPh4qLunHBw=
                 |-- 6LtiPZmaE7+WArlwqr+mtmE3yKc=
                 |-- 6pNfxReVX3a3zbMJm5pNswnoCOA=
                 |-- 8T+1ACC27VP6cmZ9TasOsWsGdV4=
@@ -2666,7 +2815,9 @@
                 |-- CZFG3qv6j+gmil41uStw2YJJKFo=
                 |-- DmG2FxqO6ysKjksFfSIRRmjp42U=
                 |-- FnUd3QYb8XW1V7FIWXkqYLJgWrc=
+                |-- G1WXydquTtTSFmhUIUyAescLD8s=
                 |-- gEuxpD8STxrtCf49GBQs5cT5RB4=
+                |-- Gnx2rNWxyUgSvpn5iIeghHfYWpY=
                 |-- I63u97_WLJT0HdZ798Tc7v8JkrM=
                 |-- iAddbeTGmxM6cCdKxjXJuwMUDfQ=
                 |-- JCVb242BT_vqqzUi3nLkVOvvQxw=
@@ -2676,6 +2827,7 @@
                 |-- oLC9hPqmLNP+lsPqtpRzYXELCMo=
                 |-- OlSn9Y8t5vdGnEcNz2ud71wt4NU=
                 |-- P8slGLa2NCn_QSM9SkaTRP7WRRo=
+                |-- Qrh43dlBLXqflXHSuu4feXXUcow=
                 |-- QtW8I1YgntEmfDBcALR+fNrHLQ4=
                 |-- TA4544J3VvNTlkx+cXALLE8ifbQ=
                 |-- ufZLlgZ8oqqUfU_2mVOAOzss9qs=
@@ -2688,11 +2840,13 @@
                 |-- WiWakdk6InnLUNbRJmkoLEdVFeI=
                 |-- YhOp+NX+w4b1X8pdofKDCnV8wv8=
                 |-- yklilPrwY513COE627iIaEIx5sw=
+                |-- yv_ku+lxdkNUtMOBi0+02ZaGJgs=
                 |-- z7t9f6dAsTp+y+DrvT1yKKU9BSc=
                 |-- zDyml6M3Y_63YyQCAlGlmjS5nro=
                 |-- Zen1anLfhnsB__DCQ9JMRLlfIkA=
                 |-- ZkRi8fXRb8+WMkXzDwL3LB3xwCA=
                 |-- ZLA79Tm4+JWnlzc0XegNFxLRITE=
+                |-- ZQC2y372l9Fvq8gRjCqEARm_q4U=
               |-- merge-state
             |-- mergeDebugAssets
               |-- merger.xml
@@ -2759,9 +2913,8 @@
               |-- mergeDebugNativeLibs
                 |-- out
                   |-- lib
-                    |-- arm64-v8a
+                    |-- x86_64
                       |-- libflutter.so
-                      |-- libVkLayer_khronos_validation.so
           |-- merged_res
             |-- debug
               |-- mergeDebugResources
@@ -3011,10 +3164,10 @@
                     |-- flutter
                       |-- plugins
                         |-- GeneratedPluginRegistrant.dex
-                  |-- 069f56b094859d0cc5bcc73e688bf79668e19a9059730ccdb08b09068b45a3f9_0.jar
-                  |-- 069f56b094859d0cc5bcc73e688bf79668e19a9059730ccdb08b09068b45a3f9_1.jar
-                  |-- 069f56b094859d0cc5bcc73e688bf79668e19a9059730ccdb08b09068b45a3f9_2.jar
-                  |-- 069f56b094859d0cc5bcc73e688bf79668e19a9059730ccdb08b09068b45a3f9_3.jar
+                  |-- 5f9f27f0dc356e58e67be4100d5ad9f9516001fb66b1c1f7082be64d3a90dc7c_0.jar
+                  |-- 5f9f27f0dc356e58e67be4100d5ad9f9516001fb66b1c1f7082be64d3a90dc7c_1.jar
+                  |-- 5f9f27f0dc356e58e67be4100d5ad9f9516001fb66b1c1f7082be64d3a90dc7c_2.jar
+                  |-- 5f9f27f0dc356e58e67be4100d5ad9f9516001fb66b1c1f7082be64d3a90dc7c_3.jar
           |-- runtime_symbol_list
             |-- debug
               |-- processDebugResources
@@ -3037,8 +3190,8 @@
                 |-- out
                   |-- lib
                     |-- arm64-v8a
+                    |-- x86_64
                       |-- libflutter.so
-                      |-- libVkLayer_khronos_validation.so
           |-- sub_project_dex_archive
             |-- debug
               |-- dexBuilderDebug
@@ -3085,6 +3238,13 @@
                     |-- internal-name-to-source.tab.values.at
                     |-- internal-name-to-source.tab_i
                     |-- internal-name-to-source.tab_i.len
+                    |-- java-sources-proto-map.tab
+                    |-- java-sources-proto-map.tab.keystream
+                    |-- java-sources-proto-map.tab.keystream.len
+                    |-- java-sources-proto-map.tab.len
+                    |-- java-sources-proto-map.tab.values.at
+                    |-- java-sources-proto-map.tab_i
+                    |-- java-sources-proto-map.tab_i.len
                     |-- proto.tab
                     |-- proto.tab.keystream
                     |-- proto.tab.keystream.len
@@ -3149,8 +3309,14 @@
             |-- app-debug.apk.sha1
           |-- logs
             |-- manifest-merger-debug-report.txt
+        |-- snapshot
+          |-- kotlin
         |-- tmp
           |-- compileDebugJavaWithJavac
+            |-- compileTransaction
+              |-- backup-dir
+              |-- stash-dir
+                |-- GeneratedPluginRegistrant.class.uniqueId0
             |-- previous-compilation-data.bin
           |-- kotlin-classes
             |-- debug
@@ -3164,6 +3330,11 @@
             |-- MANIFEST.MF
       |-- flutter_plugin_android_lifecycle
         |-- .transforms
+          |-- 399b74584972ec3b2827dd77e8cae502
+            |-- transformed
+              |-- classes
+                |-- classes.dex
+            |-- results.bin
           |-- b5acf73261aa19b2c94571b98bd49e54
             |-- transformed
               |-- classes
@@ -3330,6 +3501,11 @@
             |-- previous-compilation-data.bin
       |-- flutter_secure_storage
         |-- .transforms
+          |-- 33a64cae1965e464f72b9f1a06ce1053
+            |-- transformed
+              |-- classes
+                |-- classes.dex
+            |-- results.bin
           |-- 4cd64c44dbc18adafe5d669940a51867
             |-- transformed
               |-- classes
@@ -3507,8 +3683,224 @@
         |-- tmp
           |-- compileDebugJavaWithJavac
             |-- previous-compilation-data.bin
+      |-- geolocator_android
+        |-- .transforms
+          |-- 7e208b3d65cc3252fa3c1a6715706a8f
+            |-- transformed
+              |-- classes
+                |-- classes.dex
+            |-- results.bin
+        |-- generated
+          |-- ap_generated_sources
+            |-- debug
+              |-- out
+          |-- res
+            |-- pngs
+              |-- debug
+            |-- resValues
+              |-- debug
+        |-- intermediates
+          |-- aapt_friendly_merged_manifests
+            |-- debug
+              |-- processDebugManifest
+                |-- aapt
+                  |-- AndroidManifest.xml
+                  |-- output-metadata.json
+          |-- aar_libs_directory
+            |-- debug
+              |-- syncDebugLibJars
+                |-- libs
+          |-- aar_main_jar
+            |-- debug
+              |-- syncDebugLibJars
+                |-- classes.jar
+          |-- aar_metadata
+            |-- debug
+              |-- writeDebugAarMetadata
+                |-- aar-metadata.properties
+          |-- annotations_typedef_file
+            |-- debug
+              |-- extractDebugAnnotations
+                |-- typedefs.txt
+          |-- annotations_zip
+            |-- debug
+              |-- extractDebugAnnotations
+          |-- annotation_processor_list
+            |-- debug
+              |-- javaPreCompileDebug
+                |-- annotationProcessors.json
+          |-- compiled_local_resources
+            |-- debug
+              |-- compileDebugLibraryResources
+                |-- out
+          |-- compile_library_classes_jar
+            |-- debug
+              |-- bundleLibCompileToJarDebug
+                |-- classes.jar
+          |-- compile_r_class_jar
+            |-- debug
+              |-- generateDebugRFile
+                |-- R.jar
+          |-- compile_symbol_list
+            |-- debug
+              |-- generateDebugRFile
+                |-- R.txt
+          |-- data_binding_layout_info_type_package
+            |-- debug
+              |-- packageDebugResources
+                |-- out
+          |-- generated_proguard_file
+            |-- debug
+              |-- mergeDebugGeneratedProguardFiles
+          |-- incremental
+            |-- debug
+              |-- packageDebugResources
+                |-- merged.dir
+                |-- stripped.dir
+                |-- compile-file-map.properties
+                |-- merger.xml
+            |-- debug-mergeJavaRes
+              |-- zip-cache
+              |-- merge-state
+            |-- mergeDebugJniLibFolders
+              |-- merger.xml
+            |-- mergeDebugShaders
+              |-- merger.xml
+            |-- packageDebugAssets
+              |-- merger.xml
+          |-- javac
+            |-- debug
+              |-- compileDebugJavaWithJavac
+                |-- classes
+                  |-- com
+                    |-- baseflow
+                      |-- geolocator
+                        |-- errors
+                          |-- ErrorCallback.class
+                          |-- ErrorCodes.class
+                          |-- PermissionUndefinedException.class
+                        |-- location
+                          |-- AndroidIconResource.class
+                          |-- BackgroundNotification.class
+                          |-- FlutterLocationServiceListener.class
+                          |-- ForegroundNotificationOptions.class
+                          |-- FusedLocationClient$1.class
+                          |-- FusedLocationClient$2.class
+                          |-- FusedLocationClient.class
+                          |-- GeolocationManager.class
+                          |-- LocationAccuracy.class
+                          |-- LocationAccuracyManager.class
+                          |-- LocationAccuracyStatus.class
+                          |-- LocationClient.class
+                          |-- LocationManagerClient$1.class
+                          |-- LocationManagerClient.class
+                          |-- LocationMapper.class
+                          |-- LocationOptions.class
+                          |-- LocationServiceListener.class
+                          |-- LocationServiceStatusReceiver.class
+                          |-- NmeaClient$1.class
+                          |-- NmeaClient.class
+                          |-- PositionChangedCallback.class
+                          |-- ServiceStatus.class
+                        |-- permission
+                          |-- LocationPermission.class
+                          |-- PermissionManager.class
+                          |-- PermissionResultCallback.class
+                          |-- PermissionUtils.class
+                        |-- utils
+                          |-- Utils.class
+                        |-- GeolocatorLocationService$LocalBinder.class
+                        |-- GeolocatorLocationService.class
+                        |-- GeolocatorPlugin$1.class
+                        |-- GeolocatorPlugin.class
+                        |-- LocationServiceHandlerImpl.class
+                        |-- MethodCallHandlerImpl.class
+                        |-- StreamHandlerImpl.class
+          |-- library_and_local_jars_jni
+            |-- debug
+              |-- copyDebugJniLibsProjectAndLocalJars
+                |-- jni
+          |-- library_art_profile
+            |-- debug
+              |-- prepareDebugArtProfile
+          |-- library_assets
+            |-- debug
+              |-- packageDebugAssets
+                |-- out
+          |-- library_jni
+            |-- debug
+              |-- copyDebugJniLibsProjectOnly
+                |-- jni
+          |-- lint_publish_jar
+            |-- global
+              |-- prepareLintJarForPublish
+          |-- local_only_symbol_list
+            |-- debug
+              |-- parseDebugLocalResources
+                |-- R-def.txt
+          |-- manifest_merge_blame_file
+            |-- debug
+              |-- processDebugManifest
+                |-- manifest-merger-blame-debug-report.txt
+          |-- merged_consumer_proguard_file
+            |-- debug
+              |-- mergeDebugConsumerProguardFiles
+          |-- merged_java_res
+            |-- debug
+              |-- mergeDebugJavaResource
+                |-- feature-geolocator_android.jar
+          |-- merged_jni_libs
+            |-- debug
+              |-- mergeDebugJniLibFolders
+                |-- out
+          |-- merged_manifest
+            |-- debug
+              |-- processDebugManifest
+                |-- AndroidManifest.xml
+          |-- merged_shaders
+            |-- debug
+              |-- mergeDebugShaders
+                |-- out
+          |-- navigation_json
+            |-- debug
+              |-- extractDeepLinksDebug
+                |-- navigation.json
+          |-- navigation_json_for_aar
+            |-- debug
+              |-- extractDeepLinksForAarDebug
+          |-- nested_resources_validation_report
+            |-- debug
+              |-- generateDebugResources
+                |-- nestedResourcesValidationReport.txt
+          |-- packaged_res
+            |-- debug
+              |-- packageDebugResources
+          |-- public_res
+            |-- debug
+              |-- packageDebugResources
+          |-- runtime_library_classes_jar
+            |-- debug
+              |-- bundleLibRuntimeToJarDebug
+                |-- classes.jar
+          |-- symbol_list_with_package_name
+            |-- debug
+              |-- generateDebugRFile
+                |-- package-aware-r.txt
+        |-- outputs
+          |-- aar
+            |-- geolocator_android-debug.aar
+          |-- logs
+            |-- manifest-merger-debug-report.txt
+        |-- tmp
+          |-- compileDebugJavaWithJavac
+            |-- previous-compilation-data.bin
       |-- image_picker_android
         |-- .transforms
+          |-- 1cac04704755fe1b6152481e6c01bac3
+            |-- transformed
+              |-- classes
+                |-- classes.dex
+            |-- results.bin
           |-- 60c232340723561cd1cdf948bae0b27b
             |-- transformed
               |-- classes
@@ -3723,6 +4115,11 @@
               |-- classes
                 |-- classes.dex
             |-- results.bin
+          |-- a1b88a46c393353287b83db831716854
+            |-- transformed
+              |-- classes
+                |-- classes.dex
+            |-- results.bin
         |-- generated
           |-- ap_generated_sources
             |-- debug
@@ -3879,6 +4276,203 @@
         |-- tmp
           |-- compileDebugJavaWithJavac
             |-- previous-compilation-data.bin
+      |-- url_launcher_android
+        |-- .transforms
+          |-- a23a72fd5b506584c3ed88485d2c2723
+            |-- transformed
+              |-- classes
+                |-- classes.dex
+            |-- results.bin
+        |-- generated
+          |-- ap_generated_sources
+            |-- debug
+              |-- out
+          |-- res
+            |-- pngs
+              |-- debug
+            |-- resValues
+              |-- debug
+          |-- source
+            |-- buildConfig
+              |-- debug
+                |-- io
+                  |-- flutter
+                    |-- plugins
+                      |-- urllauncher
+                        |-- BuildConfig.java
+        |-- intermediates
+          |-- aapt_friendly_merged_manifests
+            |-- debug
+              |-- processDebugManifest
+                |-- aapt
+                  |-- AndroidManifest.xml
+                  |-- output-metadata.json
+          |-- aar_libs_directory
+            |-- debug
+              |-- syncDebugLibJars
+                |-- libs
+          |-- aar_main_jar
+            |-- debug
+              |-- syncDebugLibJars
+                |-- classes.jar
+          |-- aar_metadata
+            |-- debug
+              |-- writeDebugAarMetadata
+                |-- aar-metadata.properties
+          |-- annotations_typedef_file
+            |-- debug
+              |-- extractDebugAnnotations
+                |-- typedefs.txt
+          |-- annotations_zip
+            |-- debug
+              |-- extractDebugAnnotations
+          |-- annotation_processor_list
+            |-- debug
+              |-- javaPreCompileDebug
+                |-- annotationProcessors.json
+          |-- compiled_local_resources
+            |-- debug
+              |-- compileDebugLibraryResources
+                |-- out
+          |-- compile_library_classes_jar
+            |-- debug
+              |-- bundleLibCompileToJarDebug
+                |-- classes.jar
+          |-- compile_r_class_jar
+            |-- debug
+              |-- generateDebugRFile
+                |-- R.jar
+          |-- compile_symbol_list
+            |-- debug
+              |-- generateDebugRFile
+                |-- R.txt
+          |-- data_binding_layout_info_type_package
+            |-- debug
+              |-- packageDebugResources
+                |-- out
+          |-- generated_proguard_file
+            |-- debug
+              |-- mergeDebugGeneratedProguardFiles
+          |-- incremental
+            |-- debug
+              |-- packageDebugResources
+                |-- merged.dir
+                |-- stripped.dir
+                |-- compile-file-map.properties
+                |-- merger.xml
+            |-- debug-mergeJavaRes
+              |-- zip-cache
+              |-- merge-state
+            |-- mergeDebugJniLibFolders
+              |-- merger.xml
+            |-- mergeDebugShaders
+              |-- merger.xml
+            |-- packageDebugAssets
+              |-- merger.xml
+          |-- javac
+            |-- debug
+              |-- compileDebugJavaWithJavac
+                |-- classes
+                  |-- io
+                    |-- flutter
+                      |-- plugins
+                        |-- urllauncher
+                          |-- BuildConfig.class
+                          |-- Messages$BrowserOptions$Builder.class
+                          |-- Messages$BrowserOptions.class
+                          |-- Messages$CanIgnoreReturnValue.class
+                          |-- Messages$FlutterError.class
+                          |-- Messages$PigeonCodec.class
+                          |-- Messages$UrlLauncherApi.class
+                          |-- Messages$WebViewOptions$Builder.class
+                          |-- Messages$WebViewOptions.class
+                          |-- Messages.class
+                          |-- UrlLauncher$IntentResolver.class
+                          |-- UrlLauncher.class
+                          |-- UrlLauncherPlugin.class
+                          |-- WebViewActivity$1.class
+                          |-- WebViewActivity$2.class
+                          |-- WebViewActivity$FlutterWebChromeClient$1.class
+                          |-- WebViewActivity$FlutterWebChromeClient.class
+                          |-- WebViewActivity.class
+          |-- library_and_local_jars_jni
+            |-- debug
+              |-- copyDebugJniLibsProjectAndLocalJars
+                |-- jni
+          |-- library_art_profile
+            |-- debug
+              |-- prepareDebugArtProfile
+          |-- library_assets
+            |-- debug
+              |-- packageDebugAssets
+                |-- out
+          |-- library_jni
+            |-- debug
+              |-- copyDebugJniLibsProjectOnly
+                |-- jni
+          |-- lint_publish_jar
+            |-- global
+              |-- prepareLintJarForPublish
+          |-- local_only_symbol_list
+            |-- debug
+              |-- parseDebugLocalResources
+                |-- R-def.txt
+          |-- manifest_merge_blame_file
+            |-- debug
+              |-- processDebugManifest
+                |-- manifest-merger-blame-debug-report.txt
+          |-- merged_consumer_proguard_file
+            |-- debug
+              |-- mergeDebugConsumerProguardFiles
+          |-- merged_java_res
+            |-- debug
+              |-- mergeDebugJavaResource
+                |-- feature-url_launcher_android.jar
+          |-- merged_jni_libs
+            |-- debug
+              |-- mergeDebugJniLibFolders
+                |-- out
+          |-- merged_manifest
+            |-- debug
+              |-- processDebugManifest
+                |-- AndroidManifest.xml
+          |-- merged_shaders
+            |-- debug
+              |-- mergeDebugShaders
+                |-- out
+          |-- navigation_json
+            |-- debug
+              |-- extractDeepLinksDebug
+                |-- navigation.json
+          |-- navigation_json_for_aar
+            |-- debug
+              |-- extractDeepLinksForAarDebug
+          |-- nested_resources_validation_report
+            |-- debug
+              |-- generateDebugResources
+                |-- nestedResourcesValidationReport.txt
+          |-- packaged_res
+            |-- debug
+              |-- packageDebugResources
+          |-- public_res
+            |-- debug
+              |-- packageDebugResources
+          |-- runtime_library_classes_jar
+            |-- debug
+              |-- bundleLibRuntimeToJarDebug
+                |-- classes.jar
+          |-- symbol_list_with_package_name
+            |-- debug
+              |-- generateDebugRFile
+                |-- package-aware-r.txt
+        |-- outputs
+          |-- aar
+            |-- url_launcher_android-debug.aar
+          |-- logs
+            |-- manifest-merger-debug-report.txt
+        |-- tmp
+          |-- compileDebugJavaWithJavac
+            |-- previous-compilation-data.bin
       |-- cache.dill.track.dill
     |-- ios
       |-- Flutter
@@ -3992,6 +4586,8 @@
           |-- widgets
         |-- home
         |-- report
+      |-- services
+        |-- location_service.dart
       |-- shared
         |-- models
           |-- department.dart
@@ -4015,6 +4611,7 @@
         |-- providers
         |-- utils
         |-- widgets
+          |-- authenticated_image.dart
       |-- widgets
       |-- app.dart
       |-- main.dart
@@ -4135,6 +4732,49 @@
               |-- test
                 |-- get_application_id_test.dart
                 |-- path_provider_linux_test.dart
+              |-- AUTHORS
+              |-- CHANGELOG.md
+              |-- LICENSE
+              |-- pubspec.yaml
+              |-- README.md
+            |-- url_launcher_linux
+              |-- example
+                |-- integration_test
+                  |-- url_launcher_test.dart
+                |-- lib
+                  |-- main.dart
+                |-- linux
+                  |-- flutter
+                    |-- CMakeLists.txt
+                    |-- generated_plugins.cmake
+                  |-- CMakeLists.txt
+                  |-- main.cc
+                  |-- my_application.cc
+                  |-- my_application.h
+                |-- test_driver
+                  |-- integration_test.dart
+                |-- pubspec.yaml
+                |-- README.md
+              |-- lib
+                |-- src
+                  |-- messages.g.dart
+                |-- url_launcher_linux.dart
+              |-- linux
+                |-- include
+                  |-- url_launcher_linux
+                    |-- url_launcher_plugin.h
+                |-- test
+                  |-- url_launcher_linux_test.cc
+                |-- CMakeLists.txt
+                |-- messages.g.cc
+                |-- messages.g.h
+                |-- url_launcher_plugin.cc
+                |-- url_launcher_plugin_private.h
+              |-- pigeons
+                |-- copyright.txt
+                |-- messages.dart
+              |-- test
+                |-- url_launcher_linux_test.dart
               |-- AUTHORS
               |-- CHANGELOG.md
               |-- LICENSE
@@ -4327,6 +4967,55 @@
               |-- LICENSE
               |-- pubspec.yaml
               |-- README.md
+            |-- geolocator_windows
+              |-- example
+                |-- lib
+                  |-- main.dart
+                |-- res
+                  |-- images
+                    |-- baseflow_logo_def_light-02.png
+                    |-- poweredByBaseflowLogoLight.png
+                    |-- poweredByBaseflowLogoLight@2x.png
+                    |-- poweredByBaseflowLogoLight@3x.png
+                    |-- poweredByBaseflowLogoLight_2020-06-23.zip
+                |-- windows
+                  |-- flutter
+                    |-- CMakeLists.txt
+                    |-- generated_plugins.cmake
+                    |-- generated_plugin_registrant.cc
+                    |-- generated_plugin_registrant.h
+                  |-- runner
+                    |-- resources
+                      |-- app_icon.ico
+                    |-- CMakeLists.txt
+                    |-- flutter_window.cpp
+                    |-- flutter_window.h
+                    |-- main.cpp
+                    |-- resource.h
+                    |-- runner.exe.manifest
+                    |-- Runner.rc
+                    |-- utils.cpp
+                    |-- utils.h
+                    |-- win32_window.cpp
+                    |-- win32_window.h
+                  |-- CMakeLists.txt
+                |-- pubspec.yaml
+                |-- README.md
+              |-- windows
+                |-- include
+                  |-- geolocator_windows
+                    |-- geolocator_windows.h
+                |-- CMakeLists.txt
+                |-- geolocator_enums.h
+                |-- geolocator_plugin.cpp
+                |-- geolocator_plugin.h
+                |-- geolocator_windows.cpp
+              |-- analysis_options.yaml
+              |-- AUTHORS
+              |-- CHANGELOG.md
+              |-- LICENSE
+              |-- pubspec.yaml
+              |-- README.md
             |-- image_picker_windows
               |-- example
                 |-- lib
@@ -4410,6 +5099,65 @@
               |-- LICENSE
               |-- pubspec.yaml
               |-- README.md
+            |-- url_launcher_windows
+              |-- example
+                |-- integration_test
+                  |-- url_launcher_test.dart
+                |-- lib
+                  |-- main.dart
+                |-- test_driver
+                  |-- integration_test.dart
+                |-- windows
+                  |-- flutter
+                    |-- CMakeLists.txt
+                    |-- generated_plugins.cmake
+                  |-- runner
+                    |-- resources
+                      |-- app_icon.ico
+                    |-- CMakeLists.txt
+                    |-- flutter_window.cpp
+                    |-- flutter_window.h
+                    |-- main.cpp
+                    |-- resource.h
+                    |-- runner.exe.manifest
+                    |-- Runner.rc
+                    |-- run_loop.cpp
+                    |-- run_loop.h
+                    |-- utils.cpp
+                    |-- utils.h
+                    |-- win32_window.cpp
+                    |-- win32_window.h
+                  |-- CMakeLists.txt
+                |-- pubspec.yaml
+                |-- README.md
+              |-- lib
+                |-- src
+                  |-- messages.g.dart
+                |-- url_launcher_windows.dart
+              |-- pigeons
+                |-- copyright.txt
+                |-- messages.dart
+              |-- test
+                |-- url_launcher_windows_test.dart
+              |-- windows
+                |-- include
+                  |-- url_launcher_windows
+                    |-- url_launcher_windows.h
+                |-- test
+                  |-- url_launcher_windows_test.cpp
+                |-- CMakeLists.txt
+                |-- messages.g.cpp
+                |-- messages.g.h
+                |-- system_apis.cpp
+                |-- system_apis.h
+                |-- url_launcher_plugin.cpp
+                |-- url_launcher_plugin.h
+                |-- url_launcher_windows.cpp
+              |-- AUTHORS
+              |-- CHANGELOG.md
+              |-- LICENSE
+              |-- pubspec.yaml
+              |-- README.md
         |-- CMakeLists.txt
         |-- generated_plugins.cmake
         |-- generated_plugin_registrant.cc
@@ -4443,6 +5191,8 @@
     |-- README.md
   |-- web
     |-- public
+      |-- geojson
+        |-- islahiye-neighborhoods.geojson
       |-- images
         |-- mock
           |-- .gitkeep
@@ -4456,8 +5206,16 @@
         |-- react.svg
       |-- components
         |-- analytics
+          |-- charts
+            |-- ChartWrapper.tsx
+            |-- FunnelChart.tsx
+            |-- HorizontalBarChart.tsx
           |-- widgets
+            |-- AdvancedAnalyticsMapWidget.tsx
+            |-- CategoryDistributionWidget.tsx
+            |-- FunnelChartWidget.tsx
             |-- KpiMetricsWidget.tsx
+            |-- TemporalTrendWidget.tsx
           |-- AnalyticsFilterBar.tsx
           |-- KpiCard.tsx
         |-- common
@@ -4484,6 +5242,10 @@
           |-- TeamLeaderDashboard.tsx
           |-- TeamReportsList.tsx
         |-- maps
+          |-- CanvasHeatmapLayer.tsx
+          |-- DrawControlWrapper.tsx
+          |-- EnhancedPopup.tsx
+          |-- MapStateSync.tsx
         |-- supervisor
           |-- crud
             |-- CategoriesManagement.tsx
@@ -4496,6 +5258,7 @@
           |-- maps
             |-- index.ts
             |-- InteractiveReportMap.tsx
+            |-- InteractiveReportMapSimple.tsx
           |-- modals
             |-- AssignReportModal.tsx
             |-- ForwardReportModal.tsx
@@ -4522,17 +5285,6 @@
           |-- ReportsTableSection.tsx
           |-- StatusFilters.tsx
           |-- SupervisorLayout.tsx
-        |-- ui
-          |-- color-mode-button.tsx
-          |-- color-mode-icon.tsx
-          |-- color-mode-provider.tsx
-          |-- color-mode-script.tsx
-          |-- color-mode-toggle.tsx
-          |-- color-mode-wrapper.tsx
-          |-- color-mode.tsx
-          |-- enhanced-color-mode.tsx
-          |-- provider.tsx
-          |-- use-color-mode.tsx
         |-- AnimatedIllustration.tsx
         |-- ErrorBoundary.tsx
         |-- PageLoader.tsx
@@ -4558,8 +5310,13 @@
         |-- analytics
           |-- useAnalyticsFilters.ts
           |-- useCategories.ts
+          |-- useCategoryDistribution.ts
           |-- useDepartments.ts
+          |-- useFunnelData.ts
           |-- useKpiData.ts
+          |-- useNeighborhoods.ts
+          |-- useSpatialDistribution.ts
+          |-- useTemporalDistribution.ts
         |-- useAuthChangeDetection.ts
         |-- useDashboardStats.ts
         |-- useDepartments.ts
@@ -4569,6 +5326,7 @@
         |-- useMyTeamReports.ts
         |-- useNearbyReports.ts
         |-- useReportSupport.ts
+        |-- useScrollDirection.ts
         |-- useSnackbar.ts
         |-- useStatusCounts.ts
         |-- useSuggestedTeams.ts
@@ -4630,12 +5388,11 @@
         |-- teamLeaderService.ts
       |-- store
         |-- dashboardStore.ts
-      |-- styles
-        |-- theme
-          |-- recipes
-            |-- index.ts
       |-- theme
         |-- muiTheme.ts
+      |-- types
+        |-- geojson.d.ts
+        |-- react-leaflet-heatmap-layer.d.ts
       |-- utils
         |-- auth.ts
         |-- color-mode-script.ts
@@ -4751,11 +5508,13 @@
 |-- .gitignore
 |-- .prettierrc
 |-- check-database.ps1
-|-- check-db-simple.ps1
 |-- commitlint.config.js
+|-- database-schema.txt
 |-- docker-compose.yml
 |-- eslint.config.js
 |-- git-commit-rules.md
+|-- inspect-db-fixed.ps1
+|-- inspect-db.ps1
 |-- islahiye-coordinates.json
 |-- jest.config.ts
 |-- package.json

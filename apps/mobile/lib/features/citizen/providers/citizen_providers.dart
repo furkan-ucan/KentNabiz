@@ -51,7 +51,7 @@ class NearbyReportsParams {
   const NearbyReportsParams({
     required this.latitude,
     required this.longitude,
-    this.radiusKm = 5.0,
+    this.radiusKm = 10.0, // Default radius 10km olarak artırıldı
   });
 
   @override

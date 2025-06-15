@@ -103,10 +103,10 @@ export class TemporalAnalyticsService {
         ),
         resolved_reports AS (
           SELECT
-            date_trunc('${truncValue}', resolved_at) AS "date",
+            date_trunc('${truncValue}', created_at) AS "date",
             COUNT(*) as count
           FROM report_analytics_mv
-          WHERE resolved_at BETWEEN $1 AND $2
+          WHERE created_at BETWEEN $1 AND $2
             AND status = 'DONE'
             ${resolvedWhereConditions.join(' ')}
           GROUP BY 1

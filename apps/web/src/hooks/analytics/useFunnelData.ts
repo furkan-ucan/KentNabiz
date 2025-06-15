@@ -30,6 +30,9 @@ export const useFunnelData = (filters: AnalyticsFilters) => {
     enabled: true,
     staleTime: 5 * 60 * 1000, // 5 dakika
     gcTime: 10 * 60 * 1000, // 10 dakika
+    refetchOnWindowFocus: false,
+    placeholderData: (previousData: FunnelStatsResponse | undefined) =>
+      previousData,
   });
 
   // Debug: Sadece geliştirme modunda minimal log

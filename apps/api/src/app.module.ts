@@ -2,6 +2,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { CoreModule } from './core/core.module';
 import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -22,6 +23,7 @@ import { getTypeOrmConfig } from './config/typeorm.config'; // yapılandırma fo
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ScheduleModule.forRoot(),
     // 🔥 ANA YAPI TİCARİ BAĞLANTI BURAYA EKLENİYOR 🔥
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

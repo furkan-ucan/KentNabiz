@@ -18,17 +18,15 @@ export class UpdateReportAnalyticsMVWithAllColumns1749700000000 implements Migra
           r.category_id,
           c.code AS category_code,
           r.created_at,
-          r.resolved_at,
-          -- Çözüm süresini saniye cinsinden hesapla
+          r.resolved_at,          -- Çözüm süresini saniye cinsinden hesapla
           CASE
               WHEN r.resolved_at IS NOT NULL THEN
-                  EXTRACT(EPOCH FROM (r.resolved_at - r.resolved_at))
+                  EXTRACT(EPOCH FROM (r.resolved_at - r.created_at))
               ELSE NULL
-          END AS resolution_duration_seconds,
-          -- İlk atama tarihini hesapla (en eski assignment kaydından)
+          END AS resolution_duration_seconds,-- İlk atama tarihini hesapla (en eski assignment kaydından)
           (
               SELECT MIN(a.created_at)
-              FROM report_assignments a
+              FROM assignments a
               WHERE a.report_id = r.id
               AND a.deleted_at IS NULL
           ) AS first_assigned_at,
@@ -36,26 +34,24 @@ export class UpdateReportAnalyticsMVWithAllColumns1749700000000 implements Migra
           CASE
               WHEN (
                   SELECT MIN(a.created_at)
-                  FROM report_assignments a
+                  FROM assignments a
                   WHERE a.report_id = r.id
                   AND a.deleted_at IS NULL
               ) IS NOT NULL THEN
                   EXTRACT(EPOCH FROM (
                       (
                           SELECT MIN(a.created_at)
-                          FROM report_assignments a
+                          FROM assignments a
                           WHERE a.report_id = r.id
                           AND a.deleted_at IS NULL
                       ) - r.created_at
                   ))
               ELSE NULL
-          END AS intervention_duration_seconds,
-          -- Destek talep sayısını hesapla
+          END AS intervention_duration_seconds,          -- Destek talep sayısını hesapla
           (
               SELECT COUNT(*)
-              FROM report_support_requests sr
+              FROM report_supports sr
               WHERE sr.report_id = r.id
-              AND sr.deleted_at IS NULL
           ) AS support_count
       FROM
           reports r

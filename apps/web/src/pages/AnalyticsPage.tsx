@@ -8,6 +8,7 @@ import { FunnelChartWidget } from '@/components/analytics/widgets/FunnelChartWid
 import CategoryDistributionWidget from '@/components/analytics/widgets/CategoryDistributionWidget';
 import TemporalTrendWidget from '@/components/analytics/widgets/TemporalTrendWidget';
 import { AdvancedAnalyticsMapWidget } from '@/components/analytics/widgets/AdvancedAnalyticsMapWidget';
+import { TimeSliderWidget } from '@/components/analytics/TimeSliderWidget';
 import { useAnalyticsFilters } from '@/hooks/analytics/useAnalyticsFilters';
 import { api } from '@/lib/api';
 
@@ -142,6 +143,14 @@ export const AnalyticsPage = () => {
 
         {/* --- COĞRAFİ ANALİZ TUVALİ: Tam Genişlik --- */}
         <Grid size={{ xs: 12 }}>
+          {/* Zaman Kaydırıcısı - Haritanın üstünde */}
+          <TimeSliderWidget
+            filters={filters}
+            onFiltersChange={setFilters}
+            disabled={!filters.startDate || !filters.endDate}
+          />
+
+          {/* Gelişmiş Analitik Harita */}
           <AdvancedAnalyticsMapWidget
             filters={filters}
             onFiltersChange={setFilters}

@@ -114,14 +114,15 @@ class CitizenReportRepository {
   Future<List<Report>> getNearbyReports({
     required double latitude,
     required double longitude,
-    double radiusKm = 5.0,
+    double radiusKm = 10.0,
   }) async {
     final response = await _apiClient.dio.get(
       '/reports/nearby',
       queryParameters: {
         'latitude': latitude.toString(),
         'longitude': longitude.toString(),
-        'radius': (radiusKm * 1000).toString(), // API metre olarak bekliyorsa
+        'radius': radiusKm.toString(), // KM olarak gönder (API KM bekliyorsa)
+        'limit': '50', // Maksimum 50 rapor getir
       },
     );
 

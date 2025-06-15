@@ -50,5 +50,8 @@ export const useTemporalDistribution = (filters: TemporalFilters) => {
     },
     staleTime: 5 * 60 * 1000, // 5 dakika cache
     enabled: !!(filters.granularity && filters.startDate && filters.endDate),
+    refetchOnWindowFocus: false, // Pencere odaklandığında yeniden fetch yapma
+    placeholderData: (previousData: TemporalDataPoint[] | undefined) =>
+      previousData, // Önceki veriyi placeholder olarak kullan
   });
 };

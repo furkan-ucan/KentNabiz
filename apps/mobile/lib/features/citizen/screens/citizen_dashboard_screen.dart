@@ -20,6 +20,7 @@ class _CitizenDashboardScreenState
     extends ConsumerState<CitizenDashboardScreen> {
   final MapController _mapController = MapController();
   bool _isLoadingLocation = false;
+  double _currentRadius = 10.0; // Başlangıç yarıçapı 10km
 
   @override
   void initState() {
@@ -60,6 +61,16 @@ class _CitizenDashboardScreenState
     }
   }
 
+  void _searchWithLargerRadius() {
+    final userLocation = ref.read(userLocationProvider);
+    if (userLocation != null && _currentRadius < 50.0) {
+      setState(() {
+        // Yarıçapı artır (max 50km'ye kadar)
+        _currentRadius = (_currentRadius * 1.5).clamp(10.0, 50.0);
+      });
+    }
+  }
+
   void _centerMapOnUserLocation() {
     final userLocation = ref.read(userLocationProvider);
     if (userLocation != null) {
@@ -74,7 +85,17 @@ class _CitizenDashboardScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('KentNabız - Yakınımdakiler'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('KentNabız - Yakınımdakiler'),
+            Text(
+              'Arama Yarıçapı: ${_currentRadius.toInt()}km',
+              style:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+            ),
+          ],
+        ),
         actions: [
           if (_isLoadingLocation)
             const Padding(
@@ -85,6 +106,13 @@ class _CitizenDashboardScreenState
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
             ),
+          IconButton(
+            icon: const Icon(Icons.list),
+            tooltip: 'Liste Görünümü',
+            onPressed: () {
+              context.goNamed('nearbyReportsList');
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.my_location),
             tooltip: 'Konumuma Git',
@@ -162,11 +190,38 @@ class _CitizenDashboardScreenState
   }
 
   Widget _buildNearbyReportsLayer(NearbyReportsParams userLocation) {
-    final nearbyReportsAsync = ref.watch(nearbyReportsProvider(userLocation));
+    // Current radius ile yeni parametreler oluştur
+    final searchParams = NearbyReportsParams(
+      latitude: userLocation.latitude,
+      longitude: userLocation.longitude,
+      radiusKm: _currentRadius,
+    );
+
+    final nearbyReportsAsync = ref.watch(nearbyReportsProvider(searchParams));
 
     return nearbyReportsAsync.when(
       data: (reports) {
         if (reports.isEmpty) {
+          // Boş rapor durumunda kullanıcıya bilgi ver
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && _currentRadius <= 10.0) {
+              // Sadece ilk aramalarda bilgi ver
+              ScaffoldMessenger.of(context)
+                  .hideCurrentSnackBar(); // Önceki mesajları temizle
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                      '${_currentRadius.toInt()}km yarıçapında rapor bulunamadı'),
+                  backgroundColor: Colors.blue,
+                  duration: const Duration(seconds: 2),
+                  action: SnackBarAction(
+                    label: 'Genişlet',
+                    onPressed: _searchWithLargerRadius,
+                  ),
+                ),
+              );
+            }
+          });
           return const SizedBox.shrink();
         }
 
@@ -215,6 +270,10 @@ class _CitizenDashboardScreenState
               SnackBar(
                 content: Text('Yakındaki raporlar yüklenemedi: $error'),
                 backgroundColor: Colors.orange,
+                action: SnackBarAction(
+                  label: 'Tekrar Dene',
+                  onPressed: _loadUserLocation,
+                ),
               ),
             );
           }

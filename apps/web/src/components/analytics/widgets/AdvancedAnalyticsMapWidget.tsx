@@ -50,6 +50,15 @@ export const AdvancedAnalyticsMapWidget: React.FC<
     });
   };
 
+  // Bbox (alan seçimi) handler'ları
+  const handleBboxCreate = (bbox: string) => {
+    onFiltersChange?.({ ...filters, bbox });
+  };
+
+  const handleBboxClear = () => {
+    onFiltersChange?.({ ...filters, bbox: null });
+  };
+
   // Rapor detaylarını görüntüleme (şimdilik console.log)
   const handleViewDetails = (reportId: number) => {
     console.log('Viewing details for report:', reportId);
@@ -62,8 +71,8 @@ export const AdvancedAnalyticsMapWidget: React.FC<
     // TODO: Paylaşım modalı açma
   };
 
-  // Loading state
-  if (isLoading) {
+  // Loading state - Sadece ilk yüklemede ve veri yokken göster
+  if (isLoading && !spatialReports) {
     return (
       <Card sx={{ height: '100%' }}>
         <CardHeader
@@ -112,6 +121,11 @@ export const AdvancedAnalyticsMapWidget: React.FC<
         subheader={`${spatialReports?.totalCount || 0} rapor • Raporların İslahiye genelindeki yoğunluğunu ve dağılımını analiz edin`}
         action={
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            {/* Arka plan loading indicator */}
+            {isLoading && spatialReports && (
+              <CircularProgress size={16} sx={{ color: 'primary.main' }} />
+            )}
+
             {/* Görünüm modu toggle */}
             <ToggleButtonGroup
               value={mapView}
@@ -163,6 +177,8 @@ export const AdvancedAnalyticsMapWidget: React.FC<
             onNeighborhoodSelect={handleNeighborhoodSelect}
             onReportView={handleViewDetails}
             onReportShare={handleShareReport}
+            onBboxCreate={handleBboxCreate}
+            onBboxClear={handleBboxClear}
           />
         </Suspense>
       </CardContent>
