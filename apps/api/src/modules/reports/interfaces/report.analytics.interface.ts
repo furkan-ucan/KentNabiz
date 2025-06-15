@@ -114,6 +114,7 @@ export interface IAnalyticsFilter extends ITimeFilter {
   status?: ReportStatus;
   type?: ReportType;
   userId?: number;
+  neighborhoodName?: string; // Mahalle adı filtresi
   regionFilter?: {
     latitude: number;
     longitude: number;

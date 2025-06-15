@@ -10,6 +10,7 @@ export class AnalyticsFilterDto {
   status?: string;
   type?: string;
   userId?: number;
+  neighborhoodName?: string; // Mahalle adı filtresi
   limit?: number;
 }
 

@@ -5,7 +5,7 @@ import {
   Calendar,
   CheckCircle,
   TrendingUp,
-  Bell,
+  Clock,
 } from 'lucide-react';
 import { StatCard } from './StatCard';
 
@@ -14,7 +14,7 @@ interface StatsData {
   pendingReports: number;
   resolvedReports: number;
   myReports: number;
-  newTasks: number;
+  averageResolutionTime: number; // gün cinsinden
 }
 
 interface StatsGridProps {
@@ -57,7 +57,6 @@ export const StatsGrid = ({ stats, loading = false }: StatsGridProps) => {
             value={stats.totalReports}
             icon={BarChart3}
             color="primary"
-            trend={{ value: '+12%', type: 'positive' }}
             delay={0.1}
           />
 
@@ -66,7 +65,6 @@ export const StatsGrid = ({ stats, loading = false }: StatsGridProps) => {
             value={stats.pendingReports}
             icon={Calendar}
             color="warning"
-            trend={{ value: '-5%', type: 'negative' }}
             delay={0.2}
           />
 
@@ -75,7 +73,6 @@ export const StatsGrid = ({ stats, loading = false }: StatsGridProps) => {
             value={stats.resolvedReports}
             icon={CheckCircle}
             color="success"
-            trend={{ value: '+18%', type: 'positive' }}
             delay={0.3}
           />
 
@@ -88,9 +85,9 @@ export const StatsGrid = ({ stats, loading = false }: StatsGridProps) => {
           />
 
           <StatCard
-            title="Yeni Görevler"
-            value={stats.newTasks}
-            icon={Bell}
+            title="Ort. Çözüm Süresi"
+            value={`${stats.averageResolutionTime} gün`}
+            icon={Clock}
             color="info"
             delay={0.5}
           />

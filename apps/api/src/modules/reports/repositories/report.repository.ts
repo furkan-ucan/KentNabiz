@@ -40,6 +40,12 @@ export class ReportRepository {
     departmentCode?: MunicipalityDepartment;
     departmentId?: number;
     currentUserId?: number;
+    bbox?: string;
+    // Enhanced filters
+    assignment?: 'unassigned' | 'assigned';
+    subStatus?: string;
+    overdue?: boolean;
+    reopened?: boolean;
   }): Promise<ISpatialQueryResult> {
     const limit = options?.limit || 10;
     const page = options?.page || 1;
@@ -90,6 +96,59 @@ export class ReportRepository {
       queryBuilder.andWhere('report.currentDepartmentId = :departmentId', {
         departmentId: options.departmentId,
       });
+    }
+
+    // Enhanced Filters
+    if (options?.assignment === 'unassigned') {
+      // Aktif assignment'ı olmayan raporlar
+      queryBuilder.andWhere('(assignments.id IS NULL OR assignments.status = :cancelledStatus)', {
+        cancelledStatus: 'CANCELLED',
+      });
+    } else if (options?.assignment === 'assigned') {
+      // Aktif assignment'ı olan raporlar
+      queryBuilder.andWhere(
+        'assignments.id IS NOT NULL AND assignments.status NOT IN (:...inactiveStatuses)',
+        {
+          inactiveStatuses: ['CANCELLED', 'COMPLETED'],
+        }
+      );
+    }
+
+    if (options?.subStatus) {
+      queryBuilder.andWhere('report.subStatus = :subStatus', { subStatus: options.subStatus });
+    }
+
+    if (options?.overdue === true) {
+      queryBuilder.andWhere('report.createdAt < :sevenDaysAgo', {
+        sevenDaysAgo: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      });
+    }
+
+    if (options?.reopened === true) {
+      console.log('>>> REOPENED FILTER ACTIVATED <<<');
+      // Status history tablosunda DONE -> OPEN geçişi olan raporlar
+      queryBuilder.innerJoin(
+        'report_status_histories',
+        'statusHistory',
+        'statusHistory.report_id = report.id AND statusHistory.previous_status = :doneStatus AND statusHistory.new_status = :openStatus',
+        { doneStatus: 'DONE', openStatus: 'OPEN' }
+      );
+    }
+
+    // Spatial bbox filtering using PostGIS
+    if (options?.bbox) {
+      try {
+        const [minLng, minLat, maxLng, maxLat] = options.bbox.split(',').map(Number);
+        if (minLng && minLat && maxLng && maxLat) {
+          queryBuilder.andWhere(
+            `ST_Contains(ST_MakeEnvelope(:minLng, :minLat, :maxLng, :maxLat, 4326), report.location)`,
+            { minLng, minLat, maxLng, maxLat }
+          );
+        }
+      } catch {
+        // Geçersiz bbox formatı durumunda sessizce devam et
+        console.warn('Invalid bbox format:', options.bbox);
+      }
     }
 
     queryBuilder.skip(skip).take(limit);
@@ -186,15 +245,15 @@ export class ReportRepository {
       .leftJoinAndSelect('report.category', 'categoryEntity')
       .addSelect(
         `ST_Distance(
-          report.location,
-          ST_SetSRID(ST_GeomFromGeoJSON(:point), 4326)
+          ST_Transform(report.location, 3857),
+          ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(:point), 4326), 3857)
         )`,
         'distance'
       )
       .where(
         `ST_DWithin(
-          report.location,
-          ST_SetSRID(ST_GeomFromGeoJSON(:point), 4326),
+          ST_Transform(report.location, 3857),
+          ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(:point), 4326), 3857),
           :radius
         )`,
         { point: JSON.stringify(point), radius: radiusInMeters }
@@ -232,6 +291,7 @@ export class ReportRepository {
     queryBuilder.skip(skip).take(limit);
 
     const [reports, total] = await queryBuilder.getManyAndCount();
+
     const processedReports = reports.map(r => {
       // TypeORM'dan dönen ek alanlar için güvenli erişim
       const raw = r as Report & { isSupportedByCurrentUser?: boolean | string };
@@ -246,6 +306,7 @@ export class ReportRepository {
         isSupportedByCurrentUser: isSupported,
       };
     });
+
     return {
       data: processedReports,
       total,

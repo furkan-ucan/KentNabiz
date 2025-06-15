@@ -14,6 +14,7 @@ import {
   Portal,
 } from '@mui/material';
 import { authAPI } from '../../lib/api';
+import { setAuthTokens } from '../../utils/auth';
 import {
   formStyles,
   errorAlertStyles,
@@ -101,11 +102,27 @@ export function RegisterForm() {
       // Otomatik giriş yapmaya çalış
       try {
         console.log('Attempting auto-login'); // Debug için
-        await authAPI.login({
+        const loginResponse = await authAPI.login({
           email: data.email,
           password: data.password,
         });
-        console.log('Auto-login successful'); // Debug için        // Başarılı login sonrası dashboard'a yönlendir
+        console.log('Auto-login successful'); // Debug için
+
+        // Token'ları localStorage'a kaydet ve auth event'i tetikle
+        const responseData = loginResponse.data as unknown as Record<
+          string,
+          unknown
+        >;
+        const tokenData =
+          (responseData.data as Record<string, unknown>) || responseData;
+        const accessToken = tokenData?.accessToken as string;
+        const refreshToken = tokenData?.refreshToken as string;
+
+        if (accessToken && refreshToken) {
+          setAuthTokens(accessToken, refreshToken);
+        }
+
+        // Başarılı login sonrası dashboard'a yönlendir
         setTimeout(() => {
           console.log('Navigating to dashboard'); // Debug için
           navigate('/dashboard', { replace: true });

@@ -69,6 +69,9 @@ export class Assignment {
   @Column({ name: 'cancelled_at', type: 'timestamptz', nullable: true })
   cancelledAt?: Date;
 
+  @Column({ name: 'notes', type: 'text', nullable: true })
+  notes?: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 

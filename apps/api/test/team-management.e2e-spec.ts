@@ -6,6 +6,35 @@ import { AuthHelper } from './auth-helper';
 import TestDataSource from '../src/config/test-data-source';
 import { TeamStatus } from '../../../packages/shared/src/types/team.types';
 
+// Type definitions for test response bodies
+interface TeamResponse {
+  id: number;
+  name: string;
+  departmentId: number;
+  teamLeaderId?: number;
+  status: TeamStatus;
+  baseLocation?: {
+    type: string;
+    coordinates: number[];
+  };
+}
+
+interface UserResponse {
+  id: number;
+  email: string;
+  name: string;
+}
+
+interface SpecializationResponse {
+  id: number;
+  name: string;
+}
+
+interface ApiResponse<T> {
+  data: T;
+  message?: string;
+}
+
 describe('Team Management E2E', () => {
   let app: INestApplication;
   let authHelper: AuthHelper;
@@ -141,7 +170,9 @@ describe('Team Management E2E', () => {
       expect(response.body.data.length).toBeGreaterThan(0);
 
       // Should include our created team
-      const ourTeam = response.body.data.find((team: { id: number }) => team.id === createdTeamId);
+      const ourTeam = (response.body as ApiResponse<TeamResponse[]>).data.find(
+        (team: TeamResponse) => team.id === createdTeamId
+      );
       expect(ourTeam).toBeDefined();
     });
 
@@ -154,7 +185,7 @@ describe('Team Management E2E', () => {
       expect(Array.isArray(response.body.data)).toBe(true);
 
       // All teams should belong to the specified department
-      response.body.data.forEach((team: { departmentId: number }) => {
+      (response.body as ApiResponse<TeamResponse[]>).data.forEach((team: TeamResponse) => {
         expect(team.departmentId).toBe(testDepartmentId);
       });
     });
@@ -188,8 +219,8 @@ describe('Team Management E2E', () => {
       expect(Array.isArray(response.body.data)).toBe(true);
 
       // Should include the member we just added
-      const addedMember = response.body.data.find(
-        (member: { id: number }) => member.id === testUserId
+      const addedMember = (response.body as ApiResponse<UserResponse[]>).data.find(
+        (member: UserResponse) => member.id === testUserId
       );
       expect(addedMember).toBeDefined();
     });
@@ -211,8 +242,8 @@ describe('Team Management E2E', () => {
         .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
         .expect(200);
 
-      const removedMember = response.body.data.find(
-        (member: { id: number }) => member.id === testUserId
+      const removedMember = (response.body as ApiResponse<UserResponse[]>).data.find(
+        (member: UserResponse) => member.id === testUserId
       );
       expect(removedMember).toBeUndefined();
     });
@@ -237,9 +268,9 @@ describe('Team Management E2E', () => {
       expect(Array.isArray(response.body.data)).toBe(true);
 
       // Should include the specialization we just added
-      const addedSpecialization = response.body.data.find(
-        (spec: { id: number }) => spec.id === testSpecializationId
-      );
+      const addedSpecialization = (
+        response.body as ApiResponse<SpecializationResponse[]>
+      ).data.find((spec: SpecializationResponse) => spec.id === testSpecializationId);
       expect(addedSpecialization).toBeDefined();
     });
 
@@ -255,9 +286,9 @@ describe('Team Management E2E', () => {
         .set('Authorization', `Bearer ${authHelper.getSupervisorToken()}`)
         .expect(200);
 
-      const removedSpecialization = response.body.data.find(
-        (spec: { id: number }) => spec.id === testSpecializationId
-      );
+      const removedSpecialization = (
+        response.body as ApiResponse<SpecializationResponse[]>
+      ).data.find((spec: SpecializationResponse) => spec.id === testSpecializationId);
       expect(removedSpecialization).toBeUndefined();
     });
   });
@@ -274,15 +305,13 @@ describe('Team Management E2E', () => {
       // Teams should be sorted by distance (closest first)
       if (response.body.data.length > 1) {
         // Verify that teams have location data
-        response.body.data.forEach(
-          (team: { baseLocation?: { type: string; coordinates: number[] } }) => {
-            if (team.baseLocation) {
-              expect(team.baseLocation.type).toBe('Point');
-              expect(Array.isArray(team.baseLocation.coordinates)).toBe(true);
-              expect(team.baseLocation.coordinates.length).toBe(2);
-            }
+        (response.body as ApiResponse<TeamResponse[]>).data.forEach((team: TeamResponse) => {
+          if (team.baseLocation) {
+            expect(team.baseLocation.type).toBe('Point');
+            expect(Array.isArray(team.baseLocation.coordinates)).toBe(true);
+            expect(team.baseLocation.coordinates.length).toBe(2);
           }
-        );
+        });
       }
     });
   });

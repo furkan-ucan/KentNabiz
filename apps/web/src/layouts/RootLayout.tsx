@@ -1,6 +1,6 @@
 // apps/web/src/layouts/RootLayout.tsx
 import { useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   AppBar,
@@ -17,19 +17,25 @@ import {
   Snackbar,
   Alert,
   Divider,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Settings as SettingsIcon,
   Logout as LogoutIcon,
   AccountCircle as AccountIcon,
   Search as SearchIcon,
   Notifications as NotificationsIcon,
   DarkMode as DarkModeIcon,
+  Dashboard,
+  Group,
+  Analytics as AnalyticsIcon,
 } from '@mui/icons-material';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { clearAuth, getCurrentUser, hasRole } from '../utils/auth';
 import { SnackbarProvider } from '../providers/SnackbarProvider';
 import { LoadingProvider } from '../providers/LoadingProvider';
+import { UserRole } from '@kentnabiz/shared';
 
 interface RootLayoutProps {
   children?: React.ReactNode;
@@ -38,6 +44,8 @@ interface RootLayoutProps {
 export const RootLayout = ({ children }: RootLayoutProps) => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+  const user = getCurrentUser(); // Auth utils'den kullanıcı bilgisini al
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notificationAnchorEl, setNotificationAnchorEl] =
@@ -47,6 +55,33 @@ export const RootLayout = ({ children }: RootLayoutProps) => {
   const [snackbarSeverity, setSnackbarSeverity] = useState<
     'success' | 'error' | 'warning' | 'info'
   >('info');
+
+  // Kullanıcının rolüne göre "Yeni Rapor" butonunu göster/gizle
+  const canCreateReport = hasRole(UserRole.CITIZEN);
+  const isSupervisor =
+    hasRole(UserRole.DEPARTMENT_SUPERVISOR) || hasRole(UserRole.SYSTEM_ADMIN);
+
+  // Supervisor sayfasında mıyız kontrol et
+  const isOnSupervisorPage = location.pathname.startsWith('/supervisor');
+
+  // Supervisor tab değeri
+  const getSupervisorTabValue = () => {
+    const path = location.pathname;
+    if (path === '/supervisor' || path === '/supervisor/dashboard') return 0; // Ana Sayfa
+    if (path === '/supervisor/teams') return 1;
+    if (path === '/supervisor/analytics') return 2;
+    return 0; // Varsayılan olarak Ana Sayfa
+  };
+
+  const supervisorTabs = [
+    { label: 'Ana Sayfa', path: '/supervisor', icon: <Dashboard /> },
+    { label: 'Takımlar', path: '/supervisor/teams', icon: <Group /> },
+    {
+      label: 'Analitik Panel',
+      path: '/supervisor/analytics',
+      icon: <AnalyticsIcon />,
+    },
+  ];
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -65,9 +100,7 @@ export const RootLayout = ({ children }: RootLayoutProps) => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('rememberMe');
+    clearAuth();
     setSnackbarMessage('Başarıyla çıkış yapıldı');
     setSnackbarSeverity('success');
     setSnackbarOpen(true);
@@ -92,7 +125,7 @@ export const RootLayout = ({ children }: RootLayoutProps) => {
         paper: {
           sx: {
             mt: 1.5,
-            minWidth: 200,
+            minWidth: 250,
             backgroundColor: 'background.paper', // Mat dark arka plan
             border: `1px solid ${alpha(theme.palette.text.primary, 0.1)}`,
             borderRadius: 2,
@@ -100,22 +133,35 @@ export const RootLayout = ({ children }: RootLayoutProps) => {
         },
       }}
     >
+      {/* Kullanıcı Bilgileri */}
+      <MenuItem disabled>
+        <Box>
+          <Typography variant="subtitle2" color="text.primary">
+            {user?.email}
+          </Typography>
+          <Typography variant="caption" color="primary.main">
+            {hasRole(UserRole.CITIZEN) && 'Vatandaş'}
+            {hasRole(UserRole.TEAM_MEMBER) && 'Ekip Üyesi'}
+            {hasRole(UserRole.DEPARTMENT_SUPERVISOR) && 'Departman Sorumlusu'}
+            {hasRole(UserRole.SYSTEM_ADMIN) && 'Sistem Yöneticisi'}
+          </Typography>
+        </Box>
+      </MenuItem>
+      <Divider
+        sx={{ my: 1, borderColor: alpha(theme.palette.text.primary, 0.1) }}
+      />
+
       <MenuItem
         onClick={() => {
           navigate('/profile');
+          handleProfileMenuClose();
         }}
       >
         <AccountIcon sx={{ mr: 2, color: 'primary.main' }} />
         Profil
       </MenuItem>
-      <MenuItem
-        onClick={() => {
-          navigate('/settings');
-        }}
-      >
-        <SettingsIcon sx={{ mr: 2, color: 'primary.main' }} />
-        Ayarlar
-      </MenuItem>
+
+      {/* Ayarlar - Sadece SYSTEM_ADMIN için */}
       <Divider
         sx={{ my: 1, borderColor: alpha(theme.palette.text.primary, 0.1) }}
       />
@@ -184,12 +230,12 @@ export const RootLayout = ({ children }: RootLayoutProps) => {
                   variant="h6"
                   component="div"
                   sx={{
-                    flexGrow: 1,
                     fontWeight: 700,
                     color: 'text.primary', // Mat dark tema için basit metin
                     fontSize: { xs: '1.1rem', md: '1.25rem' },
                     cursor: 'pointer',
                     transition: 'color 0.2s ease',
+                    mr: 3,
                     '&:hover': {
                       color: 'primary.main',
                     },
@@ -200,6 +246,65 @@ export const RootLayout = ({ children }: RootLayoutProps) => {
                 >
                   KentNabız
                 </Typography>
+
+                {/* Supervisor Navigation Tabs - Sol tarafta */}
+                {isSupervisor && isOnSupervisorPage && (
+                  <Box
+                    sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}
+                  >
+                    <Tabs
+                      value={getSupervisorTabValue()}
+                      onChange={(_, newValue) => {
+                        navigate(supervisorTabs[newValue].path);
+                      }}
+                      aria-label="supervisor tabs"
+                      variant="scrollable"
+                      scrollButtons="auto"
+                      sx={{
+                        minHeight: 'auto',
+                        '& .MuiTabs-indicator': {
+                          backgroundColor: 'primary.main',
+                          height: 3,
+                        },
+                        '& .MuiTab-root': {
+                          minHeight: 48,
+                          minWidth: 'auto',
+                          textTransform: 'none',
+                          fontWeight: 500,
+                          color: 'text.secondary',
+                          px: 2,
+                          '&.Mui-selected': {
+                            color: 'primary.main',
+                            fontWeight: 600,
+                          },
+                          '&:hover': {
+                            color: 'primary.main',
+                            backgroundColor: alpha(
+                              theme.palette.primary.main,
+                              0.1
+                            ),
+                          },
+                        },
+                      }}
+                    >
+                      {supervisorTabs.map((tab, index) => (
+                        <Tab
+                          key={index}
+                          icon={tab.icon}
+                          label={tab.label}
+                          iconPosition="start"
+                          id={`supervisor-tab-${index}`}
+                          aria-controls={`supervisor-tabpanel-${index}`}
+                        />
+                      ))}
+                    </Tabs>
+                  </Box>
+                )}
+
+                {/* Sağ taraf boşluk - supervisor tab'ları yoksa */}
+                {!isSupervisor || !isOnSupervisorPage ? (
+                  <Box sx={{ flexGrow: 1 }} />
+                ) : null}
 
                 {/* Arama (Placeholder - gelecekte eklenebilir) */}
                 <IconButton
@@ -257,27 +362,29 @@ export const RootLayout = ({ children }: RootLayoutProps) => {
                   <DarkModeIcon />
                 </IconButton>
 
-                {/* Yeni Rapor CTA Button */}
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={handleNewReport}
-                  sx={{
-                    mr: 2,
-                    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${alpha(theme.palette.primary.main, 0.7)})`,
-                    borderRadius: 2,
-                    px: 3,
-                    py: 1,
-                    fontWeight: 600,
-                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: `2px 2px 6px ${alpha('#000', 0.6)}`,
-                    },
-                  }}
-                >
-                  Yeni Rapor
-                </Button>
+                {/* Yeni Rapor CTA Button - Sadece CITIZEN için */}
+                {canCreateReport && (
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={handleNewReport}
+                    sx={{
+                      mr: 2,
+                      background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${alpha(theme.palette.primary.main, 0.7)})`,
+                      borderRadius: 2,
+                      px: 3,
+                      py: 1,
+                      fontWeight: 600,
+                      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: `2px 2px 6px ${alpha('#000', 0.6)}`,
+                      },
+                    }}
+                  >
+                    Yeni Rapor
+                  </Button>
+                )}
 
                 {/* Profil Avatar */}
                 <IconButton
@@ -299,7 +406,7 @@ export const RootLayout = ({ children }: RootLayoutProps) => {
                       border: `2px solid ${alpha(theme.palette.text.primary, 0.1)}`,
                     }}
                   >
-                    U
+                    {user?.email?.charAt(0).toUpperCase() || 'U'}
                   </Avatar>
                 </IconButton>
               </Toolbar>

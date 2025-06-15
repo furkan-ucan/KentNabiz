@@ -114,6 +114,30 @@ export class TeamsController {
     );
   }
 
+  @Get('my-team/reports')
+  @Roles(UserRole.TEAM_MEMBER, UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
+  @ApiOperation({
+    summary: 'Get reports assigned to my team',
+    description:
+      "Retrieves all reports assigned to the current user's active team. Team leaders can see all team reports.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Team reports retrieved successfully',
+    type: Array,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User has no active team or team not found',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'User is not a team member or leader',
+  })
+  async getMyTeamReports(@Req() req: RequestWithUser) {
+    return this.teamsService.getMyTeamReports(req.user);
+  }
+
   @Get('department/:departmentId')
   @Roles(UserRole.TEAM_MEMBER, UserRole.DEPARTMENT_SUPERVISOR, UserRole.SYSTEM_ADMIN)
   @ApiOperation({

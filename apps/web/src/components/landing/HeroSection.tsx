@@ -51,6 +51,8 @@ export function HeroSection() {
               color: '#f8f9fa',
               textShadow: '0 4px 8px rgba(0,0,0,0.5)',
               letterSpacing: '-0.02em',
+              fontDisplay: 'swap', // Font loading optimization
+              willChange: 'auto', // Prevent unnecessary GPU acceleration
             }}
           >
             Kent

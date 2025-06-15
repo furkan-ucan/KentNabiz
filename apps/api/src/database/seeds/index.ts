@@ -8,6 +8,8 @@ import { CategoriesSeed } from './categories.seed';
 import { ReportsSeed } from './reports.seed';
 import { TeamsSeed } from './teams.seed';
 import { SpecializationsSeed } from './specializations.seed';
+import { CategorySpecializationsSeed } from './category-specializations.seed';
+import { TeamSpecializationsSeed } from './team-specializations.seed';
 import { AssignmentsSeed } from './assignments.seed';
 
 // Fix: Use default import for AppDataSource
@@ -23,8 +25,10 @@ async function runSeeds(dataSource: DataSource): Promise<void> {
     await DepartmentsSeed(dataSource);
     await CategoriesSeed(dataSource);
     await SpecializationsSeed(dataSource);
+    await CategorySpecializationsSeed(dataSource); // Kategori-uzmanlık ilişkilerini kur
+    await UsersSeed(dataSource); // Users'ı Teams'tan önce çalıştır
     await TeamsSeed(dataSource);
-    await UsersSeed(dataSource);
+    await TeamSpecializationsSeed(dataSource); // Takım-uzmanlık ilişkilerini kur
     await ReportsSeed(dataSource);
     await AssignmentsSeed(dataSource);
     console.log('✅ Tüm seed işlemleri başarıyla tamamlandı!');
